@@ -1,0 +1,11 @@
+prefix=@CMAKE_INSTALL_PREFIX@
+libdir=@CMAKE_INSTALL_PREFIX@/lib
+includedir=@CMAKE_INSTALL_PREFIX@/include
+
+Name: @PROJECT_NAME@
+Description: @v3crtplib_DESCR@
+URL:
+Version: @PROJECT_VERSION@
+CFlags: -I${includedir} @CRYPTOPP_INCLUDE_DIRS@ @V3CRTPLIB_CXX_FLAGS@
+Libs: -L${libdir} @V3CRTPLIB_LINKER_FLAGS@
+Requires:
