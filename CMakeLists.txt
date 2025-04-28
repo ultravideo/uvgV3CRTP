@@ -55,9 +55,6 @@ target_include_directories(${PROJECT_NAME}
         PUBLIC $<INSTALL_INTERFACE:include>
         )
 		
-# Include uvgRTP
-target_link_libraries(${PROJECT_NAME} PRIVATE uvgRTP)
-target_include_directories(${PROJECT_NAME} PRIVATE ${PROJECT_SOURCE_DIR}/dependencies/uvgRTP/include)
 		
 if(CMAKE_BUILD_TYPE)
     message(STATUS "Selecting build type: ${CMAKE_BUILD_TYPE}")

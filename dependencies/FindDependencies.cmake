@@ -41,6 +41,9 @@ else()
 
     add_subdirectory(${PROJECT_SOURCE_DIR}/dependencies/uvgRTP)
 	
+	include_directories(${uvgrtp_SOURCE_DIR}/include)
+	link_directories(${uvgrtp_SOURCE_DIR})
+	
     unset(BUILD_SHARED_LIBS)
 
 endif()

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../dependencies/uvgRTP/include/uvgrtp/lib.hh"
+#include <uvgrtp/lib.hh>
 
 #include <iostream>
 #include <fstream>
