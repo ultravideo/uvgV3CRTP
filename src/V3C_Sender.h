@@ -1,5 +1,8 @@
 #pragma once
+
 #include "V3C.h"
+#include "V3C_Gof.h"
+#include "V3C_Unit.h"
 
 #include <iostream>
 #include <fstream>
@@ -14,19 +17,17 @@ namespace v3cRTPLib {
     public V3C
   {
   public:
-    V3C_Sender();
-    ~V3C_Sender();
+    V3C_Sender(); // By default use 127.0.0.1 for sending
+    V3C_Sender(const char* sender_address, const char* receiver_address, const INIT_FLAGS flags);
+    ~V3C_Sender() = default;
 
-    int send();
-
-    static void sender_func(uvgrtp::media_stream* stream, const char* cbuf, const std::vector<v3c_unit_info> &units, rtp_flags_t flags, int fmt, std::atomic<size_t> &bytes_sent);
+    int send_bitstream(std::ifstream& bitstream) const;
+    void send_gof(const V3C_Gof& gof) const;
+    void send_v3c_unit(const V3C_Unit& unit) const;
 
   private:
-    static constexpr char LOCAL_IP[] = "127.0.0.1";
 
-    // Path to the V-PCC file that you want to send
-    std::string PATH = "";
-    
+
   };
 
 }

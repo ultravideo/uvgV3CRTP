@@ -39,7 +39,12 @@ set(V3CRTPLIB_CXX_FLAGS "")
 set(V3CRTPLIB_LINKER_FLAGS "")
 
 target_sources(${PROJECT_NAME} PRIVATE
+                          src/global.h
     src/V3C.cpp           src/V3C.h
+    src/V3C_Gof.cpp       src/V3C_Gof.h
+    src/V3C_Unit.cpp      src/V3C_Unit.h
+	src/Nalu.cpp		  src/Nalu.h
+	src/Sample_Stream.cpp src/Sample_Stream.h
     src/V3C_Receiver.cpp  src/V3C_Receiver.h
     src/V3C_Sender.cpp    src/V3C_Sender.h
     src/v3c_api.cpp       src/v3c_api.h

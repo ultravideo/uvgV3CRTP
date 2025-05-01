@@ -1,6 +1,8 @@
 #pragma once
 
 #include "V3C.h"
+#include "V3C_Gof.h"
+#include "V3C_Unit.h"
 
 #include <thread>
 #include <iostream>
@@ -8,7 +10,7 @@
 #include <chrono>
 #include <algorithm>
 #include <string>
-
+#include <map>
 
 namespace v3cRTPLib {
 
@@ -17,55 +19,19 @@ namespace v3cRTPLib {
   {
   public:
     V3C_Receiver();
-    ~V3C_Receiver();
+    V3C_Receiver(const char* receiver_address, const char* sender_address, INIT_FLAGS flags);
+    ~V3C_Receiver() = default;
 
-    int receive();
+    Sample_Stream<SAMPLE_STREAM_TYPE::V3C> receive_bitstream(const uint8_t v3c_size_precision, const std::map<V3C_UNIT_TYPE, uint8_t>& nal_size_precisions, const size_t expected_num_gofs, const std::map<V3C_UNIT_TYPE, size_t>& expected_num_nalus, const std::map<V3C_UNIT_TYPE, const V3C_Unit::V3C_Unit_Header>& headers, int timeout) const;
+    template <typename V3CUnitHeaderMap>
+    V3C_Gof receive_gof(const std::map<V3C_UNIT_TYPE, uint8_t>& size_precisions, const std::map<V3C_UNIT_TYPE, size_t>& expected_sizes, V3CUnitHeaderMap&& headers, const int timeout, const bool expected_size_as_num_nalus = false) const;
+    template <typename V3CUnitHeader>
+    V3C_Unit receive_v3c_unit(const V3C_UNIT_TYPE type, const uint8_t size_precision, const size_t expected_size, V3CUnitHeader&& header, const int timeout, const bool expected_size_as_num_nalus = false) const;
 
-    // Used in receiver_hooks to copy the received data
-    static void copy_rtp_payload(std::vector<v3c_unit_info>* units, uint64_t max_size, uvgrtp::frame::rtp_frame* frame);
-
-  
-    // Hooks for the media streams
-    static void vps_receive_hook(void* arg, uvgrtp::frame::rtp_frame* frame); // VPS only included for simplicity of demonstration
-    static void ad_receive_hook(void* arg, uvgrtp::frame::rtp_frame* frame);
-    static void ovd_receive_hook(void* arg, uvgrtp::frame::rtp_frame* frame);
-    static void gvd_receive_hook(void* arg, uvgrtp::frame::rtp_frame* frame);
-    static void avd_receive_hook(void* arg, uvgrtp::frame::rtp_frame* frame);
 
 private:
-    static constexpr char LOCAL_IP[] = "127.0.0.1";
 
-    // This example runs for 10 seconds
-    static constexpr auto RECEIVE_TIME_S = std::chrono::seconds(10);
 
-    uint64_t vps_count;
-
-    /* These values specify the amount of NAL units inside each type of V3C unit. These need to be known to be able to reconstruct the
-     * GOFs after receiving. These default values correspond to the provided test sequence, and may be different for other sequences.
-     * The sending example has prints that show how many NAL units each V3C unit contain. For other sequences, these values can be
-     * modified accordingly. */
-    static constexpr int VPS_NALS = 2; // VPS only included for simplicity of demonstration
-    static constexpr int AD_NALS = 35;
-    static constexpr int OVD_NALS = 35;
-    static constexpr int GVD_NALS = 131;
-    static constexpr int AVD_NALS = 131;
-
-    // These are signaled to the receiver one way or the other, for example SDP
-    static constexpr uint8_t ATLAS_NAL_SIZE_PRECISION = 2;
-    static constexpr uint8_t VIDEO_NAL_SIZE_PRECISION = 4;
-    static constexpr uint8_t V3C_SIZE_PRECISION = 2;
-
-    /* NOTE: In case where the last GOF has fewer NAL units than specified above, the receiver does not know how many to expect
-       and cannot reconstruct that specific GOF. s*/
-
-       /* How many *FULL* Groups of Frames we are expecting to receive */
-    static constexpr int EXPECTED_GOFS = 9;
-
-    /* Path to the V3C file that we are receiving. This is included so that you can check that the reconstructed full GOFs are equal to the
-     * original ones */
-    std::string PATH = "";
-
-    bool write_file(const char* data, size_t len, const std::string& filename);
   };
 
 }

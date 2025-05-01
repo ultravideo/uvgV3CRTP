@@ -1,0 +1,14 @@
+src/*.o
+*.a
+*main
+examples/.qtc_clangd/*
+examples/build-Example*
+build/*
+*.prof
+*.user
+tags
+*a.out
+docs/latex
+/cmake-build*/
+out/*
+*.vs*
