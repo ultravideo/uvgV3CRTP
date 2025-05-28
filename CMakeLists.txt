@@ -22,7 +22,7 @@ option(V3CRTPLIB_DISABLE_WERROR "Ignore compiler warnings" ON)
 # Take care of external dependencies (e.g. uvgRTP)
 include(dependencies/FindDependencies.cmake)
 
-#include(cmake/Versioning.cmake) #TODO: add if more comprehensive versioning is required
+include(cmake/Versioning.cmake)
 
 # Check necessary dependencies
 # PThread
@@ -43,14 +43,17 @@ target_sources(${PROJECT_NAME} PRIVATE
     src/V3C.cpp           src/V3C.h
     src/V3C_Gof.cpp       src/V3C_Gof.h
     src/V3C_Unit.cpp      src/V3C_Unit.h
-	src/Nalu.cpp		  src/Nalu.h
-	src/Sample_Stream.cpp src/Sample_Stream.h
+    src/Nalu.cpp          src/Nalu.h
+    src/Sample_Stream.cpp src/Sample_Stream.h
     src/V3C_Receiver.cpp  src/V3C_Receiver.h
     src/V3C_Sender.cpp    src/V3C_Sender.h
     src/v3c_api.cpp       src/v3c_api.h
+
+                          include/v3crtplib/version.h
 )
 
 source_group(src src/.*)
+source_group(include include/.*)
 
 target_link_libraries(${PROJECT_NAME} PRIVATE Threads::Threads ${PROJECT_NAME}_version)
 

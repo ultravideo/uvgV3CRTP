@@ -1,0 +1,21 @@
+#include "v3crtplib/version.h"
+
+#include <cstdint>
+#include <string>
+
+namespace v3cRTPLib {
+
+#ifdef V3CRTPLIB_RELEASE_COMMIT
+    std::string get_version() { return "@v3crtplib_VERSION@-release"; }
+#else
+    std::string get_version() { return "@v3crtplib_VERSION@-@v3crtplib_GIT_HASH@"; }
+#endif
+
+uint16_t get_version_major() { return @v3crtplib_VERSION_MAJOR@; }
+
+uint16_t get_version_minor() { return @v3crtplib_VERSION_MINOR@; }
+
+uint16_t get_version_patch() { return @v3crtplib_VERSION_PATCH@; }
+
+std::string get_git_hash() {return "@v3crtplib_GIT_HASH@";}
+}
