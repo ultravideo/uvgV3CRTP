@@ -181,14 +181,28 @@ namespace v3cRTPLib {
   template <INFO_FMT F = INFO_FMT::LOGGING, typename TF, typename TV>
   static inline void process(std::ostream& out, TF& field, TV& value)
   {
-    out << field << value << std::endl;
+    if constexpr (F == INFO_FMT::RAW)
+    {
+      out << value;
+    }
+    else
+    {
+      out << field << value << std::endl;
+    }
   }
 
   template<INFO_FMT F = INFO_FMT::LOGGING, typename TF, typename TV>
   static inline void process(std::istream& in, TF& field, TV& value)
   {
-    in >> field;
-    in >> value;
+    if constexpr (F == INFO_FMT::RAW)
+    {
+      in >> value;
+    }
+    else
+    {
+      in >> field;
+      in >> value;
+    }
   }
 
   template <INFO_FMT F = INFO_FMT::LOGGING, typename Stream, typename TF, typename TV>
@@ -253,7 +267,7 @@ namespace v3cRTPLib {
 
     if constexpr (std::is_same<DataClass, Sample_Stream<SAMPLE_STREAM_TYPE::V3C>>::value)
     {
-      /*if (has_field(data, INFO_FIELDS::NUM_GOF))*/  process_num<F>(stream, "GOFS", get_as<size_t>(data, INFO_FIELDS::NUM_GOF));
+      if (has_field(data, INFO_FIELDS::NUM_GOF))  process_num<F>(stream, "GOFS", get_as<size_t>(data, INFO_FIELDS::NUM_GOF));
       if (has_field(data, INFO_FIELDS::NUM_VPS_NALU)) process_num<F>(stream, "VPS_NALU", get_as<size_t>(data, INFO_FIELDS::NUM_VPS_NALU));
       if (has_field(data, INFO_FIELDS::NUM_AD_NALU))  process_num<F>(stream, "AD_NALU", get_as<size_t>(data, INFO_FIELDS::NUM_AD_NALU));
       if (has_field(data, INFO_FIELDS::NUM_OVD_NALU)) process_num<F>(stream, "OVD_NALU", get_as<size_t>(data, INFO_FIELDS::NUM_OVD_NALU));
@@ -261,7 +275,7 @@ namespace v3cRTPLib {
       if (has_field(data, INFO_FIELDS::NUM_AVD_NALU)) process_num<F>(stream, "AVD_NALU", get_as<size_t>(data, INFO_FIELDS::NUM_AVD_NALU));
       if (has_field(data, INFO_FIELDS::NUM_CAD_NALU)) process_num<F>(stream, "CAD_NALU", get_as<size_t>(data, INFO_FIELDS::NUM_PVD_NALU));
       if (has_field(data, INFO_FIELDS::NUM_PVD_NALU)) process_num<F>(stream, "PVD_NALU", get_as<size_t>(data, INFO_FIELDS::NUM_PVD_NALU));
-      /*if (has_field(data, INFO_FIELDS::V3C_SIZE_PREC))*/ process_prec<F>(stream, "V3C", get_as<uint8_t>(data, INFO_FIELDS::V3C_SIZE_PREC));
+      if (has_field(data, INFO_FIELDS::V3C_SIZE_PREC)) process_prec<F>(stream, "V3C", get_as<uint8_t>(data, INFO_FIELDS::V3C_SIZE_PREC));
       if (has_field(data, INFO_FIELDS::ATLAS_NAL_SIZE_PREC)) process_prec<F>(stream, "AtlasNAL", get_as<uint8_t>(data, INFO_FIELDS::ATLAS_NAL_SIZE_PREC));
       if (has_field(data, INFO_FIELDS::VIDEO_NAL_SIZE_PREC)) process_prec<F>(stream, "Video", get_as<uint8_t>(data, INFO_FIELDS::VIDEO_NAL_SIZE_PREC));
     }
@@ -288,42 +302,10 @@ namespace v3cRTPLib {
       {
         if (info_data[INFO_FIELDS::NUM_GOF] == 0)
         {
-          switch (type)
-          {
-          case v3cRTPLib::V3C_VPS:
-            info_data[INFO_FIELDS::NUM_VPS_NALU] = unit.num_nalus();
-              break;
-          case v3cRTPLib::V3C_AD:
-            info_data[INFO_FIELDS::NUM_VPS_NALU] = unit.num_nalus();
-            info_data[INFO_FIELDS::ATLAS_NAL_SIZE_PREC] = unit.nal_size_precision();
-            break;
-          case v3cRTPLib::V3C_OVD:
-            info_data[INFO_FIELDS::NUM_VPS_NALU] = unit.num_nalus();
-            info_data[INFO_FIELDS::VIDEO_NAL_SIZE_PREC] = unit.nal_size_precision();
-            break;
-          case v3cRTPLib::V3C_GVD:
-            info_data[INFO_FIELDS::NUM_VPS_NALU] = unit.num_nalus();
-            info_data[INFO_FIELDS::VIDEO_NAL_SIZE_PREC] = unit.nal_size_precision();
-            break;
-          case v3cRTPLib::V3C_AVD:
-            info_data[INFO_FIELDS::NUM_VPS_NALU] = unit.num_nalus();
-            info_data[INFO_FIELDS::VIDEO_NAL_SIZE_PREC] = unit.nal_size_precision();
-            break;
-          case v3cRTPLib::V3C_PVD:
-            info_data[INFO_FIELDS::NUM_VPS_NALU] = unit.num_nalus();
-            info_data[INFO_FIELDS::VIDEO_NAL_SIZE_PREC] = unit.nal_size_precision();
-            break;
-          case v3cRTPLib::V3C_CAD:
-            info_data[INFO_FIELDS::NUM_VPS_NALU] = unit.num_nalus();
-            info_data[INFO_FIELDS::ATLAS_NAL_SIZE_PREC] = unit.nal_size_precision();
-            break;
-          default:
-            break;
-          }
+          populate_info_data<F>(unit, info_data);
           nal_num[type] = unit.num_nalus();
           nal_prec[type] = unit.nal_size_precision();
-        }
-        else
+        } else
         {
           info_data[INFO_FIELDS::VAR_NAL_NUM] |= (nal_num[type] != unit.num_nalus());
           info_data[INFO_FIELDS::VAR_NAL_PREC] |= (nal_prec[type] != unit.nal_size_precision());
@@ -333,6 +315,51 @@ namespace v3cRTPLib {
     }
     info_data[INFO_FIELDS::V3C_SIZE_PREC] = data.size_precision;
   }
+  template <INFO_FMT F = INFO_FMT::LOGGING, typename T>
+  static void populate_info_data(const V3C_Gof & data, T& info_data)
+  {
+    for (const auto&[type, unit] : data)
+    {
+      populate_info_data<F>(unit, info_data);
+    }
+  }
+  template <INFO_FMT F = INFO_FMT::LOGGING, typename T>
+  static void populate_info_data(const V3C_Unit & data, T& info_data)
+  {
+    switch (data.type())
+    {
+    case v3cRTPLib::V3C_VPS:
+      info_data[INFO_FIELDS::NUM_VPS_NALU] = data.num_nalus();
+      break;
+    case v3cRTPLib::V3C_AD:
+      info_data[INFO_FIELDS::NUM_VPS_NALU] = data.num_nalus();
+      info_data[INFO_FIELDS::ATLAS_NAL_SIZE_PREC] = data.nal_size_precision();
+      break;
+    case v3cRTPLib::V3C_OVD:
+      info_data[INFO_FIELDS::NUM_VPS_NALU] = data.num_nalus();
+      info_data[INFO_FIELDS::VIDEO_NAL_SIZE_PREC] = data.nal_size_precision();
+      break;
+    case v3cRTPLib::V3C_GVD:
+      info_data[INFO_FIELDS::NUM_VPS_NALU] = data.num_nalus();
+      info_data[INFO_FIELDS::VIDEO_NAL_SIZE_PREC] = data.nal_size_precision();
+      break;
+    case v3cRTPLib::V3C_AVD:
+      info_data[INFO_FIELDS::NUM_VPS_NALU] = data.num_nalus();
+      info_data[INFO_FIELDS::VIDEO_NAL_SIZE_PREC] = data.nal_size_precision();
+      break;
+    case v3cRTPLib::V3C_PVD:
+      info_data[INFO_FIELDS::NUM_VPS_NALU] = data.num_nalus();
+      info_data[INFO_FIELDS::VIDEO_NAL_SIZE_PREC] = data.nal_size_precision();
+      break;
+    case v3cRTPLib::V3C_CAD:
+      info_data[INFO_FIELDS::NUM_VPS_NALU] = data.num_nalus();
+      info_data[INFO_FIELDS::ATLAS_NAL_SIZE_PREC] = data.nal_size_precision();
+      break;
+    default:
+      break;
+    }
+  }
+  
 
   template<INFO_FMT F, typename DataClass>
   void V3C::write_out_of_band_info(std::ostream & out_stream, const DataClass & data)

@@ -25,7 +25,8 @@ namespace v3cRTPLib {
 
   enum class INFO_FMT {
     LOGGING, // Logging printout in a human readable format
-    PARAM    // Print relevant parameters directly to c++ expressions
+    PARAM,   // Print relevant parameters directly to c++ expressions
+    RAW,     // Output data values directly
   };
   enum class INFO_FIELDS {
     NUM_GOF,
