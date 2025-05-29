@@ -39,7 +39,6 @@ set(V3CRTPLIB_CXX_FLAGS "")
 set(V3CRTPLIB_LINKER_FLAGS "")
 
 target_sources(${PROJECT_NAME} PRIVATE
-                          src/global.h
     src/V3C.cpp           src/V3C.h
     src/V3C_Gof.cpp       src/V3C_Gof.h
     src/V3C_Unit.cpp      src/V3C_Unit.h
@@ -49,7 +48,8 @@ target_sources(${PROJECT_NAME} PRIVATE
     src/V3C_Sender.cpp    src/V3C_Sender.h
     src/v3c_api.cpp       src/v3c_api.h
 
-                          include/v3crtplib/version.h
+    include/v3crtplib/version.h
+	include/v3crtplib/global.h
 )
 
 source_group(src src/.*)

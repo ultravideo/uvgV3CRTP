@@ -9,7 +9,7 @@
 #include <string>
 #include <map>
 
-#include "global.h"
+#include "v3crtplib/global.h"
 
 namespace v3cRTPLib {
 
