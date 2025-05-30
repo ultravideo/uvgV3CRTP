@@ -12,7 +12,11 @@ namespace v3cRTPLib {
   public:
     V3C_Gof() = default;
     template <typename FirstUnit, typename... OtherUnits>
-    V3C_Gof(FirstUnit&& unit, OtherUnits&&... others);
+    inline V3C_Gof(FirstUnit && unit, OtherUnits && ...others) :
+      V3C_Gof(std::forward<OtherUnits>(others)...)
+    { 
+      set(std::forward<FirstUnit>(unit));
+    }
 
     V3C_Gof(const V3C_Gof&) = delete;
     V3C_Gof& operator=(const V3C_Gof&) = delete;
@@ -23,12 +27,12 @@ namespace v3cRTPLib {
     ~V3C_Gof() = default;
 
     template <V3C_UNIT_TYPE E>
-    inline V3C_Unit& get();
+    inline V3C_Unit& get() { return get(E); }
     template <V3C_UNIT_TYPE E>
-    inline const V3C_Unit& get() const;
+    inline const V3C_Unit& get() const { return get(E); }
 
-    inline V3C_Unit& get(const V3C_UNIT_TYPE type);
-    inline const V3C_Unit& get(const V3C_UNIT_TYPE type) const;
+    V3C_Unit& get(const V3C_UNIT_TYPE type);
+    const V3C_Unit& get(const V3C_UNIT_TYPE type) const;
 
     void set(V3C_Unit&& unit);
 

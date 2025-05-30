@@ -6,25 +6,63 @@
 
 namespace v3cRTPLib {
 
+  // Explicitly define necessary instantiations so code is linked properly
+  template class Sample_Stream<SAMPLE_STREAM_TYPE::V3C>;
+  template class Sample_Stream<SAMPLE_STREAM_TYPE::NAL>;
+
+  // Iterator definition
+  template <typename SampleType, template <typename> class StreamType>
+  SampleStreamIterator<SampleType, StreamType>::SampleStreamIterator(typename StreamType<SampleType>::const_iterator it) : it(it)
+  {
+  }
+
+  template <typename SampleType, template <typename> class StreamType>
+  const SampleType & v3cRTPLib::SampleStreamIterator<SampleType, StreamType>::operator*() const
+  {
+    return it->second;
+  }
+
+  template <typename SampleType, template <typename> class StreamType>
+  SampleStreamIterator<SampleType, StreamType> & SampleStreamIterator<SampleType, StreamType>::operator++()
+  {
+    ++it;
+    return *this;
+  }
+
+  template <typename SampleType, template <typename> class StreamType>
+  bool SampleStreamIterator<SampleType, StreamType>::operator==(const SampleStreamIterator & other) const
+  {
+    return it == other.it;
+  }
+
+  template <typename SampleType, template <typename> class StreamType>
+  bool SampleStreamIterator<SampleType, StreamType>::operator!=(const SampleStreamIterator & other) const
+  {
+    return it != other.it;
+  }
+
+
   template<SAMPLE_STREAM_TYPE E>
-  inline Sample_Stream<E>::Sample_Stream(const uint8_t size_precision) : size_precision(size_precision)
+  Sample_Stream<E>::Sample_Stream(const uint8_t size_precision) : size_precision(size_precision)
   {
   }
 
   template<SAMPLE_STREAM_TYPE E>
-  void Sample_Stream<E>::push_back(V3C_Unit&& unit, size_t size)
+  void Sample_Stream<E>::push_back(V3C_Unit&& unit)
   {
     // Assume each gof only has max one of each type of v3c unit. Add unit to the first gof without a unit of that type.
     size_t push_gof_ind = find_free_gof(unit.type());
     if (push_gof_ind >= stream_.size())
     {
       // Allocate new gof if the existing gofs are "full"
-      this->push_back(V3C_Gof());
-      push_gof_ind = stream_.size() - 1;
+      this->push_back(V3C_Gof(std::move(unit)));
     }
-    auto& push_gof = stream_.at(push_gof_ind);
-    push_gof.first[unit.type()] = size;
-    push_gof.second.set(std::forward<V3C_Unit>(unit));
+    else
+    {
+      auto& push_gof = stream_.at(push_gof_ind);
+      push_gof.first[unit.type()] = unit.size();
+      push_gof.second.set(std::move(unit));
+    }
   }
 
   template<SAMPLE_STREAM_TYPE E>
@@ -33,11 +71,11 @@ namespace v3cRTPLib {
     std::map<V3C_UNIT_TYPE, size_t> size_map = std::map<V3C_UNIT_TYPE, size_t>{};
     for (const auto&[type, unit] : gof)
     {
-      size_map[type] = unit.size();
+      size_map.at(type) = unit.size();
     }
 
     // Push gof directly to stream
-    stream_.emplace_back(std::move(size_map), std::forward<V3C_Gof>(gof));
+    stream_.emplace_back(std::move(size_map), std::move(gof));
   }
 
   /* Calculate GOF size
@@ -75,22 +113,36 @@ namespace v3cRTPLib {
   size_t Sample_Stream<E>::size() const
   {
     size_t stream_size = SAMPLE_STREAM_HDR_LEN; // Include sample stream header size
-    for (const auto&[size, data] : stream_)
+    for (Iterator it = stream_.begin(); it != stream_.end(); ++it)
     {
       if constexpr (E == SAMPLE_STREAM_TYPE::NAL) {
         // Account for sample stream unit size size
         stream_size += size_precision;
-        stream_size += size;
+        stream_size += it.it->first;
       } else {
-        for (const auto&[type, sub_size] : size)
-        {
-          // Account for sample stream unit size size
-          stream_size += size_precision;
-          stream_size += sub_size;
-        }
+        stream_size += size(it);
       }
     }
     return stream_size;
+  }
+
+  template<SAMPLE_STREAM_TYPE E>
+  size_t Sample_Stream<E>::size(Iterator gof_it) const
+  {
+    size_t stream_size = 0;
+    for (const auto&[type, sub_size] : gof_it.it->first)
+    {
+      // Get size of v3c unit
+      stream_size += size(gof_it, type);
+    }
+    return stream_size;
+  }
+
+  template<SAMPLE_STREAM_TYPE E>
+  size_t Sample_Stream<E>::size(Iterator gof_it, const V3C_UNIT_TYPE unit_type) const
+  {
+    // Account for sample stream unit size size
+    return size_precision + gof_it.it->first.at(unit_type);
   }
 
   template<SAMPLE_STREAM_TYPE E>
@@ -106,39 +158,9 @@ namespace v3cRTPLib {
   }
 
   template<SAMPLE_STREAM_TYPE E>
-  inline Sample_Stream<E>::Iterator::Iterator(typename sample_stream_data::iterator it): it(it)
-  {
-  }
-
-  template<SAMPLE_STREAM_TYPE E>
-  inline const typename Sample_Stream<E>::sample_type & Sample_Stream<E>::Iterator::operator*() const
-  {
-    return it->second;
-  }
-
-  template<SAMPLE_STREAM_TYPE E>
-  inline typename Sample_Stream<E>::Iterator & Sample_Stream<E>::Iterator::operator++()
-  {
-    ++it;
-    return *this;
-  }
-
-  template<SAMPLE_STREAM_TYPE E>
-  inline bool Sample_Stream<E>::Iterator::operator==(const Iterator & other) const
-  {
-    return it == other.it;
-  }
-
-  template<SAMPLE_STREAM_TYPE E>
-  inline bool Sample_Stream<E>::Iterator::operator!=(const Iterator & other) const
-  {
-    return it != other.it;
-  }
-
-  template<SAMPLE_STREAM_TYPE E>
   size_t Sample_Stream<E>::find_free_gof(V3C_UNIT_TYPE type) const
   {
-    size_t ind = -1;
+    size_t ind = 0;
 
     for (const auto& gof: stream_)
     {
@@ -152,9 +174,10 @@ namespace v3cRTPLib {
     return ind;
   }
 
-  void Sample_Stream<SAMPLE_STREAM_TYPE::NAL>::push_back(Nalu&& unit, size_t size)
+  void Sample_Stream<SAMPLE_STREAM_TYPE::NAL>::push_back(Nalu&& unit)
   {
-    stream_.emplace_back( size, std::forward<Nalu>(unit));
+    const auto size = unit.size();
+    stream_.emplace_back( size, std::move(unit));
   }
 
 
@@ -169,19 +192,59 @@ namespace v3cRTPLib {
     ptr += V3C::write_size_precision(&bitstream.get()[ptr], size_precision);
 
     // Start copying data from v3c units
-    for (const auto&[size, data] : stream_)
+    for (Iterator it = stream_.begin(); it != stream_.end(); ++it)
     {
-      for (const auto&[type, unit] : data)
-      {
-        // Insert sample stream unit size
-        ptr += V3C::write_sample_stream_size(&bitstream.get()[ptr], size[type], size_precision);
-
-        // Write data to bitstream
-        ptr += unit.write_bitstream(&bitstream.get()[ptr]);
-      }
+      // Write current gof
+      ptr += write_bitstream(&bitstream.get()[ptr], it);
     }
 
     return bitstream;
+  }
+
+  template<SAMPLE_STREAM_TYPE E>
+  std::unique_ptr<char[]> Sample_Stream<E>::get_bitstream(Iterator gof_it) const
+  {
+    std::unique_ptr<char[]> bitstream = std::make_unique<char[]>(size(gof_it));
+
+    write_bitstream(bitstream.get(), gof_it);
+
+    return bitstream;
+  }
+
+  template<SAMPLE_STREAM_TYPE E>
+  std::unique_ptr<char[]> Sample_Stream<E>::get_bitstream(Iterator gof_it, const V3C_UNIT_TYPE unit_type) const
+  {
+    std::unique_ptr<char[]> bitstream = std::make_unique<char[]>(size(gof_it, unit_type));
+
+    write_bitstream(bitstream.get(), gof_it, unit_type);
+
+    return bitstream;
+  }
+
+  template<SAMPLE_STREAM_TYPE E>
+  size_t Sample_Stream<E>::write_bitstream(char * const bitstream, Iterator gof_it) const
+  {
+    size_t ptr = 0;
+    for (const auto&[type, unit] : gof_it.it->second)
+    {
+      // Write v3c unit bitstreams
+      ptr += write_bitstream(bitstream, gof_it, type);
+    }
+    return ptr;
+  }
+
+  template<SAMPLE_STREAM_TYPE E>
+  size_t Sample_Stream<E>::write_bitstream(char * const bitstream, Iterator gof_it, V3C_UNIT_TYPE unit_type) const
+  {
+    size_t ptr = 0;
+
+    // Insert sample stream unit size
+    ptr += V3C::write_sample_stream_size(&bitstream[ptr], gof_it.it->first.at(unit_type), size_precision);
+
+    // Write data to bitstream
+    ptr += (*gof_it).get(unit_type).write_bitstream(&bitstream[ptr]);
+    
+    return ptr;
   }
 
   size_t Sample_Stream<SAMPLE_STREAM_TYPE::NAL>::write_bitstream(char * const bitstream) const

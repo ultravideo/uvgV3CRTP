@@ -3,6 +3,7 @@
 #include "V3C.h"
 #include "V3C_Gof.h"
 #include "V3C_Unit.h"
+#include "Sample_Stream.h"
 
 #include <iostream>
 #include <fstream>
@@ -21,7 +22,7 @@ namespace v3cRTPLib {
     V3C_Sender(const char* sender_address, const char* receiver_address, const INIT_FLAGS flags);
     ~V3C_Sender() = default;
 
-    int send_bitstream(std::ifstream& bitstream) const;
+    void send_bitstream(const Sample_Stream<SAMPLE_STREAM_TYPE::V3C>& bitstream) const;
     void send_gof(const V3C_Gof& gof) const;
     void send_v3c_unit(const V3C_Unit& unit) const;
 

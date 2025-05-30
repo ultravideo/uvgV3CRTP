@@ -33,7 +33,7 @@ find_package( Threads REQUIRED )
 add_library(${PROJECT_NAME})
 set_target_properties(${PROJECT_NAME} PROPERTIES
                                       SOVERSION "${PROJECT_VERSION_MAJOR}"
-									  VERSION "${LIBRARY_VERSION}")
+                                      VERSION "${LIBRARY_VERSION}")
 
 set(V3CRTPLIB_CXX_FLAGS "")
 set(V3CRTPLIB_LINKER_FLAGS "")
@@ -46,10 +46,11 @@ target_sources(${PROJECT_NAME} PRIVATE
     src/Sample_Stream.cpp src/Sample_Stream.h
     src/V3C_Receiver.cpp  src/V3C_Receiver.h
     src/V3C_Sender.cpp    src/V3C_Sender.h
-    src/v3c_api.cpp       src/v3c_api.h
+    src/v3c_api.cpp       
 
+    include/v3crtplib/v3c_api.h
     include/v3crtplib/version.h
-	include/v3crtplib/global.h
+    include/v3crtplib/global.h
 )
 
 source_group(src src/.*)
@@ -62,8 +63,8 @@ target_include_directories(${PROJECT_NAME}
         PRIVATE $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>
         PUBLIC $<INSTALL_INTERFACE:include>
         )
-		
-		
+        
+        
 if(CMAKE_BUILD_TYPE)
     message(STATUS "Selecting build type: ${CMAKE_BUILD_TYPE}")
 elseif (NOT CMAKE_CONFIGURATION_TYPES)

@@ -7,7 +7,7 @@ namespace v3cRTPLib {
 
   V3C_Receiver::V3C_Receiver()
   {
-    V3C_Receiver("127.0.0.1", "127.0.0.1", INIT_FLAGS::NUL);
+    V3C_Receiver("127.0.0.1", "127.0.0.1", INIT_FLAGS::ALL);
   }
 
   V3C_Receiver::V3C_Receiver(const char* receiver_address, const char* sender_address, const INIT_FLAGS flags): V3C(receiver_address, sender_address, flags)
@@ -75,7 +75,7 @@ namespace v3cRTPLib {
       }
 
       Nalu new_nalu(reinterpret_cast<char*>(new_frame->payload), new_frame->payload_len, type);
-      new_unit.push_back(std::move(new_nalu), new_frame->payload_len);
+      new_unit.push_back(std::move(new_nalu));
 
       if (expected_size_as_num_nalus)
       {

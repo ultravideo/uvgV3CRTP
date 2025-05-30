@@ -3,43 +3,21 @@
 #include <numeric>
 
 namespace v3cRTPLib {
-/*
-  V3C_Gof::V3C_Gof(): units_{}
-  {
-  }
-*/
-  template<typename FirstUnit, typename ...OtherUnits>
-  inline V3C_Gof::V3C_Gof(FirstUnit && unit, OtherUnits && ...others): V3C_Gof(std::forward<OtherUnits>(others)...)
-  {
-    set(std::forward<FirstUnit>(unit));
-  }
 
 
-  template<V3C_UNIT_TYPE E>
-  inline V3C_Unit& V3C_Gof::get()
-  {
-    return get(E);
-  }
-
-  template<V3C_UNIT_TYPE E>
-  inline const V3C_Unit& V3C_Gof::get() const
-  {
-    return get(E);
-  }
-
-  inline V3C_Unit& V3C_Gof::get(const V3C_UNIT_TYPE type)
+  V3C_Unit& V3C_Gof::get(const V3C_UNIT_TYPE type)
   { 
     return units_.at(type);
   }
 
-  inline const V3C_Unit& V3C_Gof::get(const V3C_UNIT_TYPE type) const 
+  const V3C_Unit& V3C_Gof::get(const V3C_UNIT_TYPE type) const 
   {
-    return get(type);
+    return units_.at(type);
   }
 
   void V3C_Gof::set(V3C_Unit&& unit)
   {
-    units_.emplace(unit.type(), std::forward<V3C_Unit>(unit));
+    units_.emplace(unit.type(), std::move(unit));
   }
 
   size_t V3C_Gof::size() const

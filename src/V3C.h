@@ -10,31 +10,15 @@
 #include <map>
 
 #include "v3crtplib/global.h"
+#include "Sample_Stream.h"
 
 namespace v3cRTPLib {
 
-  // Forward declaration
-  template <SAMPLE_STREAM_TYPE E>
-  class Sample_Stream;
 
   class V3C
   {
   public:
-    // Control what media streams are initialized
-    enum class INIT_FLAGS : uint16_t {
-      NUL = 0,
-      VPS = 1,
-      AD  = 2,
-      OVD = 4,
-      GVD = 8,
-      AVD = 16,
-      PVD = 32,
-      CAD = 64,
-
-      ALL = 127,
-    };
-
-
+    
     V3C() = default;
     V3C(const char * local_address, const char * remote_address, const INIT_FLAGS init_flags, const uint16_t src_port = 8892, const uint16_t dst_port = 8890, int stream_flags = 0);
     ~V3C();
@@ -42,8 +26,8 @@ namespace v3cRTPLib {
     V3C(const V3C&) = delete;
     V3C& operator=(const V3C&) = delete;
 
-    V3C(V3C&&) = delete;
-    V3C& operator=(V3C&&) = delete;
+    V3C(V3C&&) = default;
+    V3C& operator=(V3C&&) = default;
 
     static std::vector<V3C_UNIT_TYPE> unit_types_from_init_flag(const INIT_FLAGS flags);
     
@@ -78,8 +62,4 @@ namespace v3cRTPLib {
     private:
   };
 
-
-  inline V3C::INIT_FLAGS operator|(V3C::INIT_FLAGS a, V3C::INIT_FLAGS b) { return static_cast<V3C::INIT_FLAGS>(static_cast<uint16_t>(a) | static_cast<uint16_t>(b)); };
-  inline V3C::INIT_FLAGS operator&(V3C::INIT_FLAGS a, V3C::INIT_FLAGS b) { return static_cast<V3C::INIT_FLAGS>(static_cast<uint16_t>(a) & static_cast<uint16_t>(b)); };
-  inline bool is_set(V3C::INIT_FLAGS all_flags, V3C::INIT_FLAGS flag) { return (all_flags & flag) == flag; };
 }

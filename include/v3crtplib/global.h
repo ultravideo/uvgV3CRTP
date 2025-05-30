@@ -13,6 +13,7 @@ namespace v3cRTPLib {
     V3C_AVD = 4, // Attribute video data
     V3C_PVD = 5, // Packed video data 
     V3C_CAD = 6, // Common atlas data
+    NUM_V3C_UNIT_TYPES, // Number of valid types
     V3C_UNDEF = -1 // Unit type not defined
   };
 
@@ -51,6 +52,24 @@ namespace v3cRTPLib {
     NAL
   };
 
+  // Control what media streams are initialized
+  enum class INIT_FLAGS : uint16_t {
+    NUL = 0,
+    VPS = 1,
+    AD = 2,
+    OVD = 4,
+    GVD = 8,
+    AVD = 16,
+    PVD = 32,
+    CAD = 64,
+
+    ALL = 127,
+  };
+  inline INIT_FLAGS operator|(INIT_FLAGS a, INIT_FLAGS b) { return static_cast<INIT_FLAGS>(static_cast<uint16_t>(a) | static_cast<uint16_t>(b)); };
+  inline INIT_FLAGS operator&(INIT_FLAGS a, INIT_FLAGS b) { return static_cast<INIT_FLAGS>(static_cast<uint16_t>(a) & static_cast<uint16_t>(b)); };
+  inline bool is_set(INIT_FLAGS all_flags, INIT_FLAGS flag) { return (all_flags & flag) == flag; };
+
+  // Define global constants
   static constexpr int V3C_HDR_LEN = 4; // 32 bits for v3c unit header
   static constexpr int SAMPLE_STREAM_HDR_LEN = 1; // 8 bits for sample stream headers
 

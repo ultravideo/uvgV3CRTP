@@ -40,7 +40,7 @@ namespace v3cRTPLib {
 
       Nalu new_nalu(&bitstream[ptr], nal_size, type());
       ptr += new_nalu.size();
-      payload_.push_back(std::move(new_nalu), nal_size);
+      payload_.push_back(std::move(new_nalu));
     }
 
     // Populate nalu refs
@@ -161,9 +161,9 @@ namespace v3cRTPLib {
     return nalu_refs_.size();
   }
 
-  void V3C_Unit::push_back(Nalu && nalu, size_t size) //TODO: raise exception if type() == VPS_NALU
+  void V3C_Unit::push_back(Nalu && nalu) //TODO: raise exception if type() == VPS_NALU
   {
-    payload_.push_back(std::move(nalu), size);
+    payload_.push_back(std::move(nalu));
     nalu_refs_.push_back(std::ref(*payload_.end()));
   }
 

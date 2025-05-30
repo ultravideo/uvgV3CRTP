@@ -79,7 +79,7 @@ namespace v3cRTPLib {
     nalu_ref_list nalus() const;
     size_t num_nalus() const;
 
-    void push_back(Nalu&& nalu, size_t size);
+    void push_back(Nalu&& nalu);
     void push_back(const char* const generic_payload);
 
   protected:

@@ -16,53 +16,14 @@ namespace v3cRTPLib {
 
   V3C_Sender::V3C_Sender()
   {
-    V3C_Sender("127.0.0.1", "127.0.0.1", INIT_FLAGS::NUL);
+    V3C_Sender("127.0.0.1", "127.0.0.1", INIT_FLAGS::ALL);
   }
 
-  int V3C_Sender::send_bitstream(std::ifstream& bitstream) const
+  void V3C_Sender::send_bitstream(const Sample_Stream<SAMPLE_STREAM_TYPE::V3C>& bitstream) const
   {
-    //get length of file
-    bitstream.seekg(0, bitstream.end);
-    size_t length = bitstream.tellg();
-    bitstream.seekg(0, bitstream.beg);
-
-    /* Read the file and its size */
-    if (length == 0) {
-      return EXIT_FAILURE; //TODO: Raise exception
-    }
-    
-    if (!bitstream.is_open()) {
-      //TODO: Raise exception
-      return -1;
-    }
-
-    auto buf = std::make_unique<char[]>(length);
-    if (buf == nullptr) return EXIT_FAILURE;//TODO: Raise exception
-
-    // read into char*
-    if (!(bitstream.read(buf.get(), length))) // read up to the size of the buffer
-    {
-      if (!bitstream.eof())
-      {
-        //TODO: Raise exception
-        buf = nullptr; // Release allocated memory before returning nullptr
-        return -1;
-      }
-    }
-
-    /* Parse bitstream into sample stream */
-    auto sample_stream = parse_bitstream(buf.get(), length);
-
-    for (const auto& gof : sample_stream) {
+    for (const auto& gof : bitstream) {
       send_gof(gof);
     }
-
-    // Print side-channel information needed by the receiver to receive the bitstream correctly.
-    // Check INFO_FMT for available formats. Writing to file also possible.
-    //write_out_bitstream_info(info, std::cout, INFO_FMT::LOGGING);
-
-
-    return EXIT_SUCCESS;
   }
 
   void V3C_Sender::send_gof(const V3C_Gof& gof) const

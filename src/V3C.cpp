@@ -74,7 +74,7 @@ namespace v3cRTPLib {
       V3C_Unit new_unit(&bitstream[v3c_ptr], v3c_size);
       ptr += new_unit.size();
 
-      sample_stream.push_back(std::move(new_unit), v3c_size);
+      sample_stream.push_back(std::move(new_unit));
     }
 
     return sample_stream;
@@ -106,7 +106,7 @@ namespace v3cRTPLib {
     uint8_t size_arr[MAX_V3C_SIZE_PREC] = { 0 };
 
     convert_size_big_endian(size, size_arr, precision);
-    memcpy(bitstream, reinterpret_cast<char *>(size_arr), precision);
+    memcpy(bitstream, size_arr, precision);
     return precision;
   }
 
