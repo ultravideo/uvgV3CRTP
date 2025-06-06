@@ -157,11 +157,7 @@ namespace v3cRTPLib {
     switch (V3C_Unit::V3C_Unit_Header::vuh_to_type(hs.vuh_unit_type))
     {
     case v3cRTPLib::V3C_VPS:
-      return V3C_Unit::V3C_Unit_Header(
-        hs.vuh_unit_type,
-        hs.vuh_v3c_parameter_set_id,
-        hs.vuh_atlas_id
-      );
+      return V3C_Unit::V3C_Unit_Header();
 
     case v3cRTPLib::V3C_AD:
       return V3C_Unit::V3C_Unit_Header(

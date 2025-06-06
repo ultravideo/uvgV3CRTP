@@ -1,4 +1,5 @@
 #include "V3C_Gof.h"
+#include "V3C_Unit.h"
 
 #include <numeric>
 
@@ -17,7 +18,8 @@ namespace v3cRTPLib {
 
   void V3C_Gof::set(V3C_Unit&& unit)
   {
-    units_.emplace(unit.type(), std::move(unit));
+    const auto type = unit.type();
+    units_.emplace(type, std::move(unit));
   }
 
   size_t V3C_Gof::size() const

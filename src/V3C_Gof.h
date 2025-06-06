@@ -3,9 +3,14 @@
 #include <map>
 
 #include "v3crtplib/global.h"
-#include "V3C_Unit.h"
+//#include "V3C_Unit.h"
+
+#include <cstddef>
 
 namespace v3cRTPLib {
+
+  // Forward declare
+  class V3C_Unit;
 
   class V3C_Gof
   {

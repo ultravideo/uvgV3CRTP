@@ -28,7 +28,7 @@ include(cmake/Versioning.cmake)
 # PThread
 set(CMAKE_THREAD_PREFER_PTHREAD TRUE)
 set(THREADS_PREFER_PTHREAD_FLAG TRUE)
-find_package( Threads REQUIRED )
+#find_package( Threads REQUIRED )
 
 add_library(${PROJECT_NAME})
 set_target_properties(${PROJECT_NAME} PROPERTIES
@@ -56,7 +56,10 @@ target_sources(${PROJECT_NAME} PRIVATE
 source_group(src src/.*)
 source_group(include include/.*)
 
-target_link_libraries(${PROJECT_NAME} PRIVATE Threads::Threads ${PROJECT_NAME}_version)
+# Add other libraries that should be linked
+#target_link_libraries(${PROJECT_NAME} PRIVATE Threads::Threads ${PROJECT_NAME}_version)
+target_link_libraries(${PROJECT_NAME} PRIVATE ${PROJECT_NAME}_version uvgrtp)
+# Make sure uvgRTP is linked as well when linking to the library
 
 target_include_directories(${PROJECT_NAME}
         PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
@@ -118,7 +121,7 @@ if (NOT V3CRTPLIB_DISABLE_EXAMPLES)
     add_subdirectory(examples EXCLUDE_FROM_ALL)
 endif()
 
-if (NOT UVGRTP_DISABLE_INSTALL)
+if (NOT V3CRTPLIB_DISABLE_INSTALL)
     # Install
     #
     # Define install target, install libraries and archives (static libraries) to "<prefix>/..."
@@ -183,6 +186,6 @@ if (NOT UVGRTP_DISABLE_INSTALL)
     # Packaging
     #
     if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
-        add_subdirectory(packaging)
+        #add_subdirectory(packaging)
     endif()
 endif()

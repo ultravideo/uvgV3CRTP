@@ -34,4 +34,11 @@ namespace v3cRTPLib {
 
   };
 
+  // Explicitly define necessary instantiations so code is linked properly
+  extern template V3C_Gof V3C_Receiver::receive_gof<std::map<V3C_UNIT_TYPE, V3C_Unit::V3C_Unit_Header>>(const std::map<V3C_UNIT_TYPE, uint8_t>& size_precisions, const std::map<V3C_UNIT_TYPE, size_t>& expected_sizes, std::map<V3C_UNIT_TYPE, V3C_Unit::V3C_Unit_Header>&& headers, const int timeout, const bool expected_size_as_num_nalus) const;
+  extern template V3C_Gof V3C_Receiver::receive_gof<std::map<V3C_UNIT_TYPE, V3C_Unit::V3C_Unit_Header>&>(const std::map<V3C_UNIT_TYPE, uint8_t>& size_precisions, const std::map<V3C_UNIT_TYPE, size_t>& expected_sizes, std::map<V3C_UNIT_TYPE, V3C_Unit::V3C_Unit_Header>& headers, const int timeout, const bool expected_size_as_num_nalus) const;
+  extern template V3C_Gof V3C_Receiver::receive_gof<std::map<V3C_UNIT_TYPE, const V3C_Unit::V3C_Unit_Header>>(const std::map<V3C_UNIT_TYPE, uint8_t>& size_precisions, const std::map<V3C_UNIT_TYPE, size_t>& expected_sizes, std::map<V3C_UNIT_TYPE, const V3C_Unit::V3C_Unit_Header>&& headers, const int timeout, const bool expected_size_as_num_nalus) const;
+  extern template V3C_Gof V3C_Receiver::receive_gof<std::map<V3C_UNIT_TYPE, const V3C_Unit::V3C_Unit_Header>&>(const std::map<V3C_UNIT_TYPE, uint8_t>& size_precisions, const std::map<V3C_UNIT_TYPE, size_t>& expected_sizes, std::map<V3C_UNIT_TYPE, const V3C_Unit::V3C_Unit_Header>& headers, const int timeout, const bool expected_size_as_num_nalus) const;
+  extern template V3C_Unit V3C_Receiver::receive_v3c_unit<V3C_Unit::V3C_Unit_Header>(const V3C_UNIT_TYPE type, const uint8_t size_precision, const size_t expected_size, V3C_Unit::V3C_Unit_Header&& header, const int timeout, const bool expected_size_as_num_nalus) const;
+  extern template V3C_Unit V3C_Receiver::receive_v3c_unit<V3C_Unit::V3C_Unit_Header&>(const V3C_UNIT_TYPE type, const uint8_t size_precision, const size_t expected_size, V3C_Unit::V3C_Unit_Header& header, const int timeout, const bool expected_size_as_num_nalus) const;
 }

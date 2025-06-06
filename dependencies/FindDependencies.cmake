@@ -34,10 +34,11 @@ else()
 
     set(UVGRTP_DISABLE_TESTS ON CACHE BOOL "" FORCE)
     set(UVGRTP_DISABLE_EXAMPLES  ON CACHE BOOL "" FORCE)
-    set(UVGRTP_DISABLE_INSTALL ON CACHE BOOL "" FORCE)
+    set(UVGRTP_DISABLE_INSTALL ${V3CRTPLIB_DISABLE_INSTALL} CACHE BOOL "" FORCE)
     
 	# TODO: Enable crypto? For now it breaks things so don't include
 	set(UVGRTP_DOWNLOAD_CRYPTO OFF CACHE BOOL "" FORCE)
+	set(UVGRTP_DISABLE_CRYPTO ON CACHE BOOL "" FORCE)
 
     add_subdirectory(${PROJECT_SOURCE_DIR}/dependencies/uvgRTP)
 	
@@ -47,7 +48,6 @@ else()
     unset(BUILD_SHARED_LIBS)
 
 endif()
-
 
 
 # include and link directories for dependencies. 

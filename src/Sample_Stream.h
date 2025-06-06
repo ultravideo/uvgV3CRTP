@@ -1,7 +1,7 @@
 #pragma once
 
 #include "v3crtplib/global.h"
-//#include "V3C_Gof.h"
+#include "V3C_Gof.h"
 //#include "V3C_Unit.h"
 #include "Nalu.h"
 
@@ -11,7 +11,7 @@
 
 namespace v3cRTPLib {
    //Forward declaration
-  class V3C_Gof;
+  //class V3C_Gof;
   class V3C_Unit;
 
   //Define an iterator class
@@ -28,8 +28,15 @@ namespace v3cRTPLib {
     typename StreamType<SampleType>::const_iterator it;
   };
 
+  // Define template class
   template <SAMPLE_STREAM_TYPE E>
   class Sample_Stream
+  {
+  };
+
+  // Explicitly define different types
+  template <>
+  class Sample_Stream<SAMPLE_STREAM_TYPE::V3C>
   {
   public:
     using SampleType = V3C_Gof;
@@ -37,7 +44,7 @@ namespace v3cRTPLib {
     using StreamType = std::vector<std::pair<std::map<V3C_UNIT_TYPE, size_t>, ST>>;
     using Iterator = SampleStreamIterator<SampleType, StreamType>;
 
-    Sample_Stream(const uint8_t size_precision);
+    Sample_Stream(const uint8_t size_precision) : size_precision(size_precision) {}
     ~Sample_Stream() = default;
 
     Sample_Stream(const Sample_Stream&) = delete;
@@ -81,7 +88,7 @@ namespace v3cRTPLib {
     using StreamType = std::vector<std::pair<size_t, ST>>;
     using Iterator = SampleStreamIterator<SampleType, StreamType>;
 
-    Sample_Stream(const uint8_t size_precision);
+    Sample_Stream(const uint8_t size_precision) : size_precision(size_precision) {}
     ~Sample_Stream() = default;
 
     Sample_Stream(const Sample_Stream&) = delete;
@@ -111,7 +118,12 @@ namespace v3cRTPLib {
   };
 
   // Explicitly define necessary instantiations so code is linked properly
-  extern template class Sample_Stream<SAMPLE_STREAM_TYPE::V3C>;
-  extern template class Sample_Stream<SAMPLE_STREAM_TYPE::NAL>;
+  //extern template class Sample_Stream<SAMPLE_STREAM_TYPE::V3C>;
+  //extern template class Sample_Stream<SAMPLE_STREAM_TYPE::NAL>;
+
+  extern template class SampleStreamIterator<Sample_Stream<SAMPLE_STREAM_TYPE::V3C>::SampleType,
+                                             Sample_Stream<SAMPLE_STREAM_TYPE::V3C>::StreamType>;
+  extern template class SampleStreamIterator<Sample_Stream<SAMPLE_STREAM_TYPE::NAL>::SampleType,
+                                             Sample_Stream<SAMPLE_STREAM_TYPE::NAL>::StreamType>;
 
 }

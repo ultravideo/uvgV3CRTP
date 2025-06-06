@@ -18,13 +18,51 @@ namespace v3cRTPLib {
 
     class V3C_Unit_Header {
     public:
+      V3C_Unit_Header(); //Not a valid header necessarily
       V3C_Unit_Header(const V3C_UNIT_TYPE type);
       V3C_Unit_Header(const char * const bitstream);
 
-      template <typename... Vuh>
-      V3C_Unit_Header(Vuh&&... vuh);
-      template <typename VuhTuple, std::size_t... I>
-      V3C_Unit_Header(VuhTuple&& vuh_t, std::index_sequence<I...>);
+      template<typename T, typename ...Vuh, typename = std::enable_if_t<!std::is_same_v<std::decay_t<T>, V3C_Unit_Header>>>
+      inline V3C_Unit_Header(T&& first_vuh, Vuh&& ...vuh) :
+        V3C_Unit_Header(static_cast<uint8_t>(std::forward<T>(first_vuh)),
+                        std::forward_as_tuple(std::forward<Vuh>(vuh)...),
+                                              std::index_sequence_for<Vuh...>{}) {
+      }
+      template<typename VuhTuple, std::size_t ...I>
+      inline V3C_Unit_Header(const uint8_t vuh_unit_type, VuhTuple && vuh_t, std::index_sequence<I...>) :
+        vuh_unit_type(vuh_unit_type),
+        vuh_v3c_parameter_set_id(std::get<0>(vuh_t)),
+        type(vuh_to_type(vuh_unit_type))
+      {
+        static_assert(std::tuple_size<std::decay_t<VuhTuple>>::value == sizeof...(I), "Tuple size mismatch");
+        if constexpr (sizeof...(I) > 1)
+        {
+          if (type != V3C_CAD)
+          {
+            vuh_atlas_id = std::get<1>(vuh_t);
+
+            if constexpr (sizeof...(I) > 3)
+            {
+              if (type == V3C_AVD)
+              {
+                vuh_map_index = std::get<2>(vuh_t);
+                vuh_auxiliary_video_flag = std::get<3>(vuh_t);
+              }
+            }
+            else if constexpr (sizeof...(I) > 5)
+            {
+              if (type == V3C_GVD)
+              {
+                vuh_attribute_index = std::get<2>(vuh_t);
+                vuh_attribute_partition_index = std::get<3>(vuh_t);
+
+                vuh_map_index = std::get<4>(vuh_t);
+                vuh_auxiliary_video_flag = std::get<5>(vuh_t);
+              }
+            }
+          }
+        }
+      }
 
       ~V3C_Unit_Header() = default;
 
@@ -51,8 +89,15 @@ namespace v3cRTPLib {
     };
 
     //V3C_Unit(const V3C_Unit_Header& header, uint8_t size_precision);
-    template<typename Header, typename T, typename = typename std::enable_if<std::is_same<T, uint8_t>::value>::type>
-    V3C_Unit(Header&& header, const T size_precision, const size_t generic_unit_size = 0);
+    // size_precision template needed to disambiguate from other constructor
+    template<typename Header, typename T, typename = typename std::enable_if_t<std::is_same_v<T, uint8_t>>>
+    V3C_Unit(Header&& header, const T size_precision, const size_t generic_unit_size = 0) :
+      header_(std::forward<Header>(header)),
+      payload_(size_precision),
+      generic_payload_size_(type() != V3C_VPS ? 0 : (generic_unit_size - header_.size()))
+    {
+      generic_payload_ = std::make_unique<char[]>(generic_payload_size_);
+    }
     V3C_Unit(const char * const bitstream, const size_t len);
 
     V3C_Unit(const V3C_Unit&) = delete;
@@ -101,9 +146,12 @@ namespace v3cRTPLib {
 
   };
 
-  // Define specialization for template function
+  // Define specialization for template function so code is generated when built as a library
   template <>
   size_t V3C_Unit::size<V3C_VPS>() const;
   template <>
   size_t V3C_Unit::size<V3C_UNDEF>() const;
+
+  //extern template V3C_Unit::V3C_Unit<V3C_Unit::V3C_Unit_Header,uint8_t>(V3C_Unit::V3C_Unit_Header&& header, const uint8_t size_precision, const size_t generic_unit_size);
+  //extern template V3C_Unit::V3C_Unit<V3C_Unit::V3C_Unit_Header&, uint8_t>(V3C_Unit::V3C_Unit_Header& header, const uint8_t size_precision, const size_t generic_unit_size);
 }
