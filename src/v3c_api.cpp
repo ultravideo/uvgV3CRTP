@@ -7,6 +7,7 @@
 #include <type_traits>
 #include <utility>
 #include <array>
+#include <sstream>
 
 namespace v3cRTPLib {
 
@@ -301,5 +302,39 @@ namespace v3cRTPLib {
     {
       state.init_cur_gof();
     }
+  }
+
+  template<typename D>
+  static char * write_info(const D& data, size_t & out_len, INFO_FMT fmt)
+  {
+    // Write info to string stream
+    std::ostringstream oss;
+    V3C::write_out_of_band_info(oss, data, fmt);
+    std::string output = oss.str();
+
+    // copy output to char*
+    out_len = output.size() + 1; // Include null-termination byte
+    char * out_char = static_cast<char*>(malloc(out_len));
+    if (out_char) memcpy(out_char, output.c_str(), out_len);
+
+    return out_char;
+  }
+
+  template<typename T>
+  char * V3C_State<T>::write_bitstream_info(size_t & out_len, INFO_FMT fmt)
+  {
+    return write_info(*data_, out_len, fmt);
+  }
+
+  template<typename T>
+  char * V3C_State<T>::write_cur_gof_info(size_t & out_len, INFO_FMT fmt)
+  {
+    return write_info(*get_it(cur_gof_it_), out_len, fmt);
+  }
+
+  template<typename T>
+  char * V3C_State<T>::write_cur_gof_info(size_t& out_len, V3C_UNIT_TYPE type, INFO_FMT fmt)
+  {
+    return write_info((*get_it(cur_gof_it_)).get(type), out_len, fmt);
   }
 }

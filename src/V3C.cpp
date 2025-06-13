@@ -6,8 +6,14 @@
 
 #include <cassert>
 #include <type_traits>
+#include <sstream>
 
 namespace v3cRTPLib {
+
+  // Explicitly define necessary instantiations so code is linked properly
+  template void V3C::write_out_of_band_info<Sample_Stream<SAMPLE_STREAM_TYPE::V3C>>(std::ostream&, Sample_Stream<SAMPLE_STREAM_TYPE::V3C> const&, INFO_FMT);
+  template void V3C::write_out_of_band_info<V3C_Gof>(std::ostream&, V3C_Gof const&, INFO_FMT);
+  template void V3C::write_out_of_band_info<V3C_Unit>(std::ostream&, V3C_Unit const&, INFO_FMT);
 
 
   V3C::V3C(const char * local_address, const char * remote_address, const INIT_FLAGS init_flags, const uint16_t src_port, const uint16_t dst_port, int stream_flags)
@@ -172,17 +178,29 @@ namespace v3cRTPLib {
     return (data.find(field) != data.end());
   }
 
-  template <typename T, typename DT, typename FT>
-  static inline T& get_as( DT& data, const FT& field)
+  template <typename T = size_t, typename FT>
+  static inline T& get_as( V3C::InfoDataType& data, FT&& field)
   {
-    return static_cast<T&>(data.at(field));
+    if constexpr (std::is_convertible_v < decltype(INFO_FIELD_TYPES{}.s)&, T& > )
+    {
+      return static_cast<T&>(data.at(field).s);
+    }
+    else if constexpr (std::is_convertible_v < decltype(INFO_FIELD_TYPES{}.ui8)&, T& > )
+    {
+      return static_cast<T&>(data.at(field).ui8);
+    }
+    else if constexpr (std::is_convertible_v < decltype(INFO_FIELD_TYPES{}.b)&, T& > )
+    {
+      return static_cast<T&>(data.at(field).b);
+    }
   }
 
   template <INFO_FMT F = INFO_FMT::LOGGING, typename TF, typename TV>
-  static inline void process(std::ostream& out, TF& field, TV& value)
+  static inline void process(std::ostream& out, TF&& field, TV&& value)
   {
     if constexpr (F == INFO_FMT::RAW)
     {
+      assert(field); //Suppress warnings
       out << value;
     }
     else
@@ -192,7 +210,7 @@ namespace v3cRTPLib {
   }
 
   template<INFO_FMT F = INFO_FMT::LOGGING, typename TF, typename TV>
-  static inline void process(std::istream& in, TF& field, TV& value)
+  static inline void process(std::istream& in, TF&& field, TV&& value)
   {
     if constexpr (F == INFO_FMT::RAW)
     {
@@ -206,29 +224,33 @@ namespace v3cRTPLib {
   }
 
   template <INFO_FMT F = INFO_FMT::LOGGING, typename Stream, typename TF, typename TV>
-  static inline void process_num(Stream& out, TF& field, TV& value)
+  static inline void process_num(Stream& out, TF&& field, TV&& value)
   {
+    std::ostringstream tmp;
     if constexpr (F == INFO_FMT::PARAM)
     {
-      process<F>(out, std::string({ "constexpr int EXPECTED_NUM_", field, " = " }), value);
+      tmp << "constexpr int EXPECTED_NUM_" << field << " = ";
     }
     else
     {
-      process<F>(out, std::string({ "  number of ", field, ": " }), value);
+      tmp << "  number of " << field << ": ";
     }
+    process<F>(out, tmp.str().c_str(), std::forward<TV>(value));
   }
 
   template <INFO_FMT F = INFO_FMT::LOGGING, typename Stream, typename TF, typename TV>
-  static inline void process_prec(Stream& out, TF& field, TV& value)
+  static inline void process_prec(Stream& out, TF&& field, TV&& value)
   {
+    std::ostringstream tmp;
     if constexpr (F == INFO_FMT::PARAM)
     {
-      process<F>(out, std::string({ "constexpr uint8_t ", field, "_SIZE_PRECISION = " }), value);
+      tmp << "constexpr uint8_t " << field << "_SIZE_PRECISION = ";
     }
     else
     {
-      process<F>(out, std::string({ "  ", field, " nalu size precision: " }), value);
+      tmp << "  " << field << " nalu size precision: ";
     }
+    process<F>(out, tmp.str().c_str(), std::forward<TV>(value));
   }
 
   template <INFO_FMT F, typename Stream>
@@ -280,7 +302,7 @@ namespace v3cRTPLib {
       if (has_field(data, INFO_FIELDS::VIDEO_NAL_SIZE_PREC)) process_prec<F>(stream, "Video", get_as<uint8_t>(data, INFO_FIELDS::VIDEO_NAL_SIZE_PREC));
     }
 
-    postample<F>(stream);
+    postample<F>(stream, data);
   }
 
   template <INFO_FMT F = INFO_FMT::LOGGING, typename DataClass, typename T>
@@ -293,27 +315,27 @@ namespace v3cRTPLib {
   {
     std::map<V3C_UNIT_TYPE, uint8_t> nal_prec;
     std::map<V3C_UNIT_TYPE, size_t> nal_num;
-    info_data[INFO_FIELDS::NUM_GOF] = 0;
-    info_data[INFO_FIELDS::VAR_NAL_NUM] = false;
-    info_data[INFO_FIELDS::VAR_NAL_PREC] = false;
+    get_as(info_data, INFO_FIELDS::NUM_GOF) = 0;
+    get_as<bool>(info_data, INFO_FIELDS::VAR_NAL_NUM) = false;
+    get_as<bool>(info_data, INFO_FIELDS::VAR_NAL_PREC) = false;
     for (const auto& gof : data)
     {
       for (const auto&[type, unit] : gof)
       {
-        if (info_data[INFO_FIELDS::NUM_GOF] == 0)
+        if (get_as(info_data, INFO_FIELDS::NUM_GOF) == 0)
         {
           populate_info_data<F>(unit, info_data);
           nal_num[type] = unit.num_nalus();
           nal_prec[type] = unit.nal_size_precision();
         } else
         {
-          info_data[INFO_FIELDS::VAR_NAL_NUM] |= (nal_num[type] != unit.num_nalus());
-          info_data[INFO_FIELDS::VAR_NAL_PREC] |= (nal_prec[type] != unit.nal_size_precision());
+          get_as<bool>(info_data, INFO_FIELDS::VAR_NAL_NUM) |= (nal_num[type] != unit.num_nalus());
+          get_as<bool>(info_data, INFO_FIELDS::VAR_NAL_PREC) |= (nal_prec[type] != unit.nal_size_precision());
         }
       }
-      info_data[INFO_FIELDS::NUM_GOF]++;
+      get_as(info_data, INFO_FIELDS::NUM_GOF)++;
     }
-    info_data[INFO_FIELDS::V3C_SIZE_PREC] = data.size_precision;
+    get_as<uint8_t>(info_data, INFO_FIELDS::V3C_SIZE_PREC) = data.size_precision;
   }
   template <INFO_FMT F = INFO_FMT::LOGGING, typename T>
   static void populate_info_data(const V3C_Gof & data, T& info_data)
@@ -329,31 +351,31 @@ namespace v3cRTPLib {
     switch (data.type())
     {
     case v3cRTPLib::V3C_VPS:
-      info_data[INFO_FIELDS::NUM_VPS_NALU] = data.num_nalus();
+      get_as(info_data, INFO_FIELDS::NUM_VPS_NALU) = data.num_nalus();
       break;
     case v3cRTPLib::V3C_AD:
-      info_data[INFO_FIELDS::NUM_VPS_NALU] = data.num_nalus();
-      info_data[INFO_FIELDS::ATLAS_NAL_SIZE_PREC] = data.nal_size_precision();
+      get_as(info_data, INFO_FIELDS::NUM_VPS_NALU) = data.num_nalus();
+      get_as<uint8_t>(info_data, INFO_FIELDS::ATLAS_NAL_SIZE_PREC) = data.nal_size_precision();
       break;
     case v3cRTPLib::V3C_OVD:
-      info_data[INFO_FIELDS::NUM_VPS_NALU] = data.num_nalus();
-      info_data[INFO_FIELDS::VIDEO_NAL_SIZE_PREC] = data.nal_size_precision();
+      get_as(info_data, INFO_FIELDS::NUM_VPS_NALU) = data.num_nalus();
+      get_as<uint8_t>(info_data, INFO_FIELDS::VIDEO_NAL_SIZE_PREC) = data.nal_size_precision();
       break;
     case v3cRTPLib::V3C_GVD:
-      info_data[INFO_FIELDS::NUM_VPS_NALU] = data.num_nalus();
-      info_data[INFO_FIELDS::VIDEO_NAL_SIZE_PREC] = data.nal_size_precision();
+      get_as(info_data, INFO_FIELDS::NUM_VPS_NALU) = data.num_nalus();
+      get_as<uint8_t>(info_data, INFO_FIELDS::VIDEO_NAL_SIZE_PREC) = data.nal_size_precision();
       break;
     case v3cRTPLib::V3C_AVD:
-      info_data[INFO_FIELDS::NUM_VPS_NALU] = data.num_nalus();
-      info_data[INFO_FIELDS::VIDEO_NAL_SIZE_PREC] = data.nal_size_precision();
+      get_as(info_data, INFO_FIELDS::NUM_VPS_NALU) = data.num_nalus();
+      get_as<uint8_t>(info_data, INFO_FIELDS::VIDEO_NAL_SIZE_PREC) = data.nal_size_precision();
       break;
     case v3cRTPLib::V3C_PVD:
-      info_data[INFO_FIELDS::NUM_VPS_NALU] = data.num_nalus();
-      info_data[INFO_FIELDS::VIDEO_NAL_SIZE_PREC] = data.nal_size_precision();
+      get_as(info_data, INFO_FIELDS::NUM_VPS_NALU) = data.num_nalus();
+      get_as<uint8_t>(info_data, INFO_FIELDS::VIDEO_NAL_SIZE_PREC) = data.nal_size_precision();
       break;
     case v3cRTPLib::V3C_CAD:
-      info_data[INFO_FIELDS::NUM_VPS_NALU] = data.num_nalus();
-      info_data[INFO_FIELDS::ATLAS_NAL_SIZE_PREC] = data.nal_size_precision();
+      get_as(info_data, INFO_FIELDS::NUM_VPS_NALU) = data.num_nalus();
+      get_as<uint8_t>(info_data, INFO_FIELDS::ATLAS_NAL_SIZE_PREC) = data.nal_size_precision();
       break;
     default:
       break;
@@ -361,20 +383,51 @@ namespace v3cRTPLib {
   }
   
 
-  template<INFO_FMT F, typename DataClass>
-  void V3C::write_out_of_band_info(std::ostream & out_stream, const DataClass & data)
+  template<typename DataClass>
+  void V3C::write_out_of_band_info(std::ostream & stream, const DataClass & data, INFO_FMT fmt)
   {
     InfoDataType info_data;
-    populate_info_data<F>(data, info_data);
-    process_out_of_band_info<F, DataClass>(out_stream, info_data);
+    switch (fmt)
+    {
+    case INFO_FMT::PARAM:
+      populate_info_data<INFO_FMT::PARAM>(data, info_data);
+      process_out_of_band_info<INFO_FMT::PARAM, DataClass>(stream, info_data);
+      break;
+    case INFO_FMT::RAW:
+      populate_info_data<INFO_FMT::RAW>(data, info_data);
+      process_out_of_band_info<INFO_FMT::RAW, DataClass>(stream, info_data);
+      break;
+    case INFO_FMT::SDP:
+      populate_info_data<INFO_FMT::SDP>(data, info_data);
+      process_out_of_band_info<INFO_FMT::SDP, DataClass>(stream, info_data);
+      break;
+    default:
+      populate_info_data<INFO_FMT::LOGGING>(data, info_data);
+      process_out_of_band_info<INFO_FMT::LOGGING, DataClass>(stream, info_data);
+      break;
+    }
   }
 
-  template<INFO_FMT F, typename DataClass>
-  V3C::InfoDataType V3C::read_out_of_band_info(std::istream & in_stream)
+  template<typename DataClass>
+  V3C::InfoDataType V3C::read_out_of_band_info(std::istream & stream, INFO_FMT fmt)
   {
-    InfoDataType data;
-    process_out_of_band_info<F, DataClass>(in_stream, data);
-    return data;
+    InfoDataType info_data;
+    switch (fmt)
+    {
+    case INFO_FMT::PARAM:
+      process_out_of_band_info<INFO_FMT::PARAM, DataClass>(stream, info_data);
+      break;
+    case INFO_FMT::RAW:
+      process_out_of_band_info<INFO_FMT::RAW, DataClass>(stream, info_data);
+      break;
+    case INFO_FMT::SDP:
+      process_out_of_band_info<INFO_FMT::SDP, DataClass>(stream, info_data);
+      break;
+    default:
+      process_out_of_band_info<INFO_FMT::LOGGING, DataClass>(stream, info_data);
+      break;
+    }
+    return info_data;
   }
 
   size_t V3C::combineBytes(const uint8_t *const bytes, const uint8_t num_bytes) {

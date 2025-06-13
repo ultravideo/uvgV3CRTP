@@ -44,9 +44,13 @@ int main(int argc, char* argv[]) {
   }
 
   v3cRTPLib::V3C_State<v3cRTPLib::V3C_Sender> state;
-  //state.init_sample_stream(buf.get(), length);
+  state.init_sample_stream(buf.get(), length);
+
+  size_t len = 0;
+  char* info = state.write_bitstream_info(len);
+  std::cout << info << std::endl;
   
-  //v3cRTPLib::send_bitstream(state);
+  v3cRTPLib::send_bitstream(state);
   
   return EXIT_SUCCESS;
 }

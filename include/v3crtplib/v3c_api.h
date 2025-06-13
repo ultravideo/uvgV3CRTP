@@ -4,6 +4,7 @@
 
 #include <memory>
 #include <type_traits>
+#include <iostream>
 
 namespace v3cRTPLib {
 
@@ -44,6 +45,11 @@ namespace v3cRTPLib {
 
     void init_sample_stream(const uint8_t size_precision);
     void init_sample_stream(const char* bitstream, size_t len);
+
+    // Functions for bitstream info writing (Caller responsible for freeing char*)
+    char* write_bitstream_info(size_t& out_len, INFO_FMT fmt = INFO_FMT::LOGGING);
+    char* write_cur_gof_info(size_t& out_len, INFO_FMT fmt = INFO_FMT::LOGGING);
+    char* write_cur_gof_info(size_t& out_len, V3C_UNIT_TYPE type, INFO_FMT fmt = INFO_FMT::LOGGING);
 
   private:
 

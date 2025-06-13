@@ -14,6 +14,9 @@
 
 namespace v3cRTPLib {
 
+  // Forward decleration
+  class V3C_GOF;
+  class V3C_Unit;
 
   class V3C
   {
@@ -42,11 +45,11 @@ namespace v3cRTPLib {
     static void convert_size_big_endian(const uint64_t in, uint8_t* const out, const size_t output_size);
 
 
-    using InfoDataType = std::map<INFO_FIELDS, uint64_t>;
-    template <INFO_FMT F = INFO_FMT::LOGGING, typename DataClass>
-    static void write_out_of_band_info(std::ostream& out_stream, const DataClass& data);
-    template <INFO_FMT F = INFO_FMT::LOGGING, typename DataClass>
-    static InfoDataType read_out_of_band_info(std::istream& in_stream);
+    using InfoDataType = std::map<INFO_FIELDS, INFO_FIELD_TYPES>;
+    template <typename DataClass>
+    static void write_out_of_band_info(std::ostream& out_stream, const DataClass& data, INFO_FMT fmt = INFO_FMT::LOGGING);
+    template <typename DataClass>
+    static InfoDataType read_out_of_band_info(std::istream& in_stream, INFO_FMT fmt = INFO_FMT::LOGGING);
 
 
     protected:
@@ -61,5 +64,10 @@ namespace v3cRTPLib {
 
     private:
   };
+
+  // Explicitly define necessary instantiations so code is linked properly
+  extern template void V3C::write_out_of_band_info<Sample_Stream<SAMPLE_STREAM_TYPE::V3C>>(std::ostream&, Sample_Stream<SAMPLE_STREAM_TYPE::V3C> const&, INFO_FMT);
+  extern template void V3C::write_out_of_band_info<V3C_Gof>(std::ostream&, V3C_Gof const&, INFO_FMT);
+  extern template void V3C::write_out_of_band_info<V3C_Unit>(std::ostream&, V3C_Unit const&, INFO_FMT);
 
 }

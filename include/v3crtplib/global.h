@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <cstddef>
 
 namespace v3cRTPLib {
 
@@ -28,23 +29,31 @@ namespace v3cRTPLib {
     LOGGING, // Logging printout in a human readable format
     PARAM,   // Print relevant parameters directly to c++ expressions
     RAW,     // Output data values directly
+    SDP,     // Build an SDP message
   };
   enum class INFO_FIELDS {
-    NUM_GOF,
-    NUM_VPS_NALU,
-    NUM_AD_NALU,
-    NUM_OVD_NALU,
-    NUM_GVD_NALU,
-    NUM_AVD_NALU,
-    NUM_CAD_NALU,
-    NUM_PVD_NALU,
+    NUM_GOF,              // s
+    NUM_VPS_NALU,         // s    
+    NUM_AD_NALU,          // s    
+    NUM_OVD_NALU,         // s    
+    NUM_GVD_NALU,         // s    
+    NUM_AVD_NALU,         // s    
+    NUM_CAD_NALU,         // s    
+    NUM_PVD_NALU,         // s    
 
-    V3C_SIZE_PREC,
-    VIDEO_NAL_SIZE_PREC,
-    ATLAS_NAL_SIZE_PREC,
+    V3C_SIZE_PREC,        // ui8      
+    VIDEO_NAL_SIZE_PREC,  // ui8            
+    ATLAS_NAL_SIZE_PREC,  // ui8            
 
-    VAR_NAL_PREC,
-    VAR_NAL_NUM
+    VAR_NAL_PREC,         // b    
+    VAR_NAL_NUM           // b  
+  };
+
+  union INFO_FIELD_TYPES
+  {
+    size_t s;
+    uint8_t ui8;
+    bool b;
   };
 
   enum class SAMPLE_STREAM_TYPE {
