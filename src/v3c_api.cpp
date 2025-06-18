@@ -32,20 +32,20 @@ namespace v3cRTPLib {
   }
 
   template<typename T>
-  V3C_State<T>::V3C_State(const char* dst_address, const char* src_address, INIT_FLAGS flags)
+  V3C_State<T>::V3C_State(const char* dst_address, const char* src_address, INIT_FLAGS flags): connection_(nullptr), data_(nullptr), cur_gof_it_(nullptr)
   {
     init_connection(dst_address, src_address, flags);
   }
 
   template<typename T>
-  V3C_State<T>::V3C_State(const uint8_t size_precision, const char * dst_address, const char * src_address, INIT_FLAGS flags)
+  V3C_State<T>::V3C_State(const uint8_t size_precision, const char * dst_address, const char * src_address, INIT_FLAGS flags) : connection_(nullptr), data_(nullptr), cur_gof_it_(nullptr)
   {
     init_connection(dst_address, src_address, flags);
     init_sample_stream(size_precision);
   }
   
   template<typename T>
-  V3C_State<T>::V3C_State(const char* bitstream, size_t len, const char * dst_address, const char * src_address, INIT_FLAGS flags)
+  V3C_State<T>::V3C_State(const char* bitstream, size_t len, const char * dst_address, const char * src_address, INIT_FLAGS flags) : connection_(nullptr), data_(nullptr), cur_gof_it_(nullptr)
   {
     init_connection(dst_address, src_address, flags);
     init_sample_stream(bitstream, len);

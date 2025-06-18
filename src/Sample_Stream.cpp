@@ -73,7 +73,7 @@ namespace v3cRTPLib {
     std::map<V3C_UNIT_TYPE, size_t> size_map = std::map<V3C_UNIT_TYPE, size_t>{};
     for (const auto&[type, unit] : gof)
     {
-      size_map.at(type) = unit.size();
+      size_map[type] = unit.size();
     }
 
     // Push gof directly to stream
