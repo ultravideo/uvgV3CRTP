@@ -3,6 +3,7 @@
 #include "Sample_Stream.h"
 
 #include <cassert>
+#include <stdexcept>
 
 namespace v3cRTPLib {
 
@@ -39,7 +40,7 @@ namespace v3cRTPLib {
       ptr += nal_size_precision;
 
       Nalu new_nalu(&bitstream[ptr], nal_size, type());
-      ptr += new_nalu.size();
+      ptr += nal_size;
       payload_.push_back(std::move(new_nalu));
     }
 
@@ -91,7 +92,10 @@ namespace v3cRTPLib {
     } else {
       nal_size_precision = DEFAULT_VIDEO_NAL_SIZE_PRECISION;
     }
-    assert(0 < nal_size_precision && nal_size_precision <= 8 && "sample stream precision should be in range [1,8]");
+    if (!(0 < nal_size_precision && nal_size_precision <= 8))
+    {
+      throw std::runtime_error("sample stream precision should be in range [1,8]");
+    }
 
     return nal_size_precision;
   }
@@ -105,7 +109,7 @@ namespace v3cRTPLib {
   template <>
   uint64_t V3C_Unit::size<V3C_UNDEF>() const
   {
-    //TODO: raise exception //std::cout << "Error: Unit type not supported" << std::endl;
+    throw std::invalid_argument("Not a valid unit type");
     return 0;
   }
 
@@ -141,7 +145,6 @@ namespace v3cRTPLib {
       return size<V3C_CAD>();
 
     default:
-      // TODO: raise exception?
       return size<V3C_UNDEF>();
     }
   }
@@ -201,7 +204,7 @@ namespace v3cRTPLib {
     vuh_unit_type((bitstream[0] & 0b11111000) >> 3),
     type(vuh_to_type(vuh_unit_type))
   {
-    vuh_v3c_parameter_set_id = 0;;
+    vuh_v3c_parameter_set_id = 0;
     vuh_atlas_id = 0;
 
     if (type == V3C_AVD || type == V3C_GVD ||
@@ -293,6 +296,7 @@ namespace v3cRTPLib {
     case 6:
       return V3C_CAD;
     default:
+      throw std::invalid_argument("Not a recognized unit type");
       return V3C_UNDEF;
     }
   }
@@ -316,7 +320,7 @@ namespace v3cRTPLib {
     case V3C_CAD:
       return 6;
     default:
-      // TODO: raise exception?
+      throw std::invalid_argument("Not a valid unit type");
       return static_cast<uint8_t>(-1);
     }
   }

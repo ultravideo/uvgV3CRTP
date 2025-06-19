@@ -7,6 +7,7 @@
 #include <cassert>
 #include <type_traits>
 #include <sstream>
+#include <stdexcept>
 
 namespace v3cRTPLib {
 
@@ -64,8 +65,14 @@ namespace v3cRTPLib {
   {
     // First byte should be the v3c sample stream header
     uint8_t v3c_size_precision = parse_size_precision(bitstream);
-    assert(0 < v3c_size_precision && v3c_size_precision <= 8 && "sample stream precision should be in range [1,8]");
-    
+    if (!(0 < v3c_size_precision && v3c_size_precision <= 8))
+    {
+      throw std::runtime_error(
+        std::string("Error parsing bitstream in ") + __func__ +
+        " at " + __FILE__ + ":" + std::to_string(__LINE__) + " with error: sample stream precision should be in range[1, 8]"
+      );
+    }
+
     Sample_Stream<SAMPLE_STREAM_TYPE::V3C> sample_stream(v3c_size_precision);
     
     // Start processing v3c units
@@ -75,12 +82,22 @@ namespace v3cRTPLib {
       size_t v3c_size = parse_sample_stream_size(bitstream, v3c_size_precision);
       ptr += v3c_size_precision; // Jump over the V3C unit size bytes
 
-      // Inside v3c unit now
-      size_t v3c_ptr = ptr;
-      V3C_Unit new_unit(&bitstream[v3c_ptr], v3c_size);
-      ptr += new_unit.size();
+      try
+      {
+        // Inside v3c unit now
+        V3C_Unit new_unit(&bitstream[ptr], v3c_size);
+        ptr += v3c_size;
 
-      sample_stream.push_back(std::move(new_unit));
+        sample_stream.push_back(std::move(new_unit));
+
+      }
+      catch (const std::exception& e)
+      {
+        throw std::runtime_error(
+          std::string("Error parsing bitstream in ") + __func__ +
+          " at " + __FILE__ + ":" + std::to_string(__LINE__) + " with error: " + e.what()
+        );
+      }
     }
 
     return sample_stream;
@@ -431,14 +448,14 @@ namespace v3cRTPLib {
   }
 
   size_t V3C::combineBytes(const uint8_t *const bytes, const uint8_t num_bytes) {
-    uint64_t combined_out = 0;
+    size_t combined_out = 0;
     for (uint8_t i = 0; i < num_bytes; ++i) {
-      combined_out |= (static_cast<uint64_t>(bytes[i]) << (8 * (num_bytes - 1 - i)));
+      combined_out |= (static_cast<size_t>(bytes[i]) << (8 * (num_bytes - 1 - i)));
     }
     return combined_out;
   }
 
-  void V3C::convert_size_big_endian(uint64_t in, uint8_t* out, size_t output_size) {
+  void V3C::convert_size_big_endian(size_t in, uint8_t* out, size_t output_size) {
     for (size_t i = 0; i < output_size; ++i) {
       out[output_size - i - 1] = static_cast<uint8_t>(in >> (8 * i));
     }

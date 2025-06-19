@@ -1,5 +1,7 @@
 #include "Nalu.h"
 
+#include <stdexcept>
+
 namespace v3cRTPLib {
 
   Nalu::Nalu(const uint8_t nal_unit_type, const uint8_t nal_layer_id, const uint8_t nal_temporal_id, const char * const payload, const size_t len, const V3C_UNIT_TYPE type):
@@ -60,6 +62,28 @@ namespace v3cRTPLib {
     size_ = NAL_UNIT_HEADER_SIZE + len;
     bitstream_ = new uint8_t[size_];
     memset(bitstream_, 0, size_);
+  }
+
+  //Error if undef or VPS (does not have NAL)
+  template <>
+  void Nalu::parse_header<V3C_UNDEF>()
+  {
+    throw std::invalid_argument("Not a valid unit type");
+  }
+  template <>
+  void Nalu::parse_header<V3C_VPS>()
+  {
+    throw std::invalid_argument("VPS should not have NALUs");
+  }
+  template <>
+  void Nalu::write_header<V3C_UNDEF>()
+  {
+    throw std::invalid_argument("Not a valid unit type");
+  }
+  template <>
+  void Nalu::write_header<V3C_VPS>()
+  {
+    throw std::invalid_argument("VPS should not have NALUs");
   }
 
   void Nalu::parse_header(const V3C_UNIT_TYPE type)
@@ -148,5 +172,4 @@ namespace v3cRTPLib {
     bitstream_[1] = h_byte2;
   }
 
-  //TODO: Error if undef
 }
