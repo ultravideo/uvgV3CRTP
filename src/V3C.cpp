@@ -79,7 +79,7 @@ namespace v3cRTPLib {
     for (size_t ptr = SAMPLE_STREAM_HDR_LEN; ptr < len;) {
 
       // Read the V3C unit size 
-      size_t v3c_size = parse_sample_stream_size(bitstream, v3c_size_precision);
+      size_t v3c_size = parse_sample_stream_size(&bitstream[ptr], v3c_size_precision);
       ptr += v3c_size_precision; // Jump over the V3C unit size bytes
 
       try

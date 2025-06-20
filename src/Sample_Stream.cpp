@@ -193,10 +193,11 @@ namespace v3cRTPLib {
   }
 
 
-  std::unique_ptr<char[]> Sample_Stream<SAMPLE_STREAM_TYPE::V3C>::get_bitstream() const
+  std::unique_ptr<char, decltype(&free)> Sample_Stream<SAMPLE_STREAM_TYPE::V3C>::get_bitstream() const
   {
     // Allocate enough memory for whole sample stream
-    std::unique_ptr<char[]> bitstream = std::make_unique<char[]>(size());
+    const size_t len = size();
+    std::unique_ptr<char, decltype(&free)> bitstream((char *)malloc(len), &free);
     size_t ptr = 0;
 
     // Insert sample stream header
@@ -205,27 +206,40 @@ namespace v3cRTPLib {
     // Start copying data from v3c units
     for (Iterator it = stream_.begin(); it != stream_.end(); ++it)
     {
+      if (ptr + (*it).size() > len) std::length_error(std::string("Error: about to exceed allocated memory in ") + __func__ +
+        " at " + __FILE__ + ":" + std::to_string(__LINE__));
       // Write current gof
       ptr += write_bitstream(&bitstream.get()[ptr], it);
     }
 
-    return bitstream;
-  }
-
-  std::unique_ptr<char[]> Sample_Stream<SAMPLE_STREAM_TYPE::V3C>::get_bitstream(Iterator gof_it) const
-  {
-    std::unique_ptr<char[]> bitstream = std::make_unique<char[]>(size(gof_it));
-
-    write_bitstream(bitstream.get(), gof_it);
+    if (ptr != len) std::logic_error(std::string("Error: size mismatch in ") + __func__ +
+      " at " + __FILE__ + ":" + std::to_string(__LINE__));
 
     return bitstream;
   }
 
-  std::unique_ptr<char[]> Sample_Stream<SAMPLE_STREAM_TYPE::V3C>::get_bitstream(Iterator gof_it, const V3C_UNIT_TYPE unit_type) const
+  std::unique_ptr<char, decltype(&free)> Sample_Stream<SAMPLE_STREAM_TYPE::V3C>::get_bitstream(Iterator gof_it) const
   {
-    std::unique_ptr<char[]> bitstream = std::make_unique<char[]>(size(gof_it, unit_type));
+    const size_t len = size(gof_it);
+    std::unique_ptr<char, decltype(&free)> bitstream((char *)malloc(len), &free);
 
-    write_bitstream(bitstream.get(), gof_it, unit_type);
+    size_t ptr = write_bitstream(bitstream.get(), gof_it);
+
+    if (ptr != len) std::logic_error(std::string("Error: size mismatch in ") + __func__ +
+      " at " + __FILE__ + ":" + std::to_string(__LINE__));
+
+    return bitstream;
+  }
+
+  std::unique_ptr<char, decltype(&free)> Sample_Stream<SAMPLE_STREAM_TYPE::V3C>::get_bitstream(Iterator gof_it, const V3C_UNIT_TYPE unit_type) const
+  {
+    const size_t len = size(gof_it, unit_type);
+    std::unique_ptr<char, decltype(&free)> bitstream((char *)malloc(len), &free);
+
+    size_t ptr = write_bitstream(bitstream.get(), gof_it, unit_type);
+    
+    if (ptr != len) std::logic_error(std::string("Error: size mismatch in ") + __func__ +
+      " at " + __FILE__ + ":" + std::to_string(__LINE__));
 
     return bitstream;
   }

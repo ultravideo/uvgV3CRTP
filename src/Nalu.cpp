@@ -4,16 +4,16 @@
 
 namespace v3cRTPLib {
 
-  Nalu::Nalu(const uint8_t nal_unit_type, const uint8_t nal_layer_id, const uint8_t nal_temporal_id, const char * const payload, const size_t len, const V3C_UNIT_TYPE type):
+  Nalu::Nalu(const uint8_t nal_unit_type, const uint8_t nal_layer_id, const uint8_t nal_temporal_id, const char * const payload, const size_t payload_len, const V3C_UNIT_TYPE type):
     nal_unit_type_(nal_unit_type),
     nal_layer_id_(nal_layer_id),
     nal_temporal_id_(nal_temporal_id)
   {
-    init_bitstream(len);
+    init_bitstream(NAL_UNIT_HEADER_SIZE + payload_len);
 
     //Create bitstream
     write_header(type);
-    memcpy(bitstream_ + NAL_UNIT_HEADER_SIZE, payload, len);
+    memcpy(bitstream_.get() + NAL_UNIT_HEADER_SIZE, payload, payload_len);
   }
 
   Nalu::Nalu(const char * const bitstream, const size_t len, const V3C_UNIT_TYPE type)
@@ -21,19 +21,19 @@ namespace v3cRTPLib {
     init_bitstream(len);
 
     //Copy input bitstream
-    memcpy(bitstream_, bitstream, size_);
+    memcpy(bitstream_.get(), bitstream, len);
 
     parse_header(type);
   }
 
-  Nalu::~Nalu()
-  {
-    delete[] bitstream_;
-  }
+  //Nalu::~Nalu()
+  //{
+  //  delete[] bitstream_;
+  //}
 
   uint8_t * Nalu::bitstream() const
   {
-    return bitstream_;
+    return bitstream_.get();
   }
 
   size_t Nalu::size() const
@@ -59,9 +59,9 @@ namespace v3cRTPLib {
   void Nalu::init_bitstream(const size_t len)
   {
     //Allocate memory for new bitstream
-    size_ = NAL_UNIT_HEADER_SIZE + len;
-    bitstream_ = new uint8_t[size_];
-    memset(bitstream_, 0, size_);
+    size_ = len;
+    bitstream_ = std::make_unique<uint8_t[]>(size_);
+    memset(bitstream_.get(), 0, size_);
   }
 
   //Error if undef or VPS (does not have NAL)
@@ -158,7 +158,7 @@ namespace v3cRTPLib {
   void Nalu::parse_header()
   {
     nal_unit_type_ = ((0b01111110 & bitstream_[0]) >> 1);
-    nal_unit_type_ = ((0b10000000 & bitstream_[0]) >> 2) | ((0b11111000 & bitstream_[1]) >> 3);
+    nal_layer_id_ = ((0b10000000 & bitstream_[0]) >> 2) | ((0b11111000 & bitstream_[1]) >> 3);
     nal_temporal_id_ = (0b00000111 & bitstream_[1]);
   }
 

@@ -3,6 +3,8 @@
 
 #include <iostream>
 #include <fstream>
+#include <bitset>
+#include <cstdlib>
 
 int main(int argc, char* argv[]) {
   std::cout << "V3C rtp lib version: " << v3cRTPLib::get_version() << std::endl;
@@ -11,9 +13,16 @@ int main(int argc, char* argv[]) {
     std::cout << "Enter bitstream file name as input parameter" << std::endl;
     return EXIT_FAILURE;
   }
+
+  std::cout << "Reading input bitstream... ";
   // Open file
   std::ifstream bitstream(argv[1]);
-  
+
+  if (!bitstream.is_open()) {
+    //TODO: Raise exception
+    return EXIT_FAILURE;
+  }
+
   //get length of file
   bitstream.seekg(0, bitstream.end);
   size_t length = bitstream.tellg();
@@ -23,12 +32,9 @@ int main(int argc, char* argv[]) {
   if (length == 0) {
     return EXIT_FAILURE; //TODO: Raise exception
   }
+  std::cout << "Done" << std::endl;
 
-  if (!bitstream.is_open()) {
-    //TODO: Raise exception
-    return -1;
-  }
-
+  std::cout << "Reading file to buffer... ";
   auto buf = std::make_unique<char[]>(length);
   if (buf == nullptr) return EXIT_FAILURE;//TODO: Raise exception
 
@@ -39,18 +45,49 @@ int main(int argc, char* argv[]) {
     {
       //TODO: Raise exception
       buf = nullptr; // Release allocated memory before returning nullptr
-      return -1;
+      return EXIT_FAILURE;
     }
   }
+  std::cout << "Done" << std::endl;
 
+  std::cout << "Initialize state... ";
   v3cRTPLib::V3C_State<v3cRTPLib::V3C_Sender> state;
   state.init_sample_stream(buf.get(), length);
+  std::cout << "Done" << std::endl;
 
+  // Check that bitstream was correctly parsed
+  std::cout << "Check bitstream was parsed correctly..." << std::endl;
+  size_t rec_len = 0;
+  auto rec = std::unique_ptr<char, decltype(&free)>(state.get_bitstream(&rec_len), &free);
+  bool diff = false;
+  if (length != rec_len) {
+    std::cout << "Error: Original bitstream size does not match reconstructed bitstream size: " << (int)length << " vs. " << (int)rec_len << std::endl;
+    diff = true;
+  }
+
+  // Compare reconstructed file with the original one
+  for (int i = 0; i < (length < rec_len ? length : rec_len); ++i) {
+    if (buf[i] != rec.get()[i]) {
+      diff = true;
+      std::cout << "Difference found in " << i << std::endl;
+      std::cout << "  orig byte: " << std::bitset<8>(buf[i]) << std::endl;
+      std::cout << "   rec byte: " << std::bitset<8>(rec.get()[i]) << std::endl;
+
+      break;
+    }
+  }
+  if (!diff) {
+    std::cout << "No differences found" << std::endl;
+  }
+
+  std::cout << "Bitstream info: " << std::endl;
   size_t len = 0;
-  char* info = state.write_bitstream_info(len);
-  std::cout << info << std::endl;
-  
-  v3cRTPLib::send_bitstream(state);
-  
+  auto info = std::unique_ptr<char, decltype(&free)>(state.write_bitstream_info(&len), &free);
+  std::cout << info.get() << std::endl;
+
+  std::cout << "Sending bitstream... ";
+  v3cRTPLib::send_bitstream(&state);
+  std::cout << "Done" << std::endl;
+
   return EXIT_SUCCESS;
 }

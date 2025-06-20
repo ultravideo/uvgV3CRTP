@@ -19,11 +19,10 @@ namespace v3cRTPLib {
 
   V3C_Unit::V3C_Unit(const char * const bitstream, const size_t len) : 
     header_(bitstream),
-    payload_(parse_precision(bitstream)),
+    payload_(parse_precision(&bitstream[header_.size()])),
     generic_payload_size_(type() != V3C_VPS ? 0 : (len - header_.size()))
   {
-    generic_payload_ = std::make_unique<char[]>(generic_payload_size_);
-
+    if (generic_payload_size_) generic_payload_ = std::make_unique<char[]>(generic_payload_size_);
     if (type() == V3C_VPS) {
       // Parameter set contains no NAL units, use generic payload instead
       memcpy(generic_payload_.get(), bitstream, generic_payload_size_);

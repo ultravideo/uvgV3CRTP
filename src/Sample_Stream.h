@@ -8,6 +8,7 @@
 #include <map>
 #include <vector>
 #include <memory>
+#include <cstdlib>
 
 namespace v3cRTPLib {
    //Forward declaration
@@ -65,9 +66,9 @@ namespace v3cRTPLib {
     Iterator begin() const;
     Iterator end() const;
 
-    std::unique_ptr<char[]> get_bitstream() const;
-    std::unique_ptr<char[]> get_bitstream(Iterator gof_it) const;
-    std::unique_ptr<char[]> get_bitstream(Iterator gof_it, const V3C_UNIT_TYPE unit_type) const;
+    std::unique_ptr<char, decltype(&free)> get_bitstream() const;
+    std::unique_ptr<char, decltype(&free)> get_bitstream(Iterator gof_it) const;
+    std::unique_ptr<char, decltype(&free)> get_bitstream(Iterator gof_it, const V3C_UNIT_TYPE unit_type) const;
 
   protected:
     size_t write_bitstream(char * const bitstream, Iterator gof_it) const;

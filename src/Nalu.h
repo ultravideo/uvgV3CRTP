@@ -3,6 +3,7 @@
 #include "v3crtplib/global.h"
 
 #include <cstring>
+#include <memory>
 
 namespace v3cRTPLib {
 
@@ -10,8 +11,8 @@ namespace v3cRTPLib {
   {
   public:
     Nalu(const char * const bitstream, const size_t len, const V3C_UNIT_TYPE type);
-    Nalu(const uint8_t nal_unit_type, const uint8_t nal_layer_id, const uint8_t nal_temporal_id, const char * const payload, const size_t len, const V3C_UNIT_TYPE type);
-    ~Nalu();
+    Nalu(const uint8_t nal_unit_type, const uint8_t nal_layer_id, const uint8_t nal_temporal_id, const char * const payload, const size_t payload_len, const V3C_UNIT_TYPE type);
+    ~Nalu() = default;
 
     Nalu(const Nalu&) = delete;
     Nalu& operator=(const Nalu&) = delete;
@@ -43,7 +44,7 @@ namespace v3cRTPLib {
     uint8_t nal_temporal_id_;
 
     size_t size_;
-    uint8_t * bitstream_;
+    std::unique_ptr<uint8_t[]> bitstream_;
   };
 
 }

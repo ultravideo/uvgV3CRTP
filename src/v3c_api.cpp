@@ -97,33 +97,39 @@ namespace v3cRTPLib {
   }
 
   template<typename T>
-  std::unique_ptr<char[]> v3cRTPLib::V3C_State<T>::get_bitstream() const
+  char* v3cRTPLib::V3C_State<T>::get_bitstream(size_t* length) const
   {
     if (!data_)
     {
       //TODO: give error
+      return nullptr;
     }
-    return data_->get_bitstream();
+    if (length) *length = data_->size();
+    return data_->get_bitstream().release();
   }
 
   template<typename T>
-  std::unique_ptr<char[]> V3C_State<T>::get_bitstream_cur_gof() const
+  char* V3C_State<T>::get_bitstream_cur_gof(size_t* length) const
   {
     if (!data_ || !cur_gof_it_)
     {
       //TODO: give error
+      return nullptr;
     }
-    return data_->get_bitstream(get_it(cur_gof_it_));
+    if (length) *length = data_->size(get_it(cur_gof_it_));
+    return data_->get_bitstream(get_it(cur_gof_it_)).release();
   }
 
   template<typename T>
-  std::unique_ptr<char[]> V3C_State<T>::get_bitstream_cur_gof_unit(V3C_UNIT_TYPE type) const
+  char* V3C_State<T>::get_bitstream_cur_gof_unit(V3C_UNIT_TYPE type, size_t* length) const
   {
     if (!data_ || !cur_gof_it_)
     {
       //TODO: give error
+      return nullptr;
     }
-    return data_->get_bitstream(get_it(cur_gof_it_), type);
+    if (length) *length = data_->size(get_it(cur_gof_it_), type);
+    return data_->get_bitstream(get_it(cur_gof_it_), type).release();
   }
 
   template<typename T>
@@ -132,24 +138,25 @@ namespace v3cRTPLib {
     if (!data_)
     {
       //TODO: give error
+      return;
     }
     ++get_it(cur_gof_it_);
   }
 
 
-  void send_bitstream(V3C_State<V3C_Sender>& state)
+  void send_bitstream(V3C_State<V3C_Sender>* state)
   {
-    state.connection_->send_bitstream(*state.data_);
+    state->connection_->send_bitstream(*state->data_);
   }
 
-  void send_gof(V3C_State<V3C_Sender>& state)
+  void send_gof(V3C_State<V3C_Sender>* state)
   {
-    state.connection_->send_gof(*get_it(state.cur_gof_it_));
+    state->connection_->send_gof(*get_it(state->cur_gof_it_));
   }
 
-  void send_unit(V3C_State<V3C_Sender>& state, V3C_UNIT_TYPE type)
+  void send_unit(V3C_State<V3C_Sender>* state, V3C_UNIT_TYPE type)
   {
-    state.connection_->send_v3c_unit((*get_it(state.cur_gof_it_)).get(type));
+    state->connection_->send_v3c_unit((*get_it(state->cur_gof_it_)).get(type));
   }
 
 
@@ -235,16 +242,16 @@ namespace v3cRTPLib {
   }
 
 
-  void receive_bitstream(V3C_State<V3C_Receiver>& state, const uint8_t v3c_size_precision, const uint8_t size_precisions[NUM_V3C_UNIT_TYPES], const size_t expected_num_gofs, const size_t num_nalus[NUM_V3C_UNIT_TYPES], const HeaderStruct header_defs[NUM_V3C_UNIT_TYPES], int timeout)
+  void receive_bitstream(V3C_State<V3C_Receiver>* state, const uint8_t v3c_size_precision, const uint8_t size_precisions[NUM_V3C_UNIT_TYPES], const size_t expected_num_gofs, const size_t num_nalus[NUM_V3C_UNIT_TYPES], const HeaderStruct header_defs[NUM_V3C_UNIT_TYPES], int timeout)
   {
-    if (state.data_)
+    if (state->data_)
     {
       //TODO: give error that existing data would be replaced
       return;
     }
 
-    state.data_ = new Sample_Stream<SAMPLE_STREAM_TYPE::V3C>(
-      state.connection_->receive_bitstream(
+    state->data_ = new Sample_Stream<SAMPLE_STREAM_TYPE::V3C>(
+      state->connection_->receive_bitstream(
         v3c_size_precision,
         array_to_enum_map<V3C_UNIT_TYPE, uint8_t, NUM_V3C_UNIT_TYPES>(size_precisions),
         expected_num_gofs,
@@ -253,19 +260,19 @@ namespace v3cRTPLib {
         timeout)
     );
 
-    state.init_cur_gof();
+    state->init_cur_gof();
   }
 
-  void receive_gof(V3C_State<V3C_Receiver>& state, const uint8_t size_precisions[NUM_V3C_UNIT_TYPES], const size_t num_nalus[NUM_V3C_UNIT_TYPES], const HeaderStruct header_defs[NUM_V3C_UNIT_TYPES], int timeout)
+  void receive_gof(V3C_State<V3C_Receiver>* state, const uint8_t size_precisions[NUM_V3C_UNIT_TYPES], const size_t num_nalus[NUM_V3C_UNIT_TYPES], const HeaderStruct header_defs[NUM_V3C_UNIT_TYPES], int timeout)
   {
-    if (!state.data_)
+    if (!state->data_)
     {
       //TODO: give error
       return;
     }
 
-    state.data_->push_back(
-      state.connection_->receive_gof(
+    state->data_->push_back(
+      state->connection_->receive_gof(
         array_to_enum_map<V3C_UNIT_TYPE, uint8_t, NUM_V3C_UNIT_TYPES>(size_precisions),
         array_to_enum_map<V3C_UNIT_TYPE, size_t, NUM_V3C_UNIT_TYPES>(num_nalus),
         make_header_map_from_struct_array(header_defs),
@@ -274,22 +281,22 @@ namespace v3cRTPLib {
       )
     );
 
-    if (!state.cur_gof_it_)
+    if (!state->cur_gof_it_)
     {
-      state.init_cur_gof();
+      state->init_cur_gof();
     }
   }
 
-  void receive_unit(V3C_State<V3C_Receiver>& state, const V3C_UNIT_TYPE unit_type, const uint8_t size_precision, const size_t expected_size, const HeaderStruct& header_def, int timeout)
+  void receive_unit(V3C_State<V3C_Receiver>* state, const V3C_UNIT_TYPE unit_type, const uint8_t size_precision, const size_t expected_size, const HeaderStruct header_def, int timeout)
   {
-    if (!state.data_)
+    if (!state->data_)
     {
       //TODO: give error
       return;
     }
 
-    state.data_->push_back(
-      state.connection_->receive_v3c_unit(
+    state->data_->push_back(
+      state->connection_->receive_v3c_unit(
         unit_type,
         size_precision,
         expected_size,
@@ -298,14 +305,14 @@ namespace v3cRTPLib {
       )
     );
 
-    if (!state.cur_gof_it_)
+    if (!state->cur_gof_it_)
     {
-      state.init_cur_gof();
+      state->init_cur_gof();
     }
   }
 
   template<typename D>
-  static char * write_info(const D& data, size_t & out_len, INFO_FMT fmt)
+  static char * write_info(const D& data, size_t* out_len, INFO_FMT fmt)
   {
     // Write info to string stream
     std::ostringstream oss;
@@ -313,27 +320,27 @@ namespace v3cRTPLib {
     std::string output = oss.str();
 
     // copy output to char*
-    out_len = output.size() + 1; // Include null-termination byte
-    char * out_char = static_cast<char*>(malloc(out_len));
-    if (out_char) memcpy(out_char, output.c_str(), out_len);
+    *out_len = output.size() + 1; // Include null-termination byte
+    char * out_char = static_cast<char*>(malloc(*out_len));
+    if (out_char) memcpy(out_char, output.c_str(), *out_len);
 
     return out_char;
   }
 
   template<typename T>
-  char * V3C_State<T>::write_bitstream_info(size_t & out_len, INFO_FMT fmt)
+  char * V3C_State<T>::write_bitstream_info(size_t* out_len, INFO_FMT fmt)
   {
     return write_info(*data_, out_len, fmt);
   }
 
   template<typename T>
-  char * V3C_State<T>::write_cur_gof_info(size_t & out_len, INFO_FMT fmt)
+  char * V3C_State<T>::write_cur_gof_info(size_t* out_len, INFO_FMT fmt)
   {
     return write_info(*get_it(cur_gof_it_), out_len, fmt);
   }
 
   template<typename T>
-  char * V3C_State<T>::write_cur_gof_info(size_t& out_len, V3C_UNIT_TYPE type, INFO_FMT fmt)
+  char * V3C_State<T>::write_cur_gof_info(size_t* out_len, V3C_UNIT_TYPE type, INFO_FMT fmt)
   {
     return write_info((*get_it(cur_gof_it_)).get(type), out_len, fmt);
   }
