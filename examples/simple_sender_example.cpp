@@ -65,6 +65,7 @@ int main(int argc, char* argv[]) {
     diff = true;
   }
 
+
   // Compare reconstructed file with the original one
   for (int i = 0; i < (length < rec_len ? length : rec_len); ++i) {
     if (buf[i] != rec.get()[i]) {
@@ -79,6 +80,9 @@ int main(int argc, char* argv[]) {
   if (!diff) {
     std::cout << "No differences found" << std::endl;
   }
+
+  // Print state and bitstream info
+  state.print_state();
 
   std::cout << "Bitstream info: " << std::endl;
   size_t len = 0;

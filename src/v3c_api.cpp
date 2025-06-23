@@ -344,4 +344,66 @@ namespace v3cRTPLib {
   {
     return write_info((*get_it(cur_gof_it_)).get(type), out_len, fmt);
   }
+
+
+  template<typename T>
+  void V3C_State<T>::print_state()
+  {
+    if (!data_)
+    {
+      //TODO: give error
+      return;
+    }
+
+    std::cout << "Sample stream of size " << data_->size() << " (v3c size precision: " << (int)data_->size_precision << ")" << std::endl;
+    std::cout << "Stream state:" << std::endl;
+    int gof_ind = 0;
+    for (auto it = data_->begin(); it != data_->end(); ++it)
+    {
+      std::cout << "  Gof #" << gof_ind;
+      if (it == get_it(cur_gof_it_)) std::cout << " [cur gof]";
+      std::cout << std::endl;
+
+      for (auto&[type, unit] : *it)
+      {
+        switch (type)
+        {
+        case V3C_VPS:
+          std::cout << "    V3C unit of type VPS ";
+          break;
+        case V3C_AD:
+          std::cout << "    V3C unit of type AD  ";
+          break;
+        case V3C_OVD:
+          std::cout << "    V3C unit of type OVD ";
+          break;
+        case V3C_GVD:
+          std::cout << "    V3C unit of type GVD ";
+          break;
+        case V3C_AVD:
+          std::cout << "    V3C unit of type AVD ";
+          break;
+        case V3C_PVD:
+          std::cout << "    V3C unit of type PVD ";
+          break;
+        case V3C_CAD:
+          std::cout << "    V3C unit of type CAD ";
+          break;
+
+        default:
+          // TODO: give error
+          std::cout << "    not a valid unit type";
+          break;
+        }
+        std::cout << "(nal size precision: " << (int)unit.nal_size_precision() << ", size: " << unit.size();
+        if (type != V3C_VPS)
+        {
+          std::cout << ", num nalu: " << unit.num_nalus();
+        }
+        std::cout << ")" << std::endl;
+      }
+
+      gof_ind++;
+    }
+  }
 }

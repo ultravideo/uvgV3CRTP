@@ -33,7 +33,7 @@ namespace v3cRTPLib {
   };
   enum class INFO_FIELDS {
     NUM_GOF,              // s
-    NUM_VPS_NALU,         // s    
+    NUM_VPS,              // s    
     NUM_AD_NALU,          // s    
     NUM_OVD_NALU,         // s    
     NUM_GVD_NALU,         // s    
