@@ -174,13 +174,14 @@ namespace v3cRTPLib {
   {
     size_t ind = 0;
 
-    for (const auto& gof: stream_)
+    for (const auto& [size, gof]: stream_)
     {
-      ind++;
-      if (gof.first.find(type) != gof.first.end())
+      if (size.find(type) == size.end()) // Check if type exists in cur gof
       {
+        //Not found in this gof so return cur ind
         break;
       }
+      ind++;
     }
 
     return ind;
