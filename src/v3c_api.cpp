@@ -347,7 +347,7 @@ namespace v3cRTPLib {
 
 
   template<typename T>
-  void V3C_State<T>::print_state()
+  void V3C_State<T>::print_state(bool print_nalus)
   {
     if (!data_)
     {
@@ -360,34 +360,34 @@ namespace v3cRTPLib {
     int gof_ind = 0;
     for (auto it = data_->begin(); it != data_->end(); ++it)
     {
-      std::cout << "  Gof #" << gof_ind;
+      std::cout << "|--Gof #" << gof_ind;
       if (it == get_it(cur_gof_it_)) std::cout << " [cur gof]";
       std::cout << std::endl;
 
-      for (auto&[type, unit] : *it)
+      for (const auto&[type, unit] : *it)
       {
         switch (type)
         {
         case V3C_VPS:
-          std::cout << "    V3C unit of type VPS ";
+          std::cout << "|  |--V3C unit of type VPS ";
           break;
         case V3C_AD:
-          std::cout << "    V3C unit of type AD  ";
+          std::cout << "|  |--V3C unit of type AD  ";
           break;
         case V3C_OVD:
-          std::cout << "    V3C unit of type OVD ";
+          std::cout << "|  |--V3C unit of type OVD ";
           break;
         case V3C_GVD:
-          std::cout << "    V3C unit of type GVD ";
+          std::cout << "|  |--V3C unit of type GVD ";
           break;
         case V3C_AVD:
-          std::cout << "    V3C unit of type AVD ";
+          std::cout << "|  |--V3C unit of type AVD ";
           break;
         case V3C_PVD:
-          std::cout << "    V3C unit of type PVD ";
+          std::cout << "|  |--V3C unit of type PVD ";
           break;
         case V3C_CAD:
-          std::cout << "    V3C unit of type CAD ";
+          std::cout << "|  |--V3C unit of type CAD ";
           break;
 
         default:
@@ -401,6 +401,14 @@ namespace v3cRTPLib {
           std::cout << ", num nalu: " << unit.num_nalus();
         }
         std::cout << ")" << std::endl;
+
+        if (print_nalus)
+        {
+          for (const auto& nal : unit.nalus())
+          {
+            std::cout << "|  |  |--NAL unit of type " << (int)nal.get().nal_unit_type() << " (size: " << nal.get().size() << ")" << std::endl;
+          }
+        }
       }
 
       gof_ind++;

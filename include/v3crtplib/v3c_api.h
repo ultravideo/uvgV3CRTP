@@ -53,7 +53,7 @@ namespace v3cRTPLib {
     char* write_cur_gof_info(size_t* out_len, V3C_UNIT_TYPE type, INFO_FMT fmt = INFO_FMT::LOGGING);
 
     // Print current state (Sample stream etc.) to cout
-    void print_state();
+    void print_state(bool print_nalus = false);
 
   private:
 

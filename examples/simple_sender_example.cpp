@@ -82,7 +82,7 @@ int main(int argc, char* argv[]) {
   }
 
   // Print state and bitstream info
-  state.print_state();
+  state.print_state(true);
 
   std::cout << "Bitstream info: " << std::endl;
   size_t len = 0;
