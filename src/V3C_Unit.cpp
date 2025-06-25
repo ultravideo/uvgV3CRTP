@@ -19,7 +19,7 @@ namespace v3cRTPLib {
 
   V3C_Unit::V3C_Unit(const char * const bitstream, const size_t len) : 
     header_(bitstream),
-    payload_(parse_precision(&bitstream[header_.size()])),
+    payload_(parse_precision(&bitstream[header_.size()]), get_sample_stream_header_size()),
     generic_payload_size_(type() != V3C_VPS ? 0 : (len - header_.size()))
   {
     if (generic_payload_size_) generic_payload_ = std::make_unique<char[]>(generic_payload_size_);
@@ -30,10 +30,11 @@ namespace v3cRTPLib {
     }
 
     const uint8_t nal_size_precision = payload_.size_precision;
+    const uint8_t sample_stream_hdr_offset = payload_.header_size;
 
     // Rest of the function goes inside the V3C unit payload and parses it into NAL units
     // Now start to parse the NAL sample stream
-    for (size_t ptr = SAMPLE_STREAM_HDR_LEN + header_.size(); ptr < len;) {
+    for (size_t ptr = sample_stream_hdr_offset + header_.size(); ptr < len;) {
 
       size_t nal_size = V3C::parse_sample_stream_size(&bitstream[ptr], nal_size_precision);
       ptr += nal_size_precision;
@@ -79,6 +80,11 @@ namespace v3cRTPLib {
     + NALs count(4 bytes of NAL Unit Size
       + x2 bytes of NAL unit payload)
     + ---------------------------------------------------------------- + */
+
+  size_t V3C_Unit::get_sample_stream_header_size()
+  {
+    return V3C::sample_stream_header_size<SAMPLE_STREAM_TYPE::NAL>(type());
+  }
 
   uint8_t V3C_Unit::parse_precision(const char * const bitstream) const
   {

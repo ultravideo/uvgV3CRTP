@@ -113,7 +113,7 @@ namespace v3cRTPLib {
 
   size_t Sample_Stream<SAMPLE_STREAM_TYPE::NAL>::size() const
   {
-    size_t stream_size = SAMPLE_STREAM_HDR_LEN; // Include sample stream header size
+    size_t stream_size = header_size; // Include sample stream header size
     for (Iterator it = stream_.begin(); it != stream_.end(); ++it)
     {
       // Account for sample stream unit size size
@@ -273,7 +273,10 @@ namespace v3cRTPLib {
   {
     // Insert sample stream header
     size_t ptr = 0;
-    ptr += V3C::write_size_precision(bitstream, size_precision);
+    if (header_size > 0)
+    {
+      ptr += V3C::write_size_precision(bitstream, size_precision); // TODO: check that header_size matches how much is written
+    }
 
     // Start copying data from nal units
     for (const auto&[size, data] : stream_)

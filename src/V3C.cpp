@@ -15,7 +15,8 @@ namespace v3cRTPLib {
   template void V3C::write_out_of_band_info<Sample_Stream<SAMPLE_STREAM_TYPE::V3C>>(std::ostream&, Sample_Stream<SAMPLE_STREAM_TYPE::V3C> const&, INFO_FMT);
   template void V3C::write_out_of_band_info<V3C_Gof>(std::ostream&, V3C_Gof const&, INFO_FMT);
   template void V3C::write_out_of_band_info<V3C_Unit>(std::ostream&, V3C_Unit const&, INFO_FMT);
-
+  template size_t V3C::sample_stream_header_size<SAMPLE_STREAM_TYPE::V3C>(V3C_UNIT_TYPE type);
+  template size_t V3C::sample_stream_header_size<SAMPLE_STREAM_TYPE::NAL>(V3C_UNIT_TYPE type);
 
   V3C::V3C(const char * local_address, const char * remote_address, const INIT_FLAGS init_flags, const uint16_t src_port, const uint16_t dst_port, int stream_flags)
   {
@@ -101,6 +102,19 @@ namespace v3cRTPLib {
     }
 
     return sample_stream;
+  }
+
+  template<SAMPLE_STREAM_TYPE E>
+  size_t V3C::sample_stream_header_size(V3C_UNIT_TYPE type)
+  {
+    if constexpr (E == SAMPLE_STREAM_TYPE::NAL)
+    {
+      return (type == V3C_AD || type == V3C_CAD) ? SAMPLE_STREAM_HDR_LEN : 0; // TODO: figure out correct procedure for video sub-bitstream;
+    }
+    else
+    {
+      return SAMPLE_STREAM_HDR_LEN;
+    }
   }
 
   uint8_t V3C::parse_size_precision(const char * const bitstream)
@@ -461,7 +475,7 @@ namespace v3cRTPLib {
     return combined_out;
   }
 
-  void V3C::convert_size_big_endian(size_t in, uint8_t* out, size_t output_size) {
+  void V3C::convert_size_big_endian(const uint64_t in, uint8_t* const out, const size_t output_size) {
     for (size_t i = 0; i < output_size; ++i) {
       out[output_size - i - 1] = static_cast<uint8_t>(in >> (8 * i));
     }

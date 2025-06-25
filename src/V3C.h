@@ -41,6 +41,9 @@ namespace v3cRTPLib {
     static size_t parse_sample_stream_size(const char * const bitstream, const uint8_t precision);
     static size_t write_sample_stream_size(char * const bitstream, const size_t size, const uint8_t precision);
 
+    template <SAMPLE_STREAM_TYPE E>
+    static size_t sample_stream_header_size(V3C_UNIT_TYPE type);
+
     static size_t combineBytes(const uint8_t *const bytes, const uint8_t num_bytes);
     static void convert_size_big_endian(const uint64_t in, uint8_t* const out, const size_t output_size);
 
@@ -69,5 +72,6 @@ namespace v3cRTPLib {
   extern template void V3C::write_out_of_band_info<Sample_Stream<SAMPLE_STREAM_TYPE::V3C>>(std::ostream&, Sample_Stream<SAMPLE_STREAM_TYPE::V3C> const&, INFO_FMT);
   extern template void V3C::write_out_of_band_info<V3C_Gof>(std::ostream&, V3C_Gof const&, INFO_FMT);
   extern template void V3C::write_out_of_band_info<V3C_Unit>(std::ostream&, V3C_Unit const&, INFO_FMT);
-
+  extern template size_t V3C::sample_stream_header_size<SAMPLE_STREAM_TYPE::V3C>(V3C_UNIT_TYPE type);
+  extern template size_t V3C::sample_stream_header_size<SAMPLE_STREAM_TYPE::NAL>(V3C_UNIT_TYPE type);
 }

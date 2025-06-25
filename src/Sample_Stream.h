@@ -89,7 +89,7 @@ namespace v3cRTPLib {
     using StreamType = std::vector<std::pair<size_t, ST>>;
     using Iterator = SampleStreamIterator<SampleType, StreamType>;
 
-    Sample_Stream(const uint8_t size_precision) : size_precision(size_precision) {}
+    Sample_Stream(const uint8_t size_precision, const size_t header_size) : size_precision(size_precision), header_size(header_size) {}
     ~Sample_Stream() = default;
 
     Sample_Stream(const Sample_Stream&) = delete;
@@ -103,6 +103,7 @@ namespace v3cRTPLib {
     size_t size() const;
 
     const uint8_t size_precision;
+    const uint8_t header_size;
 
     Iterator begin() const;
     Iterator end() const;

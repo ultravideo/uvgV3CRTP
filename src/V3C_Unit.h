@@ -93,7 +93,7 @@ namespace v3cRTPLib {
     template<typename Header, typename T, typename = typename std::enable_if_t<std::is_same_v<T, uint8_t>>>
     V3C_Unit(Header&& header, const T size_precision, const size_t generic_unit_size = 0) :
       header_(std::forward<Header>(header)),
-      payload_(size_precision),
+      payload_(size_precision, get_sample_stream_header_size()),
       generic_payload_size_(type() != V3C_VPS ? 0 : (generic_unit_size - header_.size()))
     {
       generic_payload_ = std::make_unique<char[]>(generic_payload_size_);
@@ -134,7 +134,7 @@ namespace v3cRTPLib {
     size_t write_bitstream(char* const bitstream) const;
 
   private:
-
+    size_t get_sample_stream_header_size();
     uint8_t parse_precision(const char * const bitstream) const;
 
     const V3C_Unit_Header header_;
