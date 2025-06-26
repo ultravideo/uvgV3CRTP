@@ -75,16 +75,15 @@ namespace v3cRTPLib {
       }
       
       Nalu new_nalu(reinterpret_cast<char*>(new_frame->payload), new_frame->payload_len, type);
-      new_unit.push_back(std::move(new_nalu));
-
       if (expected_size_as_num_nalus)
       {
         size_received++;
       }
       else
       {
-        size_received += new_frame->padding_len;
+        size_received += new_nalu.size();
       }
+      new_unit.push_back(std::move(new_nalu));
 
       (void)uvgrtp::frame::dealloc_frame(new_frame);
     }
