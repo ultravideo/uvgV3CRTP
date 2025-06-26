@@ -40,7 +40,7 @@ namespace v3cRTPLib {
     // (Caller responsible for freeing char*)
     char* get_bitstream(size_t* length = nullptr) const;
     char* get_bitstream_cur_gof(size_t* length = nullptr) const;
-    char* get_bitstream_cur_gof_unit(V3C_UNIT_TYPE type, size_t* length = nullptr) const;
+    char* get_bitstream_cur_gof_unit(const V3C_UNIT_TYPE type, size_t* length = nullptr) const;
 
     void next_gof();
 
@@ -48,12 +48,15 @@ namespace v3cRTPLib {
     void init_sample_stream(const char* bitstream, size_t len);
 
     // Functions for bitstream info writing (Caller responsible for freeing char*)
-    char* write_bitstream_info(size_t* out_len, INFO_FMT fmt = INFO_FMT::LOGGING);
-    char* write_cur_gof_info(size_t* out_len, INFO_FMT fmt = INFO_FMT::LOGGING);
-    char* write_cur_gof_info(size_t* out_len, V3C_UNIT_TYPE type, INFO_FMT fmt = INFO_FMT::LOGGING);
+    char* get_bitstream_info_string(size_t* out_len, const INFO_FMT fmt = INFO_FMT::LOGGING) const;
+    char* get_cur_gof_info_string(size_t* out_len, const INFO_FMT fmt = INFO_FMT::LOGGING) const;
+    char* get_cur_gof_info_string(size_t* out_len, const V3C_UNIT_TYPE type, const INFO_FMT fmt = INFO_FMT::LOGGING) const;
 
     // Print current state (Sample stream etc.) to cout
-    void print_state(bool print_nalus = false);
+    void print_state(const bool print_nalus = false) const;
+    void print_bitstream_info(const INFO_FMT fmt = INFO_FMT::LOGGING) const;
+    void print_cur_gof_info(const INFO_FMT fmt = INFO_FMT::LOGGING) const;
+    void print_cur_gof_info(const V3C_UNIT_TYPE type, const INFO_FMT fmt = INFO_FMT::LOGGING) const;
 
   private:
 

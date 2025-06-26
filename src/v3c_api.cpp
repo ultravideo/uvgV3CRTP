@@ -121,7 +121,7 @@ namespace v3cRTPLib {
   }
 
   template<typename T>
-  char* V3C_State<T>::get_bitstream_cur_gof_unit(V3C_UNIT_TYPE type, size_t* length) const
+  char* V3C_State<T>::get_bitstream_cur_gof_unit(const V3C_UNIT_TYPE type, size_t* length) const
   {
     if (!data_ || !cur_gof_it_)
     {
@@ -312,7 +312,7 @@ namespace v3cRTPLib {
   }
 
   template<typename D>
-  static char * write_info(const D& data, size_t* out_len, INFO_FMT fmt)
+  static char * write_info(const D& data, size_t* out_len, const INFO_FMT fmt)
   {
     // Write info to string stream
     std::ostringstream oss;
@@ -328,26 +328,26 @@ namespace v3cRTPLib {
   }
 
   template<typename T>
-  char * V3C_State<T>::write_bitstream_info(size_t* out_len, INFO_FMT fmt)
+  char * V3C_State<T>::get_bitstream_info_string(size_t* out_len, const INFO_FMT fmt) const
   {
     return write_info(*data_, out_len, fmt);
   }
 
   template<typename T>
-  char * V3C_State<T>::write_cur_gof_info(size_t* out_len, INFO_FMT fmt)
+  char * V3C_State<T>::get_cur_gof_info_string(size_t* out_len, const INFO_FMT fmt) const
   {
     return write_info(*get_it(cur_gof_it_), out_len, fmt);
   }
 
   template<typename T>
-  char * V3C_State<T>::write_cur_gof_info(size_t* out_len, V3C_UNIT_TYPE type, INFO_FMT fmt)
+  char * V3C_State<T>::get_cur_gof_info_string(size_t* out_len, const V3C_UNIT_TYPE type, const INFO_FMT fmt) const
   {
     return write_info((*get_it(cur_gof_it_)).get(type), out_len, fmt);
   }
 
 
   template<typename T>
-  void V3C_State<T>::print_state(bool print_nalus)
+  void V3C_State<T>::print_state(const bool print_nalus) const
   {
     if (!data_)
     {
@@ -355,8 +355,7 @@ namespace v3cRTPLib {
       return;
     }
 
-    std::cout << "Sample stream of size " << data_->size() << " (v3c size precision: " << (int)data_->size_precision << ")" << std::endl;
-    std::cout << "Stream state:" << std::endl;
+    std::cout << "Sample stream of size " << data_->size() << " (v3c size precision: " << (int)data_->size_precision << ") with state:" << std::endl;
     int gof_ind = 0;
     for (auto it = data_->begin(); it != data_->end(); ++it)
     {
@@ -413,5 +412,29 @@ namespace v3cRTPLib {
 
       gof_ind++;
     }
+  }
+
+  template<typename C, typename R, typename... P>
+  static void print_info(const C* obj, R (C::*info_func)(size_t*, P...) const, P... param)
+  {
+    size_t len = 0;
+    auto info = std::unique_ptr<char, decltype(&free)>((obj->*info_func)(&len, param...), &free);
+    std::cout << info.get() << std::endl;
+  }
+
+  template<typename T>
+  void V3C_State<T>::print_bitstream_info(const INFO_FMT fmt) const
+  {
+    print_info(this, &V3C_State<T>::get_bitstream_info_string, fmt);
+  }
+  template<typename T>
+  void V3C_State<T>::print_cur_gof_info(const INFO_FMT fmt) const
+  {
+    print_info(this, static_cast<char*(V3C_State<T>::*)(size_t*, INFO_FMT)const>(&V3C_State<T>::get_cur_gof_info_string), fmt);
+  }
+  template<typename T>
+  void V3C_State<T>::print_cur_gof_info(const V3C_UNIT_TYPE type, const INFO_FMT fmt) const
+  {
+    print_info(this, static_cast<char*(V3C_State<T>::*)(size_t*, V3C_UNIT_TYPE, INFO_FMT)const>(&V3C_State<T>::get_cur_gof_info_string), type, fmt);
   }
 }

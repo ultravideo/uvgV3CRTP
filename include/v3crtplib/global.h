@@ -38,8 +38,8 @@ namespace v3cRTPLib {
     NUM_OVD_NALU,         // s    
     NUM_GVD_NALU,         // s    
     NUM_AVD_NALU,         // s    
-    NUM_CAD_NALU,         // s    
     NUM_PVD_NALU,         // s    
+    NUM_CAD_NALU,         // s    
 
     V3C_SIZE_PREC,        // ui8      
     VIDEO_NAL_SIZE_PREC,  // ui8            
