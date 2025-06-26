@@ -251,7 +251,7 @@ namespace v3cRTPLib {
     for (const auto&[type, unit] : gof_it.it->second)
     {
       // Write v3c unit bitstreams
-      ptr += write_bitstream(bitstream, gof_it, type);
+      ptr += write_bitstream(&bitstream[ptr], gof_it, type);
     }
     return ptr;
   }
@@ -275,14 +275,14 @@ namespace v3cRTPLib {
     size_t ptr = 0;
     if (header_size > 0)
     {
-      ptr += V3C::write_size_precision(bitstream, size_precision); // TODO: check that header_size matches how much is written
+      ptr += V3C::write_size_precision(&bitstream[ptr], size_precision); // TODO: check that header_size matches how much is written
     }
 
     // Start copying data from nal units
     for (const auto&[size, data] : stream_)
     {
       // Insert sample stream unit size
-      ptr += V3C::write_sample_stream_size(bitstream, size, size_precision);
+      ptr += V3C::write_sample_stream_size(&bitstream[ptr], size, size_precision);
 
       // Write data to bitstream
       memcpy(&bitstream[ptr], data.bitstream(), data.size());

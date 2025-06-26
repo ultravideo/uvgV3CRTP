@@ -134,7 +134,7 @@ namespace v3cRTPLib {
     size_t write_bitstream(char* const bitstream) const;
 
   private:
-    size_t get_sample_stream_header_size();
+    size_t get_sample_stream_header_size() const;
     uint8_t parse_precision(const char * const bitstream) const;
 
     const V3C_Unit_Header header_;
