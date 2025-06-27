@@ -32,9 +32,9 @@ namespace v3cRTPLib {
   class V3C_State {
   public:
 
-    V3C_State(const char* dst_address = "127.0.0.1", const char* src_address = "127.0.0.1", INIT_FLAGS flags = INIT_FLAGS::ALL);
-    V3C_State(const uint8_t size_precision, const char* dst_address = "127.0.0.1", const char* src_address = "127.0.0.1", INIT_FLAGS flags = INIT_FLAGS::ALL);
-    V3C_State(const char* bitstream, size_t len, const char* dst_address = "127.0.0.1", const char* src_address = "127.0.0.1", INIT_FLAGS flags = INIT_FLAGS::ALL);
+    V3C_State(INIT_FLAGS flags = INIT_FLAGS::ALL, const char* endpoint_address = "127.0.0.1", uint16_t port = 8890);
+    V3C_State(const uint8_t size_precision, INIT_FLAGS flags = INIT_FLAGS::ALL, const char* endpoint_address = "127.0.0.1", uint16_t port = 8890);
+    V3C_State(const char* bitstream, size_t len, INIT_FLAGS flags = INIT_FLAGS::ALL, const char* endpoint_address = "127.0.0.1", uint16_t port = 8890);
     ~V3C_State();
 
     // (Caller responsible for freeing char*)
@@ -67,7 +67,7 @@ namespace v3cRTPLib {
     friend void receive_gof(V3C_State<V3C_Receiver>* state, const uint8_t size_precisions[NUM_V3C_UNIT_TYPES], const size_t num_nalus[NUM_V3C_UNIT_TYPES], const HeaderStruct header_defs[NUM_V3C_UNIT_TYPES], int timeout);
     friend void receive_unit(V3C_State<V3C_Receiver>* state, const V3C_UNIT_TYPE unit_type, const uint8_t size_precision, const size_t expected_size, const HeaderStruct header_def, int timeout);
 
-    void init_connection(const char* dst_address, const char* src_address, INIT_FLAGS flags);
+    void init_connection(INIT_FLAGS flags, const char* endpoint_address, uint16_t port);
     void init_cur_gof();
 
     T* connection_;

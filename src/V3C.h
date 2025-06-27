@@ -22,8 +22,11 @@ namespace v3cRTPLib {
   {
   public:
     
-    V3C() = default;
-    V3C(const char * local_address, const char * remote_address, const INIT_FLAGS init_flags, const uint16_t src_port = 8892, const uint16_t dst_port = 8890, int stream_flags = 0);
+    V3C() = delete;
+    // Uni-directional stream. For sending address should be remote address. For receiving address should be the local address (to bind to). Caller should set either RCE_SEND_ONLY or RCE_RECEIVE_ONLY to stream_flags
+    V3C(const INIT_FLAGS init_flags, const char * endpoint_address, const uint16_t port, int stream_flags);
+    // Bi-directional stream
+    V3C(const INIT_FLAGS init_flags, const char * local_address, const char * remote_address, const uint16_t src_port, const uint16_t dst_port, int stream_flags = 0); 
     ~V3C();
 
     V3C(const V3C&) = delete;

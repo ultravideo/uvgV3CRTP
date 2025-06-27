@@ -18,8 +18,8 @@ namespace v3cRTPLib {
     public V3C
   {
   public:
-    V3C_Sender(); // By default use 127.0.0.1 for sending
-    V3C_Sender(const char* sender_address, const char* receiver_address, const INIT_FLAGS flags);
+    //V3C_Sender() = delete;
+    V3C_Sender(const INIT_FLAGS flags = INIT_FLAGS::ALL, const char * receiver_address = "127.0.0.1", const uint16_t dst_port = 8890, int stream_flags = 0);
     ~V3C_Sender() = default;
 
     void send_bitstream(const Sample_Stream<SAMPLE_STREAM_TYPE::V3C>& bitstream) const;

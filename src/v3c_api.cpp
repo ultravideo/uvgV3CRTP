@@ -32,22 +32,22 @@ namespace v3cRTPLib {
   }
 
   template<typename T>
-  V3C_State<T>::V3C_State(const char* dst_address, const char* src_address, INIT_FLAGS flags): connection_(nullptr), data_(nullptr), cur_gof_it_(nullptr)
+  V3C_State<T>::V3C_State(INIT_FLAGS flags, const char* endpoint_address, uint16_t port): connection_(nullptr), data_(nullptr), cur_gof_it_(nullptr)
   {
-    init_connection(dst_address, src_address, flags);
+    init_connection(flags, endpoint_address, port);
   }
 
   template<typename T>
-  V3C_State<T>::V3C_State(const uint8_t size_precision, const char * dst_address, const char * src_address, INIT_FLAGS flags) : connection_(nullptr), data_(nullptr), cur_gof_it_(nullptr)
+  V3C_State<T>::V3C_State(const uint8_t size_precision, INIT_FLAGS flags, const char* endpoint_address, uint16_t port) : connection_(nullptr), data_(nullptr), cur_gof_it_(nullptr)
   {
-    init_connection(dst_address, src_address, flags);
+    init_connection(flags, endpoint_address, port);
     init_sample_stream(size_precision);
   }
   
   template<typename T>
-  V3C_State<T>::V3C_State(const char* bitstream, size_t len, const char * dst_address, const char * src_address, INIT_FLAGS flags) : connection_(nullptr), data_(nullptr), cur_gof_it_(nullptr)
+  V3C_State<T>::V3C_State(const char* bitstream, size_t len, INIT_FLAGS flags, const char* endpoint_address, uint16_t port) : connection_(nullptr), data_(nullptr), cur_gof_it_(nullptr)
   {
-    init_connection(dst_address, src_address, flags);
+    init_connection(flags, endpoint_address, port);
     init_sample_stream(bitstream, len);
   }
 
@@ -74,14 +74,14 @@ namespace v3cRTPLib {
   }
 
   template<typename T>
-  void V3C_State<T>::init_connection(const char * dst_address, const char * src_address, INIT_FLAGS flags)
+  void V3C_State<T>::init_connection(INIT_FLAGS flags, const char* endpoint_address, uint16_t port)
   {
     if (connection_)
     {
       //TODO: give error
       return;
     }
-    connection_ = new T(dst_address, src_address, flags);
+    connection_ = new T(flags, endpoint_address, port);
   }
 
   template<typename T>

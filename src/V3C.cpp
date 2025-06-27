@@ -18,11 +18,29 @@ namespace v3cRTPLib {
   template size_t V3C::sample_stream_header_size<SAMPLE_STREAM_TYPE::V3C>(V3C_UNIT_TYPE type);
   template size_t V3C::sample_stream_header_size<SAMPLE_STREAM_TYPE::NAL>(V3C_UNIT_TYPE type);
 
-  V3C::V3C(const char * local_address, const char * remote_address, const INIT_FLAGS init_flags, const uint16_t src_port, const uint16_t dst_port, int stream_flags)
+
+  V3C::V3C(const INIT_FLAGS init_flags, const char * endpoint_address, const uint16_t port, int stream_flags)
   {
     /* Create the necessary uvgRTP media streams */
-    std::pair<std::string, std::string> addresses_sender(local_address, remote_address);
-    session_ = ctx_.create_session(addresses_sender);
+    session_ = ctx_.create_session(std::string(endpoint_address));
+
+    // TODO: error handling if create_session fails
+
+    // Init v3c streams
+    stream_flags |= RCE_NO_H26X_PREPEND_SC;
+
+    for (auto unit_type : unit_types_from_init_flag(init_flags)) {
+      streams_[unit_type] = session_->create_stream(port, get_format(unit_type), stream_flags);
+    }
+  }
+
+  V3C::V3C(const INIT_FLAGS init_flags, const char * local_address, const char * remote_address,  const uint16_t src_port, const uint16_t dst_port, int stream_flags)
+  {
+    /* Create the necessary uvgRTP media streams */
+    std::pair<std::string, std::string> addresses(local_address, remote_address);
+    session_ = ctx_.create_session(addresses);
+
+    // TODO: error handling if create_session fails
 
     // Init v3c streams
     stream_flags |= RCE_NO_H26X_PREPEND_SC;

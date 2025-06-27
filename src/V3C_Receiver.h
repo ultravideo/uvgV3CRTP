@@ -18,8 +18,8 @@ namespace v3cRTPLib {
     public V3C
   {
   public:
-    V3C_Receiver();
-    V3C_Receiver(const char* receiver_address, const char* sender_address, INIT_FLAGS flags);
+    //V3C_Receiver() = delete;
+    V3C_Receiver(const INIT_FLAGS flags = INIT_FLAGS::ALL, const char * local_address = "127.0.0.1", uint16_t local_port = 8890, int stream_flags = 0); // Local address to bind to i.e. the address sender sends to 
     ~V3C_Receiver() = default;
 
     Sample_Stream<SAMPLE_STREAM_TYPE::V3C> receive_bitstream(const uint8_t v3c_size_precision, const std::map<V3C_UNIT_TYPE, uint8_t>& nal_size_precisions, const size_t expected_num_gofs, const std::map<V3C_UNIT_TYPE, size_t>& expected_num_nalus, const std::map<V3C_UNIT_TYPE, const V3C_Unit::V3C_Unit_Header>& headers, int timeout) const;
