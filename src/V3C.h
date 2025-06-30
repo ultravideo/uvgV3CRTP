@@ -8,6 +8,7 @@
 #include <vector>
 #include <string>
 #include <map>
+#include <exception>
 
 #include "v3crtplib/global.h"
 #include "Sample_Stream.h"
@@ -69,6 +70,17 @@ namespace v3cRTPLib {
       uvgrtp::session* session_;
 
     private:
+  };
+
+  class TimeoutException : public std::exception
+  {
+  public:
+    explicit TimeoutException(const std::string& msg): message_(msg) {}
+    virtual const char* what() const noexcept override {
+      return message_.c_str();
+    }
+  private:
+    std::string message_;
   };
 
   // Explicitly define necessary instantiations so code is linked properly

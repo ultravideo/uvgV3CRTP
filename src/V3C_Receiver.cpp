@@ -13,9 +13,8 @@ namespace v3cRTPLib {
   V3C_Receiver::V3C_Receiver(const INIT_FLAGS flags, const char * local_address, const uint16_t local_port, int stream_flags): V3C(flags, local_address, local_port, (stream_flags | RCE_RECEIVE_ONLY))
   {
     // Parent class initializes media streams. Just set context here.
-    int i = 1;
     for (const auto&[type, stream] : streams_) {
-      stream->configure_ctx(RCC_REMOTE_SSRC, i++); //TODO: SSRC value could be set in a better way. Need to match the sender values respectively
+      stream->configure_ctx(RCC_REMOTE_SSRC, static_cast<int>(type)); //TODO: SSRC value could be set in a better way. Need to match the sender values respectively
     }
   }
 
@@ -39,7 +38,15 @@ namespace v3cRTPLib {
 
     for (const auto&[type, stream] : streams_)
     {
-      new_gof.set(std::move(receive_v3c_unit(type, size_precisions.at(type), expected_sizes.at(type), std::forward<V3CUnitHeaderMap>(headers).at(type), timeout, expected_size_as_num_nalus)));
+      try
+      {
+        new_gof.set(std::move(receive_v3c_unit(type, size_precisions.at(type), expected_sizes.at(type), std::forward<V3CUnitHeaderMap>(headers).at(type), timeout, expected_size_as_num_nalus)));
+      }
+      catch (const TimeoutException& e)
+      {
+        // Timeout trying to receive v3c unit, try receiving othre units
+        std::cerr << "Timeout: " << e.what() << " in unit type id " << static_cast<int>(type) << std::endl;
+      }
     }
 
     return new_gof;
@@ -54,7 +61,7 @@ namespace v3cRTPLib {
       uvgrtp::frame::rtp_frame* new_frame = streams_.at(type)->pull_frame(timeout);
       if (!new_frame)
       {
-        //Timeout. TODO: Print something?
+        throw TimeoutException("V3C_VPS receiving timeout");
         return V3C_Unit(std::forward<V3CUnitHeader>(header), size_precision);
       }
       V3C_Unit new_unit(std::forward<V3CUnitHeader>(header), size_precision, new_frame->payload_len);
@@ -70,7 +77,8 @@ namespace v3cRTPLib {
       uvgrtp::frame::rtp_frame* new_frame = streams_.at(type)->pull_frame(timeout);
       if (!new_frame)
       {
-        //Timeout. TODO: Print something?
+        //Timeout
+        if (size_received == 0) throw TimeoutException("V3C unit receiving timeout");
         break;
       }
       

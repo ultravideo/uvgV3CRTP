@@ -7,9 +7,8 @@ namespace v3cRTPLib {
   V3C_Sender::V3C_Sender(const INIT_FLAGS flags, const char * receiver_address, const uint16_t dst_port, int stream_flags): V3C(flags, receiver_address, dst_port, (stream_flags | RCE_SEND_ONLY))
   {
     // Parent class initializes media streams. Just set context here.
-    int i = 1;
     for (const auto& [type, stream] : streams_) {
-      stream->configure_ctx(RCC_SSRC, i++); //TODO: SSRC value could be set in a better way. Need to match the receiver values respectively
+      stream->configure_ctx(RCC_SSRC, static_cast<int>(type)); //TODO: SSRC value could be set in a better way. Need to match the receiver values respectively
     }
   }
 

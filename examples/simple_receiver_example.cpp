@@ -136,7 +136,13 @@ int main(int argc, char* argv[]) {
   // ******** Initialize sample stream with default values or out_of_band info ***********
   //
   std::cout << "Initialize state... ";
-  v3cRTPLib::V3C_State<v3cRTPLib::V3C_Receiver> state; // Create a new state in a receiver configuration
+  v3cRTPLib::V3C_State<v3cRTPLib::V3C_Receiver> state(
+    v3cRTPLib::INIT_FLAGS::VPS |
+    v3cRTPLib::INIT_FLAGS::AD |
+    v3cRTPLib::INIT_FLAGS::OVD |
+    v3cRTPLib::INIT_FLAGS::GVD |
+    v3cRTPLib::INIT_FLAGS::AVD
+  ); // Create a new state in a receiver configuration
   //state.init_sample_stream(v3c_size_precision); //Don't init sample stream here since receive_bistream() will create one
   std::cout << "Done" << std::endl;
 
@@ -147,7 +153,7 @@ int main(int argc, char* argv[]) {
   
   size_t expected_number_of_gof = EXPECTED_NUM_GOFs;
   size_t num_vps = EXPECTED_NUM_VPSs;
-  size_t num_ad_nalu = EXPECTED_NUM_VPSs;
+  size_t num_ad_nalu = EXPECTED_NUM_AD_NALU;
   size_t num_ovd_nalu = EXPECTED_NUM_OVD_NALU;
   size_t num_gvd_nalu = EXPECTED_NUM_GVD_NALU;
   size_t num_avd_nalu = EXPECTED_NUM_AVD_NALU;
