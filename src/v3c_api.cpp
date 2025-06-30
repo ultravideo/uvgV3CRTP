@@ -295,15 +295,23 @@ namespace v3cRTPLib {
       return;
     }
 
-    state->data_->push_back(
-      state->connection_->receive_v3c_unit(
-        unit_type,
-        size_precision,
-        expected_size,
-        make_header_from_struct(header_def),
-        timeout
-      )
-    );
+    try {
+      state->data_->push_back(
+        state->connection_->receive_v3c_unit(
+          unit_type,
+          size_precision,
+          expected_size,
+          make_header_from_struct(header_def),
+          timeout
+        )
+      );
+    }
+    catch (const TimeoutException& e)
+    {
+      // Timeout trying to receive v3c unit
+      std::cerr << "Timeout: " << e.what() << " in unit type id " << static_cast<int>(unit_type) << std::endl;
+      return;
+    }
 
     if (!state->cur_gof_it_)
     {
