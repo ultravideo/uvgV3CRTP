@@ -56,41 +56,42 @@ int main(int argc, char* argv[]) {
   size_t length = 0;
   if (argc >= 2) {
     //TODO: read orig bitstream for comparison
-    //std::cout << "Reading input bitstream... ";
-    //// Open file
-    //std::ifstream bitstream(argv[1]);
+    std::cout << "Reading input bitstream... ";
+    // Open file
+    std::ifstream bitstream(argv[1]);
 
-    //if (!bitstream.is_open()) {
-    //  //TODO: Raise exception
-    //  return EXIT_FAILURE;
-    //}
+    if (!bitstream.is_open()) {
+      //TODO: Raise exception
+      std::cerr << "File open failed";
+      return EXIT_FAILURE;
+    }
 
-    ////get length of file
-    //bitstream.seekg(0, bitstream.end);
-    //size_t length = bitstream.tellg();
-    //bitstream.seekg(0, bitstream.beg);
+    //get length of file
+    bitstream.seekg(0, bitstream.end);
+    size_t length = bitstream.tellg();
+    bitstream.seekg(0, bitstream.beg);
 
-    ///* Read the file and its size */
-    //if (length == 0) {
-    //  return EXIT_FAILURE; //TODO: Raise exception
-    //}
-    //std::cout << "Done" << std::endl;
+    /* Read the file and its size */
+    if (length == 0) {
+      return EXIT_FAILURE; //TODO: Raise exception
+    }
+    std::cout << "Done" << std::endl;
 
-    //std::cout << "Reading file to buffer... ";
-    //auto buf = std::make_unique<char[]>(length);
-    //if (buf == nullptr) return EXIT_FAILURE;//TODO: Raise exception
+    std::cout << "Reading file to buffer... ";
+    auto buf = std::make_unique<char[]>(length);
+    if (buf == nullptr) return EXIT_FAILURE;//TODO: Raise exception
 
-    //// read into char*
-    //if (!(bitstream.read(buf.get(), length))) // read up to the size of the buffer
-    //{
-    //  if (!bitstream.eof())
-    //  {
-    //    //TODO: Raise exception
-    //    buf = nullptr; // Release allocated memory before returning nullptr
-    //    return EXIT_FAILURE;
-    //  }
-    //}
-    //std::cout << "Done" << std::endl;
+    // read into char*
+    if (!(bitstream.read(buf.get(), length))) // read up to the size of the buffer
+    {
+      if (!bitstream.eof())
+      {
+        //TODO: Raise exception
+        buf = nullptr; // Release allocated memory before returning nullptr
+        return EXIT_FAILURE;
+      }
+    }
+    std::cout << "Done" << std::endl;
     orig_available = true;
   }
   if (argc >= 3) {

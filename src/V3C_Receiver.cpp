@@ -22,10 +22,17 @@ namespace v3cRTPLib {
   Sample_Stream<SAMPLE_STREAM_TYPE::V3C> V3C_Receiver::receive_bitstream(const uint8_t v3c_size_precision, const std::map<V3C_UNIT_TYPE, uint8_t>& nal_size_precisions, const size_t expected_num_gofs, const std::map<V3C_UNIT_TYPE, size_t>& expected_num_nalus, const std::map<V3C_UNIT_TYPE, const V3C_Unit::V3C_Unit_Header>& headers, const int timeout) const
   {
     Sample_Stream<SAMPLE_STREAM_TYPE::V3C> new_stream(v3c_size_precision);
-
-    for (size_t i = 0; i < expected_num_gofs; i++)
+    try
     {
-      new_stream.push_back(std::move(receive_gof(nal_size_precisions, expected_num_nalus, headers, timeout, true)));
+      for (size_t i = 0; i < expected_num_gofs; i++)
+      {
+        new_stream.push_back(std::move(receive_gof(nal_size_precisions, expected_num_nalus, headers, timeout, true)));
+      }
+    }
+    catch (const TimeoutException& e)
+    {
+      // Timeout trying to receive anymore gofs
+      std::cerr << "Timeout: " << e.what() << std::endl;
     }
 
     return new_stream;
@@ -48,6 +55,7 @@ namespace v3cRTPLib {
         std::cerr << "Timeout: " << e.what() << " in unit type id " << static_cast<int>(type) << std::endl;
       }
     }
+    if (new_gof.size() == 0) throw TimeoutException("GoF receiving timeout");
 
     return new_gof;
   }
@@ -79,6 +87,7 @@ namespace v3cRTPLib {
       {
         //Timeout
         if (size_received == 0) throw TimeoutException("V3C unit receiving timeout");
+        //std::cerr << "timeout " << (int)type << std::endl;
         break;
       }
       

@@ -270,16 +270,22 @@ namespace v3cRTPLib {
       //TODO: give error
       return;
     }
-
-    state->data_->push_back(
-      state->connection_->receive_gof(
-        array_to_enum_map<V3C_UNIT_TYPE, uint8_t, NUM_V3C_UNIT_TYPES>(size_precisions),
-        array_to_enum_map<V3C_UNIT_TYPE, size_t, NUM_V3C_UNIT_TYPES>(num_nalus),
-        make_header_map_from_struct_array(header_defs),
-        timeout,
-        true
-      )
-    );
+    try {
+      state->data_->push_back(
+        state->connection_->receive_gof(
+          array_to_enum_map<V3C_UNIT_TYPE, uint8_t, NUM_V3C_UNIT_TYPES>(size_precisions),
+          array_to_enum_map<V3C_UNIT_TYPE, size_t, NUM_V3C_UNIT_TYPES>(num_nalus),
+          make_header_map_from_struct_array(header_defs),
+          timeout,
+          true
+        )
+      );
+    }
+    catch (const TimeoutException& e)
+    {
+      // Timeout trying to receive anymore gofs
+      std::cerr << "Timeout: " << e.what() << std::endl;
+    }
 
     if (!state->cur_gof_it_)
     {
