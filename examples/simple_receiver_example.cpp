@@ -68,7 +68,7 @@ int main(int argc, char* argv[]) {
 
     //get length of file
     bitstream.seekg(0, bitstream.end);
-    size_t length = bitstream.tellg();
+    length = bitstream.tellg();
     bitstream.seekg(0, bitstream.beg);
 
     /* Read the file and its size */
