@@ -34,6 +34,13 @@ namespace v3cRTPLib {
   }
 
   template <typename SampleType, template <typename> class StreamType>
+  SampleStreamIterator<SampleType, StreamType> & SampleStreamIterator<SampleType, StreamType>::operator--()
+  {
+    --it;
+    return *this;
+  }
+
+  template <typename SampleType, template <typename> class StreamType>
   bool SampleStreamIterator<SampleType, StreamType>::operator==(const SampleStreamIterator & other) const
   {
     return it == other.it;
@@ -160,6 +167,16 @@ namespace v3cRTPLib {
     return Iterator(stream_.end());
   }
 
+  const Sample_Stream<SAMPLE_STREAM_TYPE::V3C>::SampleType& Sample_Stream<SAMPLE_STREAM_TYPE::V3C>::front() const
+  {
+    return stream_.front().second;
+  }
+
+  const Sample_Stream<SAMPLE_STREAM_TYPE::V3C>::SampleType& Sample_Stream<SAMPLE_STREAM_TYPE::V3C>::back() const
+  {
+    return stream_.back().second;
+  }
+
   typename Sample_Stream<SAMPLE_STREAM_TYPE::NAL>::Iterator Sample_Stream<SAMPLE_STREAM_TYPE::NAL>::begin() const
   {
     return Iterator(stream_.begin());
@@ -168,6 +185,16 @@ namespace v3cRTPLib {
   typename Sample_Stream<SAMPLE_STREAM_TYPE::NAL>::Iterator Sample_Stream<SAMPLE_STREAM_TYPE::NAL>::end() const
   {
     return Iterator(stream_.end());
+  }
+
+  const Sample_Stream<SAMPLE_STREAM_TYPE::NAL>::SampleType& Sample_Stream<SAMPLE_STREAM_TYPE::NAL>::front() const
+  {
+    return stream_.front().second;
+  }
+
+  const Sample_Stream<SAMPLE_STREAM_TYPE::NAL>::SampleType& Sample_Stream<SAMPLE_STREAM_TYPE::NAL>::back() const
+  {
+    return stream_.back().second;
   }
 
   size_t Sample_Stream<SAMPLE_STREAM_TYPE::V3C>::find_free_gof(V3C_UNIT_TYPE type) const

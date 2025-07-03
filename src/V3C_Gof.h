@@ -50,6 +50,9 @@ namespace v3cRTPLib {
     auto cbegin() const { return units_.cbegin(); }
     auto cend() const { return units_.cend(); }
 
+    auto find(const V3C_UNIT_TYPE& type) { return units_.find(type); }
+    auto find(const V3C_UNIT_TYPE& type) const { return units_.find(type); }
+
     size_t size() const;
   
   private:

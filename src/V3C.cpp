@@ -158,6 +158,8 @@ namespace v3cRTPLib {
 
   size_t V3C::write_sample_stream_size(char * const bitstream, const size_t size, const uint8_t precision)
   {
+    if (precision <= 0) return 0;
+
     uint8_t size_arr[MAX_V3C_SIZE_PREC] = { 0 };
 
     convert_size_big_endian(size, size_arr, precision);

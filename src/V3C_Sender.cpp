@@ -34,14 +34,12 @@ namespace v3cRTPLib {
 
   void V3C_Sender::send_v3c_unit(const V3C_Unit& unit) const
   {
-    size_t bytes_sent = 0;
     for (const auto& nalu : unit.nalus()) {
       rtp_error_t ret = RTP_OK;
       ret = this->get_stream(unit.type())->push_frame(nalu.get().bitstream(), nalu.get().size(), this->get_flags(unit.type()));
       if (ret != RTP_OK) {
         throw std::runtime_error("Failed to send RTP frame");
       }
-      bytes_sent += nalu.get().size();
     }
   }
 

@@ -19,31 +19,30 @@ namespace v3cRTPLib {
 
   V3C_Unit::V3C_Unit(const char * const bitstream, const size_t len) : 
     header_(bitstream),
-    payload_(parse_precision(&bitstream[header_.size()]), get_sample_stream_header_size()),
-    generic_payload_size_(type() != V3C_VPS ? 0 : (len - header_.size()))
+    payload_(parse_precision(&bitstream[header_.size()]), get_sample_stream_header_size())
   {
-    if (generic_payload_size_) generic_payload_ = std::make_unique<char[]>(generic_payload_size_);
     if (type() == V3C_VPS) {
-      // Parameter set contains no NAL units, use generic payload instead
-      memcpy(generic_payload_.get(), &bitstream[header_.size()], generic_payload_size_);
-      return;
+      // Parameter set contains no NAL units, but repurpose NAL for the VPS payload anyway
+      Nalu vps_nalu(0, 0, 0, &bitstream[header_.size()], len - header_.size(), type());
+      payload_.push_back(std::move(vps_nalu));
     }
+    else
+    {
+      const uint8_t nal_size_precision = payload_.size_precision;
+      const uint8_t sample_stream_hdr_offset = payload_.header_size;
 
-    const uint8_t nal_size_precision = payload_.size_precision;
-    const uint8_t sample_stream_hdr_offset = payload_.header_size;
+      // Rest of the function goes inside the V3C unit payload and parses it into NAL units
+      // Now start to parse the NAL sample stream
+      for (size_t ptr = sample_stream_hdr_offset + header_.size(); ptr < len;) {
 
-    // Rest of the function goes inside the V3C unit payload and parses it into NAL units
-    // Now start to parse the NAL sample stream
-    for (size_t ptr = sample_stream_hdr_offset + header_.size(); ptr < len;) {
+        size_t nal_size = V3C::parse_sample_stream_size(&bitstream[ptr], nal_size_precision);
+        ptr += nal_size_precision;
 
-      size_t nal_size = V3C::parse_sample_stream_size(&bitstream[ptr], nal_size_precision);
-      ptr += nal_size_precision;
-
-      Nalu new_nalu(&bitstream[ptr], nal_size, type());
-      ptr += nal_size;
-      payload_.push_back(std::move(new_nalu));
+        Nalu new_nalu(&bitstream[ptr], nal_size, type());
+        ptr += nal_size;
+        payload_.push_back(std::move(new_nalu));
+      }
     }
-
     // Populate nalu refs
     nalu_refs_ = {};
     for (const auto& nalu : payload_)
@@ -105,11 +104,11 @@ namespace v3cRTPLib {
     return nal_size_precision;
   }
 
-  template <>
-  size_t V3C_Unit::size<V3C_VPS>() const
-  {
-    return header_.size() + generic_payload_size_;
-  }
+  //template <>
+  //size_t V3C_Unit::size<V3C_VPS>() const
+  //{
+  //  return header_.size() + generic_payload_size_;
+  //}
 
   template <>
   uint64_t V3C_Unit::size<V3C_UNDEF>() const
@@ -169,30 +168,18 @@ namespace v3cRTPLib {
     return nalu_refs_.size();
   }
 
-  void V3C_Unit::push_back(Nalu && nalu) //TODO: raise exception if type() == VPS_NALU
+  void V3C_Unit::push_back(Nalu && nalu)
   {
     payload_.push_back(std::move(nalu));
     nalu_refs_.push_back(std::ref(*payload_.end()));
-  }
-
-  void V3C_Unit::push_back(const char * const generic_payload)
-  {
-    memcpy(generic_payload_.get(), generic_payload, generic_payload_size_);
   }
 
   size_t V3C_Unit::write_bitstream(char * const bitstream) const
   {
     size_t ptr = 0;
     ptr += header_.write_header(&bitstream[ptr]);
-    if (type() == V3C_VPS)
-    {
-      memcpy(&bitstream[ptr], generic_payload_.get(), generic_payload_size_);
-      ptr += generic_payload_size_;
-    }
-    else
-    {
-      ptr += payload_.write_bitstream(&bitstream[ptr]);
-    }
+    ptr += payload_.write_bitstream(&bitstream[ptr]);
+
     return ptr;
   }
 

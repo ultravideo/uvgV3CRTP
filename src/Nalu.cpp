@@ -9,15 +9,20 @@ namespace v3cRTPLib {
     nal_layer_id_(nal_layer_id),
     nal_temporal_id_(nal_temporal_id)
   {
-    init_bitstream(NAL_UNIT_HEADER_SIZE + payload_len);
+    // Special handling for VPS
+    const uint8_t nal_unit_header_size = type == V3C_VPS ? 0 : NAL_UNIT_HEADER_SIZE;
+
+    init_bitstream(nal_unit_header_size + payload_len);
 
     //Create bitstream
     write_header(type);
-    memcpy(bitstream_.get() + NAL_UNIT_HEADER_SIZE, payload, payload_len);
+    memcpy(bitstream_.get() + nal_unit_header_size, payload, payload_len);
   }
 
   Nalu::Nalu(const char * const bitstream, const size_t len, const V3C_UNIT_TYPE type)
   {
+    if (type == V3C_VPS) throw std::invalid_argument("This constructor should not be used to initialize VPS payload NALU");
+
     init_bitstream(len);
 
     //Copy input bitstream
@@ -73,7 +78,7 @@ namespace v3cRTPLib {
   template <>
   void Nalu::parse_header<V3C_VPS>()
   {
-    throw std::invalid_argument("VPS should not have NALUs");
+    throw std::invalid_argument("VPS should not have NAL header");
   }
   template <>
   void Nalu::write_header<V3C_UNDEF>()
@@ -83,7 +88,9 @@ namespace v3cRTPLib {
   template <>
   void Nalu::write_header<V3C_VPS>()
   {
-    throw std::invalid_argument("VPS should not have NALUs");
+    //throw std::invalid_argument("VPS should not have NALUs");
+    //Use Nalu for storing VPS payload, but don't write header
+    return;
   }
 
   void Nalu::parse_header(const V3C_UNIT_TYPE type)

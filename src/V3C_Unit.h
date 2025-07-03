@@ -91,12 +91,10 @@ namespace v3cRTPLib {
     //V3C_Unit(const V3C_Unit_Header& header, uint8_t size_precision);
     // size_precision template needed to disambiguate from other constructor
     template<typename Header, typename T, typename = typename std::enable_if_t<std::is_same_v<T, uint8_t>>>
-    V3C_Unit(Header&& header, const T size_precision, const size_t generic_unit_size = 0) :
+    V3C_Unit(Header&& header, const T size_precision) :
       header_(std::forward<Header>(header)),
-      payload_(size_precision, get_sample_stream_header_size()),
-      generic_payload_size_(type() != V3C_VPS ? 0 : (generic_unit_size - header_.size()))
+      payload_(size_precision, get_sample_stream_header_size())
     {
-      generic_payload_ = std::make_unique<char[]>(generic_payload_size_);
     }
     V3C_Unit(const char * const bitstream, const size_t len);
 
@@ -125,7 +123,6 @@ namespace v3cRTPLib {
     size_t num_nalus() const;
 
     void push_back(Nalu&& nalu);
-    void push_back(const char* const generic_payload);
 
   protected:
 
@@ -139,16 +136,14 @@ namespace v3cRTPLib {
 
     const V3C_Unit_Header header_;
     Sample_Stream<SAMPLE_STREAM_TYPE::NAL> payload_;
-    const size_t generic_payload_size_;
-    std::unique_ptr<char[]> generic_payload_;
 
     nalu_ref_list nalu_refs_;
 
   };
 
   // Define specialization for template function so code is generated when built as a library
-  template <>
-  size_t V3C_Unit::size<V3C_VPS>() const;
+  //template <>
+  //size_t V3C_Unit::size<V3C_VPS>() const;
   template <>
   size_t V3C_Unit::size<V3C_UNDEF>() const;
 

@@ -22,6 +22,7 @@ namespace v3cRTPLib {
     SampleStreamIterator(typename StreamType<SampleType>::const_iterator it);
     const SampleType& operator*() const;
     SampleStreamIterator& operator++();
+    SampleStreamIterator& operator--();
     bool operator==(const SampleStreamIterator& other) const;
     bool operator!=(const SampleStreamIterator& other) const;
 
@@ -66,6 +67,9 @@ namespace v3cRTPLib {
     Iterator begin() const;
     Iterator end() const;
 
+    const SampleType& front() const;
+    const SampleType& back() const;
+
     std::unique_ptr<char, decltype(&free)> get_bitstream() const;
     std::unique_ptr<char, decltype(&free)> get_bitstream(Iterator gof_it) const;
     std::unique_ptr<char, decltype(&free)> get_bitstream(Iterator gof_it, const V3C_UNIT_TYPE unit_type) const;
@@ -107,6 +111,9 @@ namespace v3cRTPLib {
 
     Iterator begin() const;
     Iterator end() const;
+
+    const SampleType& front() const;
+    const SampleType& back() const;
 
   protected:
 

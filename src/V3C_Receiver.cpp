@@ -22,11 +22,17 @@ namespace v3cRTPLib {
   Sample_Stream<SAMPLE_STREAM_TYPE::V3C> V3C_Receiver::receive_bitstream(const uint8_t v3c_size_precision, const std::map<V3C_UNIT_TYPE, uint8_t>& nal_size_precisions, const size_t expected_num_gofs, const std::map<V3C_UNIT_TYPE, size_t>& expected_num_nalus, const std::map<V3C_UNIT_TYPE, const V3C_Unit::V3C_Unit_Header>& headers, const int timeout) const
   {
     Sample_Stream<SAMPLE_STREAM_TYPE::V3C> new_stream(v3c_size_precision);
+    auto local_exp_num_nalus = expected_num_nalus;
     try
     {
       for (size_t i = 0; i < expected_num_gofs; i++)
       {
-        new_stream.push_back(std::move(receive_gof(nal_size_precisions, expected_num_nalus, headers, timeout, true)));
+        new_stream.push_back(std::move(receive_gof(nal_size_precisions, local_exp_num_nalus, headers, timeout, true)));
+        // Decrement VPS count so we don't try to receive stuff that isn't coming
+        if (new_stream.back().find(V3C_VPS) != new_stream.back().end())
+        {
+          local_exp_num_nalus.at(V3C_VPS) -= 1;
+        }
       }
     }
     catch (const TimeoutException& e)
@@ -63,7 +69,7 @@ namespace v3cRTPLib {
   template <typename V3CUnitHeader>
   V3C_Unit V3C_Receiver::receive_v3c_unit(const V3C_UNIT_TYPE type, const uint8_t size_precision, const size_t expected_size, V3CUnitHeader&& header, const int timeout, const bool expected_size_as_num_nalus) const
   {
-    if (type == V3C_VPS)
+    if (type == V3C_VPS && expected_size > 0)
     {
       // Special handling for VPS because it contains no nalu
       uvgrtp::frame::rtp_frame* new_frame = streams_.at(type)->pull_frame(timeout);
@@ -72,8 +78,10 @@ namespace v3cRTPLib {
         throw TimeoutException("V3C_VPS receiving timeout");
         return V3C_Unit(std::forward<V3CUnitHeader>(header), size_precision);
       }
-      V3C_Unit new_unit(std::forward<V3CUnitHeader>(header), size_precision, new_frame->payload_len);
-      new_unit.push_back(reinterpret_cast<char*>(new_frame->payload));
+      V3C_Unit new_unit(std::forward<V3CUnitHeader>(header), size_precision);
+      new_unit.push_back(Nalu(0, 0, 0, reinterpret_cast<char*>(new_frame->payload), new_frame->payload_len, type));
+
+      (void)uvgrtp::frame::dealloc_frame(new_frame);
       return new_unit;
     }
 
