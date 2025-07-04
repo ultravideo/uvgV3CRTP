@@ -78,7 +78,7 @@ int main(int argc, char* argv[]) {
     std::cout << "Done" << std::endl;
 
     std::cout << "Reading file to buffer... ";
-    auto buf = std::make_unique<char[]>(length);
+    buf = std::make_unique<char[]>(length);
     if (buf == nullptr) return EXIT_FAILURE;//TODO: Raise exception
 
     // read into char*
