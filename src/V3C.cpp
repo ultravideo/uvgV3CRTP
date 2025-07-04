@@ -177,6 +177,7 @@ namespace v3cRTPLib {
     }
   }
 
+  // TODO: Figure out correct format from bitstream etc. if not H265
   RTP_FORMAT V3C::get_format(const V3C_UNIT_TYPE type)
   {
     switch (type)
@@ -198,6 +199,12 @@ namespace v3cRTPLib {
     default:
       return RTP_FORMAT_GENERIC;
     }
+  }
+
+  //TODO: SSRC value could be set in a better way (random). Need to match the sender/receiver values respectively
+  int V3C::unit_type_to_ssrc(const V3C_UNIT_TYPE type)
+  {
+    return 1 + static_cast<int>(type);
   }
 
   RTP_FLAGS V3C::get_flags(const V3C_UNIT_TYPE type)

@@ -64,6 +64,7 @@ namespace v3cRTPLib {
       
       static RTP_FLAGS get_flags(const V3C_UNIT_TYPE type);
       static RTP_FORMAT get_format(const V3C_UNIT_TYPE type);
+      static int unit_type_to_ssrc(const V3C_UNIT_TYPE type);
 
       std::map<V3C_UNIT_TYPE, uvgrtp::media_stream*> streams_;
       uvgrtp::context ctx_;

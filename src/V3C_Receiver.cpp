@@ -14,7 +14,7 @@ namespace v3cRTPLib {
   {
     // Parent class initializes media streams. Just set context here.
     for (const auto&[type, stream] : streams_) {
-      stream->configure_ctx(RCC_REMOTE_SSRC, static_cast<int>(type)); //TODO: SSRC value could be set in a better way. Need to match the sender values respectively
+      stream->configure_ctx(RCC_REMOTE_SSRC, V3C::unit_type_to_ssrc(type)); 
     }
   }
 
