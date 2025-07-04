@@ -242,25 +242,33 @@ namespace v3cRTPLib {
 
   size_t V3C_Unit::V3C_Unit_Header::write_header(char * const bitstream) const
   {
-    uint8_t hdr[V3C_HDR_LEN] = { 0 };
+    uint8_t hdr[V3C_HDR_LEN] = {};
 
-    // All V3C unit types have parameter_set_id in header
-    hdr[0] = (vuh_unit_type << 3) | ((vuh_v3c_parameter_set_id & 0b1110) >> 1);
-    hdr[1] = ((vuh_v3c_parameter_set_id & 0b1) << 7);
+    if (type != V3C_VPS)
+    {
+      // All V3C unit types have parameter_set_id in header
+      hdr[0] = (vuh_unit_type << 3) | ((vuh_v3c_parameter_set_id & 0b1110) >> 1);
+      hdr[1] = ((vuh_v3c_parameter_set_id & 0b1) << 7);
 
-    // Only CAD does NOT have atlas_id
-    if (type != V3C_CAD) {
-      hdr[1] = hdr[1] | ((vuh_atlas_id & 0b111111) << 1);
+      // Only CAD does NOT have atlas_id
+      if (type != V3C_CAD) {
+        hdr[1] = hdr[1] | ((vuh_atlas_id & 0b111111) << 1);
+      }
+      // GVD has map_index and aux_video_flag, then zeroes
+      if (type == V3C_GVD) {
+        hdr[1] = hdr[1] | ((vuh_map_index & 0b1000) >> 3);
+        hdr[2] = ((vuh_map_index & 0b111) << 5) | (static_cast<int>(vuh_auxiliary_video_flag) << 4);
+      }
+      if (type == V3C_AVD) {
+        hdr[1] = hdr[1] | ((vuh_attribute_index & 0b1000000) >> 7);
+        hdr[2] = ((vuh_attribute_index & 0b111111) << 2) | ((vuh_attribute_partition_index & 0b11000) >> 3);
+        hdr[3] = ((vuh_attribute_partition_index & 0b111) << 5) | (vuh_map_index << 1) | static_cast<int>(vuh_auxiliary_video_flag);
+      }
     }
-    // GVD has map_index and aux_video_flag, then zeroes
-    if (type == V3C_GVD) {
-      hdr[1] = hdr[1] | ((vuh_map_index & 0b1000) >> 3);
-      hdr[2] = ((vuh_map_index & 0b111) << 5) | (static_cast<int>(vuh_auxiliary_video_flag) << 4);
-    }
-    if (type == V3C_AVD) {
-      hdr[1] = hdr[1] | ((vuh_attribute_index & 0b1000000) >> 7);
-      hdr[2] = ((vuh_attribute_index & 0b111111) << 2) | ((vuh_attribute_partition_index & 0b11000) >> 3);
-      hdr[3] = ((vuh_attribute_partition_index & 0b111) << 5) | (vuh_map_index << 1) | static_cast<int>(vuh_auxiliary_video_flag);
+    else
+    {
+      //VPS only has vuh_unit_type field
+      hdr[0] = (vuh_unit_type << 3);
     }
 
     // Copy V3C header to outbut buffer

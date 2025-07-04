@@ -165,7 +165,7 @@ namespace v3cRTPLib {
     switch (V3C_Unit::V3C_Unit_Header::vuh_to_type(hs.vuh_unit_type))
     {
     case v3cRTPLib::V3C_VPS:
-      return V3C_Unit::V3C_Unit_Header();
+      return V3C_Unit::V3C_Unit_Header(v3cRTPLib::V3C_VPS);
 
     case v3cRTPLib::V3C_AD:
       return V3C_Unit::V3C_Unit_Header(
@@ -361,7 +361,7 @@ namespace v3cRTPLib {
 
 
   template<typename T>
-  void V3C_State<T>::print_state(const bool print_nalus) const
+  void V3C_State<T>::print_state(const bool print_nalus, size_t num_gofs) const
   {
     if (!data_)
     {
@@ -370,9 +370,14 @@ namespace v3cRTPLib {
     }
 
     std::cout << "Sample stream of size " << data_->size() << " (v3c size precision: " << (int)data_->size_precision << ") with state:" << std::endl;
-    int gof_ind = 0;
+    size_t gof_ind = 0;
     for (auto it = data_->begin(); it != data_->end(); ++it)
     {
+      if (gof_ind >= num_gofs) {
+        std::cout << "." << std::endl << "." << std::endl << "." << std::endl << "(showing only the first " << (int)num_gofs << " Gofs)" << std::endl;
+        break;
+      }
+
       std::cout << "|--Gof #" << gof_ind;
       if (it == get_it(cur_gof_it_)) std::cout << " [cur gof]";
       std::cout << std::endl;

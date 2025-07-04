@@ -5,6 +5,7 @@
 #include <memory>
 #include <type_traits>
 #include <iostream>
+#include <limits>
 
 namespace v3cRTPLib {
 
@@ -53,7 +54,7 @@ namespace v3cRTPLib {
     char* get_cur_gof_info_string(size_t* out_len, const V3C_UNIT_TYPE type, const INFO_FMT fmt = INFO_FMT::LOGGING) const;
 
     // Print current state (Sample stream etc.) to cout
-    void print_state(const bool print_nalus = false) const;
+    void print_state(const bool print_nalus = false, size_t num_gofs = std::numeric_limits<size_t>::max()) const;
     void print_bitstream_info(const INFO_FMT fmt = INFO_FMT::LOGGING) const;
     void print_cur_gof_info(const INFO_FMT fmt = INFO_FMT::LOGGING) const;
     void print_cur_gof_info(const V3C_UNIT_TYPE type, const INFO_FMT fmt = INFO_FMT::LOGGING) const;
