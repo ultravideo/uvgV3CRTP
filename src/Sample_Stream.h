@@ -61,6 +61,7 @@ namespace v3cRTPLib {
     size_t size() const;
     size_t size(Iterator gof_it) const;
     size_t size(Iterator gof_it, const V3C_UNIT_TYPE unit_type) const;
+    size_t num_samples() const;
 
     const uint8_t size_precision;    
 
@@ -105,6 +106,7 @@ namespace v3cRTPLib {
     void push_back(Nalu&& unit);
 
     size_t size() const;
+    size_t num_samples() const;
 
     const uint8_t size_precision;
     const uint8_t header_size;

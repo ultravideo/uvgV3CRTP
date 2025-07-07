@@ -157,6 +157,16 @@ namespace v3cRTPLib {
     return size_precision + gof_it.it->first.at(unit_type);
   }
 
+  size_t Sample_Stream<SAMPLE_STREAM_TYPE::V3C>::num_samples() const
+  {
+    return stream_.size();
+  }
+
+  size_t Sample_Stream<SAMPLE_STREAM_TYPE::NAL>::num_samples() const
+  {
+    return stream_.size();
+  }
+
   typename Sample_Stream<SAMPLE_STREAM_TYPE::V3C>::Iterator Sample_Stream<SAMPLE_STREAM_TYPE::V3C>::begin() const
   {
     return Iterator(stream_.begin());

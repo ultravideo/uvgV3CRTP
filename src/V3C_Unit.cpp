@@ -43,12 +43,6 @@ namespace v3cRTPLib {
         payload_.push_back(std::move(new_nalu));
       }
     }
-    // Populate nalu refs
-    nalu_refs_ = {};
-    for (const auto& nalu : payload_)
-    {
-      nalu_refs_.push_back(std::ref(nalu));
-    }
   }
 
   /*+
@@ -160,18 +154,23 @@ namespace v3cRTPLib {
 
   V3C_Unit::nalu_ref_list V3C_Unit::nalus() const
   {
-    return nalu_refs_;
+    // Populate nalu refs
+    nalu_ref_list nalu_refs = {};
+    for (const auto& nalu : payload_)
+    {
+      nalu_refs.push_back(std::ref(nalu));
+    }
+    return nalu_refs;
   }
 
   size_t V3C_Unit::num_nalus() const
   {
-    return nalu_refs_.size();
+    return payload_.num_samples();
   }
 
   void V3C_Unit::push_back(Nalu && nalu)
   {
     payload_.push_back(std::move(nalu));
-    nalu_refs_.push_back(std::ref(*payload_.end()));
   }
 
   size_t V3C_Unit::write_bitstream(char * const bitstream) const

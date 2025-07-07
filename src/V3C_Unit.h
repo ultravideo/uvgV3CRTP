@@ -137,8 +137,6 @@ namespace v3cRTPLib {
     const V3C_Unit_Header header_;
     Sample_Stream<SAMPLE_STREAM_TYPE::NAL> payload_;
 
-    nalu_ref_list nalu_refs_;
-
   };
 
   // Define specialization for template function so code is generated when built as a library
