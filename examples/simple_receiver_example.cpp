@@ -186,12 +186,12 @@ int main(int argc, char* argv[]) {
   };
   v3cRTPLib::HeaderStruct header_defs[v3cRTPLib::NUM_V3C_UNIT_TYPES] = {
     {v3cRTPLib::V3C_VPS},
-    {v3cRTPLib::V3C_AD},
-    {v3cRTPLib::V3C_OVD},
-    {v3cRTPLib::V3C_GVD},
-    {v3cRTPLib::V3C_AVD},
-    {v3cRTPLib::V3C_PVD},
-    {v3cRTPLib::V3C_CAD},
+    {v3cRTPLib::V3C_AD, 0, 0},
+    {v3cRTPLib::V3C_OVD, 0, 0},
+    {v3cRTPLib::V3C_GVD, 0, 0, 0, 0, 0, false},
+    {v3cRTPLib::V3C_AVD, 0, 0, 0, 0, 0, false},
+    {v3cRTPLib::V3C_PVD, 0, 0},
+    {v3cRTPLib::V3C_CAD, 0},
   };
   //
   // ************************************************************************************
@@ -213,7 +213,7 @@ int main(int argc, char* argv[]) {
   // ******** Print info about sample stream **********
   //
   // Print state and bitstream info
-  state.print_state(true, 1);
+  state.print_state(false);
 
   //std::cout << "Bitstream info: " << std::endl;
   state.print_bitstream_info();

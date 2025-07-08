@@ -96,7 +96,7 @@ int main(int argc, char* argv[]) {
   // ******** Print info about sample stream **********
   //
   // Print state and bitstream info
-  state.print_state(true, 1);
+  state.print_state(false);
 
   //std::cout << "Bitstream info: " << std::endl;
   state.print_bitstream_info();

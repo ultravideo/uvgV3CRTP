@@ -23,15 +23,29 @@ namespace v3cRTPLib {
   {
     Sample_Stream<SAMPLE_STREAM_TYPE::V3C> new_stream(v3c_size_precision);
     auto local_exp_num_nalus = expected_num_nalus;
+    std::map<V3C_UNIT_TYPE, V3C_Unit::V3C_Unit_Header> local_headers = {};
+    for (const auto& [type, header]: headers)
+    {
+      local_headers.emplace(type, header);
+    }
+
     try
     {
       for (size_t i = 0; i < expected_num_gofs; i++)
       {
-        new_stream.push_back(std::move(receive_gof(nal_size_precisions, local_exp_num_nalus, headers, timeout, true)));
+        new_stream.push_back(std::move(receive_gof(nal_size_precisions, local_exp_num_nalus, local_headers, timeout, true)));
         // Decrement VPS count so we don't try to receive stuff that isn't coming
         if (new_stream.back().find(V3C_VPS) != new_stream.back().end())
         {
           local_exp_num_nalus.at(V3C_VPS) -= 1;
+          if (local_exp_num_nalus.at(V3C_VPS) != 0)
+          {
+            // We're expecting a new VPS so following headers should increment VPS id (this is kind of a hacky thing to do but VPS should not be sent over rtp anyway)
+            for (auto&[type, unit_header] : local_headers)
+            {
+              unit_header.vuh_v3c_parameter_set_id += 1;
+            }
+          }
         }
       }
     }

@@ -43,21 +43,22 @@ namespace v3cRTPLib {
 
             if constexpr (sizeof...(I) > 3)
             {
-              if (type == V3C_AVD)
+              if (type == V3C_GVD)
               {
                 vuh_map_index = std::get<2>(vuh_t);
                 vuh_auxiliary_video_flag = std::get<3>(vuh_t);
               }
-            }
-            else if constexpr (sizeof...(I) > 5)
-            {
-              if (type == V3C_GVD)
-              {
-                vuh_attribute_index = std::get<2>(vuh_t);
-                vuh_attribute_partition_index = std::get<3>(vuh_t);
 
-                vuh_map_index = std::get<4>(vuh_t);
-                vuh_auxiliary_video_flag = std::get<5>(vuh_t);
+              if constexpr (sizeof...(I) > 5)
+              {
+                if (type == V3C_AVD)
+                {
+                  vuh_attribute_index = std::get<2>(vuh_t);
+                  vuh_attribute_partition_index = std::get<3>(vuh_t);
+
+                  vuh_map_index = std::get<4>(vuh_t);
+                  vuh_auxiliary_video_flag = std::get<5>(vuh_t);
+                }
               }
             }
           }

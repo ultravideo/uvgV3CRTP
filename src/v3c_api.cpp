@@ -186,8 +186,6 @@ namespace v3cRTPLib {
         hs.vuh_unit_type,
         hs.vuh_v3c_parameter_set_id,
         hs.vuh_atlas_id,
-        hs.vuh_attribute_index,
-        hs.vuh_attribute_partition_index,
         hs.vuh_map_index,
         hs.vuh_auxiliary_video_flag
       );
@@ -197,6 +195,8 @@ namespace v3cRTPLib {
         hs.vuh_unit_type,
         hs.vuh_v3c_parameter_set_id,
         hs.vuh_atlas_id,
+        hs.vuh_attribute_index,
+        hs.vuh_attribute_partition_index,
         hs.vuh_map_index,
         hs.vuh_auxiliary_video_flag
       );

@@ -258,7 +258,7 @@ namespace v3cRTPLib {
         hdr[1] = hdr[1] | ((vuh_map_index & 0b1000) >> 3);
         hdr[2] = ((vuh_map_index & 0b111) << 5) | (static_cast<int>(vuh_auxiliary_video_flag) << 4);
       }
-      if (type == V3C_AVD) {
+      else if (type == V3C_AVD) {
         hdr[1] = hdr[1] | ((vuh_attribute_index & 0b1000000) >> 7);
         hdr[2] = ((vuh_attribute_index & 0b111111) << 2) | ((vuh_attribute_partition_index & 0b11000) >> 3);
         hdr[3] = ((vuh_attribute_partition_index & 0b111) << 5) | (vuh_map_index << 1) | static_cast<int>(vuh_auxiliary_video_flag);
