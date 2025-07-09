@@ -28,7 +28,7 @@ namespace v3cRTPLib {
     }
     else
     {
-      const uint8_t nal_size_precision = payload_.size_precision;
+      const uint8_t nal_size_precision = payload_.size_precision();
       const uint8_t sample_stream_hdr_offset = payload_.header_size;
 
       // Rest of the function goes inside the V3C unit payload and parses it into NAL units
@@ -149,7 +149,7 @@ namespace v3cRTPLib {
 
   uint8_t V3C_Unit::nal_size_precision() const
   {
-    return payload_.size_precision;
+    return payload_.size_precision();
   }
 
   V3C_Unit::nalu_ref_list V3C_Unit::nalus() const

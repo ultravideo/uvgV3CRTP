@@ -399,7 +399,7 @@ namespace v3cRTPLib {
       }
       get_as(info_data, INFO_FIELDS::NUM_GOF) += 1;
     }
-    get_as<uint8_t>(info_data, INFO_FIELDS::V3C_SIZE_PREC) = data.size_precision;
+    get_as<uint8_t>(info_data, INFO_FIELDS::V3C_SIZE_PREC) = data.size_precision();
   }
   template <INFO_FMT F = INFO_FMT::LOGGING, typename T>
   static void populate_info_data(const V3C_Gof & data, T& info_data)
@@ -461,9 +461,9 @@ namespace v3cRTPLib {
       populate_info_data<INFO_FMT::RAW>(data, info_data);
       process_out_of_band_info<INFO_FMT::RAW, DataClass>(stream, info_data);
       break;
-    case INFO_FMT::SDP:
-      populate_info_data<INFO_FMT::SDP>(data, info_data);
-      process_out_of_band_info<INFO_FMT::SDP, DataClass>(stream, info_data);
+    case INFO_FMT::BASE64:
+      populate_info_data<INFO_FMT::BASE64>(data, info_data);
+      process_out_of_band_info<INFO_FMT::BASE64, DataClass>(stream, info_data);
       break;
     default:
       populate_info_data<INFO_FMT::LOGGING>(data, info_data);
@@ -484,8 +484,8 @@ namespace v3cRTPLib {
     case INFO_FMT::RAW:
       process_out_of_band_info<INFO_FMT::RAW, DataClass>(stream, info_data);
       break;
-    case INFO_FMT::SDP:
-      process_out_of_band_info<INFO_FMT::SDP, DataClass>(stream, info_data);
+    case INFO_FMT::BASE64:
+      process_out_of_band_info<INFO_FMT::BASE64, DataClass>(stream, info_data);
       break;
     default:
       process_out_of_band_info<INFO_FMT::LOGGING, DataClass>(stream, info_data);

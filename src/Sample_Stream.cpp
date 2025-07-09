@@ -4,6 +4,9 @@
 #include "V3C_Gof.h"
 #include "V3C_Unit.h"
 
+#include <numeric>
+#include <exception>
+
 namespace v3cRTPLib {
 
   // Explicitly define necessary instantiations so code is linked properly
@@ -54,7 +57,7 @@ namespace v3cRTPLib {
 
 
   //template<SAMPLE_STREAM_TYPE E>
-  //Sample_Stream<E>::Sample_Stream(const uint8_t size_precision) : size_precision(size_precision)
+  //Sample_Stream<E>::Sample_Stream(const uint8_t size_precision) : size_precision_(size_precision)
   //{
   //}
 
@@ -124,7 +127,7 @@ namespace v3cRTPLib {
     for (Iterator it = stream_.begin(); it != stream_.end(); ++it)
     {
       // Account for sample stream unit size size
-      stream_size += size_precision;
+      stream_size += size_precision();
       stream_size += it.it->first;
     }
     return stream_size;
@@ -154,7 +157,7 @@ namespace v3cRTPLib {
   size_t Sample_Stream<SAMPLE_STREAM_TYPE::V3C>::size(Iterator gof_it, const V3C_UNIT_TYPE unit_type) const
   {
     // Account for sample stream unit size size
-    return size_precision + gof_it.it->first.at(unit_type);
+    return size_precision() + gof_it.it->first.at(unit_type);
   }
 
   size_t Sample_Stream<SAMPLE_STREAM_TYPE::V3C>::num_samples() const
@@ -165,6 +168,92 @@ namespace v3cRTPLib {
   size_t Sample_Stream<SAMPLE_STREAM_TYPE::NAL>::num_samples() const
   {
     return stream_.size();
+  }
+
+  static uint8_t calc_min_size_precision(const size_t size)
+  {
+    if (size < (1LLU << (1 * SIZE_PREC_MULT))) return 1; // 1 is the smallest allowed precision and number of size bits is prec * SIZE_PREC_MULT
+    
+    // Precision should be in range [1, 8] so start checking from 4
+    if (size < (1LLU << (4 * SIZE_PREC_MULT)))
+    {
+      if (size < (1LLU << (3 * SIZE_PREC_MULT)))
+      {
+        if (size < (1LLU << (2 * SIZE_PREC_MULT)))
+        {
+          return 2;
+        } 
+        else //(1 << 2 * SIZE_PREC_MULT)) <= size < (1 << 3 * SIZE_PREC_MULT)) 
+        {
+          return 3;
+        }
+      }
+      else //(1 << 3 * SIZE_PREC_MULT)) <= size < (1 << 4 * SIZE_PREC_MULT)) 
+      {
+        return 4;
+      }
+    } else // (size >= (1 << 4 * SIZE_PREC_MULT))
+    {
+      if (size < (1LLU << (6 * SIZE_PREC_MULT)))
+      {
+        if (size < (1LLU << (5 * SIZE_PREC_MULT)))
+        {
+          return 5;
+        } 
+        else //(1 << 5 * SIZE_PREC_MULT)) <= size < (1 << 6 * SIZE_PREC_MULT)) 
+        {
+          return 6;
+        }
+      } 
+      else if /*(1 << 6 * SIZE_PREC_MULT) <=*/ (size < (1LLU << (7 * SIZE_PREC_MULT)))
+      {
+        return 7;
+      }
+    }
+
+    // Would overflow size_t anyway
+    //if (size >= (1LLU << (8 * SIZE_PREC_MULT))) throw std::runtime_error("Size exceeds maximum size precision range");
+
+    return 8;
+  }
+
+  uint8_t Sample_Stream<SAMPLE_STREAM_TYPE::V3C>::size_precision() const
+  {
+    // If size_precision_ is -1, infer it from max size sample size
+    if (size_precision_ != static_cast<uint8_t>(-1)) return size_precision_;
+
+    size_t max_sample_size = 0;
+    for (const auto& [sizes, sample]: stream_)
+    {
+      size_t cur_size = std::accumulate(sizes.cbegin(), sizes.cend(), 0LLU,
+        [](const size_t a, decltype(*sizes.cbegin()) b)
+        {
+          return a + b.second;
+        });
+      if (max_sample_size < cur_size)
+      {
+        max_sample_size = cur_size;
+      }
+    }
+
+    return calc_min_size_precision(max_sample_size);
+  }
+
+  uint8_t Sample_Stream<SAMPLE_STREAM_TYPE::NAL>::size_precision() const
+  {
+    // If size_precision_ is -1, infer it from max size sample size
+    if (size_precision_ != static_cast<uint8_t>(-1)) return size_precision_;
+
+    size_t max_sample_size = 0;
+    for (const auto&[size, sample] : stream_)
+    {
+      if (max_sample_size < size)
+      {
+        max_sample_size = size;
+      }
+    }
+
+    return calc_min_size_precision(max_sample_size);
   }
 
   typename Sample_Stream<SAMPLE_STREAM_TYPE::V3C>::Iterator Sample_Stream<SAMPLE_STREAM_TYPE::V3C>::begin() const
@@ -239,7 +328,7 @@ namespace v3cRTPLib {
     size_t ptr = 0;
 
     // Insert sample stream header
-    ptr += V3C::write_size_precision(&bitstream.get()[ptr], size_precision);
+    ptr += V3C::write_size_precision(&bitstream.get()[ptr], size_precision());
 
     // Start copying data from v3c units
     for (Iterator it = stream_.begin(); it != stream_.end(); ++it)
@@ -298,7 +387,7 @@ namespace v3cRTPLib {
     size_t ptr = 0;
 
     // Insert sample stream unit size
-    ptr += V3C::write_sample_stream_size(&bitstream[ptr], gof_it.it->first.at(unit_type), size_precision);
+    ptr += V3C::write_sample_stream_size(&bitstream[ptr], gof_it.it->first.at(unit_type), size_precision());
 
     // Write data to bitstream
     ptr += (*gof_it).get(unit_type).write_bitstream(&bitstream[ptr]);
@@ -312,14 +401,14 @@ namespace v3cRTPLib {
     size_t ptr = 0;
     if (header_size > 0)
     {
-      ptr += V3C::write_size_precision(&bitstream[ptr], size_precision); // TODO: check that header_size matches how much is written
+      ptr += V3C::write_size_precision(&bitstream[ptr], size_precision()); // TODO: check that header_size matches how much is written
     }
 
     // Start copying data from nal units
     for (const auto&[size, data] : stream_)
     {
       // Insert sample stream unit size
-      ptr += V3C::write_sample_stream_size(&bitstream[ptr], size, size_precision);
+      ptr += V3C::write_sample_stream_size(&bitstream[ptr], size, size_precision());
 
       // Write data to bitstream
       memcpy(&bitstream[ptr], data.bitstream(), data.size());

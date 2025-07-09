@@ -29,7 +29,7 @@ namespace v3cRTPLib {
     LOGGING, // Logging printout in a human readable format
     PARAM,   // Print relevant parameters directly to c++ expressions
     RAW,     // Output data values directly
-    SDP,     // Build an SDP message
+    BASE64,  // Base64 encoded data
   };
   enum class INFO_FIELDS {
     NUM_GOF,              // s
@@ -87,6 +87,7 @@ namespace v3cRTPLib {
   static constexpr uint8_t DEFAULT_VIDEO_NAL_SIZE_PRECISION = 4;
 
   static constexpr uint8_t MAX_V3C_SIZE_PREC = 8;
+  static constexpr size_t SIZE_PREC_MULT = 8;
 
   static constexpr uint8_t NAL_UNIT_HEADER_SIZE = 2;
 

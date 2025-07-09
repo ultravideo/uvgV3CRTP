@@ -46,7 +46,7 @@ namespace v3cRTPLib {
     using StreamType = std::vector<std::pair<std::map<V3C_UNIT_TYPE, size_t>, ST>>;
     using Iterator = SampleStreamIterator<SampleType, StreamType>;
 
-    Sample_Stream(const uint8_t size_precision) : size_precision(size_precision) {}
+    Sample_Stream(const uint8_t size_precision) : size_precision_(size_precision) {}
     ~Sample_Stream() = default;
 
     Sample_Stream(const Sample_Stream&) = delete;
@@ -63,7 +63,7 @@ namespace v3cRTPLib {
     size_t size(Iterator gof_it, const V3C_UNIT_TYPE unit_type) const;
     size_t num_samples() const;
 
-    const uint8_t size_precision;    
+    uint8_t size_precision() const; // Inferred if size_precision_ == -1
 
     Iterator begin() const;
     Iterator end() const;
@@ -78,6 +78,8 @@ namespace v3cRTPLib {
   protected:
     size_t write_bitstream(char * const bitstream, Iterator gof_it) const;
     size_t write_bitstream(char * const bitstream, Iterator gof_it, V3C_UNIT_TYPE unit_type) const;
+
+    const uint8_t size_precision_;
 
   private:
     size_t find_free_gof(const V3C_UNIT_TYPE type) const;
@@ -94,7 +96,7 @@ namespace v3cRTPLib {
     using StreamType = std::vector<std::pair<size_t, ST>>;
     using Iterator = SampleStreamIterator<SampleType, StreamType>;
 
-    Sample_Stream(const uint8_t size_precision, const size_t header_size) : size_precision(size_precision), header_size(header_size) {}
+    Sample_Stream(const uint8_t size_precision, const size_t header_size) : header_size(header_size), size_precision_(size_precision) {}
     ~Sample_Stream() = default;
 
     Sample_Stream(const Sample_Stream&) = delete;
@@ -108,7 +110,7 @@ namespace v3cRTPLib {
     size_t size() const;
     size_t num_samples() const;
 
-    const uint8_t size_precision;
+    uint8_t size_precision() const; // Inferred if size_precision_ == -1
     const uint8_t header_size;
 
     Iterator begin() const;
@@ -122,6 +124,8 @@ namespace v3cRTPLib {
     //friend size_t V3C_Unit::write_bitstream(char* const bitstream);
     friend class V3C_Unit;
     size_t write_bitstream(char * const bitstream) const;
+
+    const uint8_t size_precision_;
 
   private:
     StreamType<SampleType> stream_;

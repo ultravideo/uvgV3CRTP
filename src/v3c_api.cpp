@@ -369,7 +369,7 @@ namespace v3cRTPLib {
       return;
     }
 
-    std::cout << "Sample stream of size " << data_->size() << " (v3c size precision: " << (int)data_->size_precision << ") with state:" << std::endl;
+    std::cout << "Sample stream of size " << data_->size() << " (v3c size precision: " << (int)data_->size_precision() << ") with state:" << std::endl;
     size_t gof_ind = 0;
     for (auto it = data_->begin(); it != data_->end(); ++it)
     {

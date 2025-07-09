@@ -17,7 +17,8 @@ constexpr uint8_t AtlasNAL_SIZE_PRECISION = 2;
 constexpr uint8_t Video_SIZE_PRECISION = 4;
 
 constexpr int TIMEOUT = 5000;
-constexpr bool AUTO_PRECISION_MODE = false;
+// Auto size precision may not match orig bitstream
+constexpr bool AUTO_PRECISION_MODE = true;
 
 
 static void compare_bitstreams(v3cRTPLib::V3C_State<v3cRTPLib::V3C_Receiver>& state, std::unique_ptr<char[]>& buf, size_t length)
@@ -148,24 +149,25 @@ int main(int argc, char* argv[]) {
   std::cout << "Done" << std::endl;
 
   // Define necessary information for receiving a v3c stream
-  uint8_t v3c_size_precision = AUTO_PRECISION_MODE ? 0 : V3C_SIZE_PRECISION;
-  uint8_t atlas_size_precision = AUTO_PRECISION_MODE ? 0 : AtlasNAL_SIZE_PRECISION;
-  uint8_t video_size_precision = AUTO_PRECISION_MODE ? 0 : Video_SIZE_PRECISION;
+  uint8_t v3c_size_precision   = AUTO_PRECISION_MODE ? static_cast<uint8_t>(-1) : V3C_SIZE_PRECISION;
+  uint8_t atlas_size_precision = AUTO_PRECISION_MODE ? static_cast<uint8_t>(-1) : AtlasNAL_SIZE_PRECISION;
+  uint8_t video_size_precision = Video_SIZE_PRECISION;//AUTO_PRECISION_MODE ? static_cast<uint8_t>(-1) : Video_SIZE_PRECISION;
   
   size_t expected_number_of_gof = EXPECTED_NUM_GOFs;
-  size_t num_vps = EXPECTED_NUM_VPSs;
-  size_t num_ad_nalu = EXPECTED_NUM_AD_NALU;
-  size_t num_ovd_nalu = EXPECTED_NUM_OVD_NALU;
-  size_t num_gvd_nalu = EXPECTED_NUM_GVD_NALU;
-  size_t num_avd_nalu = EXPECTED_NUM_AVD_NALU;
-  size_t num_pvd_nalu = 0;
-  size_t num_cad_nalu = 0;
+  size_t num_vps                = EXPECTED_NUM_VPSs;
+  size_t num_ad_nalu            = EXPECTED_NUM_AD_NALU;
+  size_t num_ovd_nalu           = EXPECTED_NUM_OVD_NALU;
+  size_t num_gvd_nalu           = EXPECTED_NUM_GVD_NALU;
+  size_t num_avd_nalu           = EXPECTED_NUM_AVD_NALU;
+  size_t num_pvd_nalu           = 0;
+  size_t num_cad_nalu           = 0;
 
   if (out_of_band_available)
   {
     //TODO: set outofband info
   }
 
+  // Auto size precision if set to 0 (may not match orig bitstream)
   uint8_t size_precisions[v3cRTPLib::NUM_V3C_UNIT_TYPES] = {
     0,
     atlas_size_precision,
