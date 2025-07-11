@@ -29,7 +29,7 @@ namespace v3cRTPLib {
     else
     {
       const uint8_t nal_size_precision = payload_.size_precision();
-      const uint8_t sample_stream_hdr_offset = payload_.header_size;
+      const size_t sample_stream_hdr_offset = payload_.header_size;
 
       // Rest of the function goes inside the V3C unit payload and parses it into NAL units
       // Now start to parse the NAL sample stream
@@ -108,7 +108,7 @@ namespace v3cRTPLib {
   uint64_t V3C_Unit::size<V3C_UNDEF>() const
   {
     throw std::invalid_argument("Not a valid unit type");
-    return 0;
+    //return 0;
   }
 
   template <V3C_UNIT_TYPE E>
@@ -296,7 +296,7 @@ namespace v3cRTPLib {
       return V3C_CAD;
     default:
       throw std::invalid_argument("Not a recognized unit type");
-      return V3C_UNDEF;
+      //return V3C_UNDEF;
     }
   }
 
@@ -320,7 +320,7 @@ namespace v3cRTPLib {
       return 6;
     default:
       throw std::invalid_argument("Not a valid unit type");
-      return static_cast<uint8_t>(-1);
+      //return static_cast<uint8_t>(-1);
     }
   }
 

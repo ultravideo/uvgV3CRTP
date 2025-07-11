@@ -63,7 +63,7 @@ namespace v3cRTPLib {
     size_t size(Iterator gof_it, const V3C_UNIT_TYPE unit_type) const;
     size_t num_samples() const;
 
-    uint8_t size_precision() const; // Inferred if size_precision_ == -1
+    uint8_t size_precision() const; // Inferred if size_precision_ == (uint8_t)-1
 
     Iterator begin() const;
     Iterator end() const;
@@ -110,8 +110,8 @@ namespace v3cRTPLib {
     size_t size() const;
     size_t num_samples() const;
 
-    uint8_t size_precision() const; // Inferred if size_precision_ == -1
-    const uint8_t header_size;
+    uint8_t size_precision() const; // Inferred if size_precision_ == (uint8_t)-1
+    const size_t header_size;
 
     Iterator begin() const;
     Iterator end() const;

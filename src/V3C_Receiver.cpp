@@ -90,7 +90,7 @@ namespace v3cRTPLib {
       if (!new_frame)
       {
         throw TimeoutException("V3C_VPS receiving timeout");
-        return V3C_Unit(std::forward<V3CUnitHeader>(header), size_precision);
+        //return V3C_Unit(std::forward<V3CUnitHeader>(header), size_precision);
       }
       V3C_Unit new_unit(std::forward<V3CUnitHeader>(header), size_precision);
       new_unit.push_back(Nalu(0, 0, 0, reinterpret_cast<char*>(new_frame->payload), new_frame->payload_len, type));

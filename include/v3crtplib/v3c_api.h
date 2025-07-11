@@ -43,7 +43,7 @@ namespace v3cRTPLib {
     char* get_bitstream_cur_gof(size_t* length = nullptr) const;
     char* get_bitstream_cur_gof_unit(const V3C_UNIT_TYPE type, size_t* length = nullptr) const;
 
-    void next_gof();
+    ERROR_TYPE next_gof();
 
     void init_sample_stream(const uint8_t size_precision);
     void init_sample_stream(const char* bitstream, size_t len);
@@ -59,14 +59,19 @@ namespace v3cRTPLib {
     void print_cur_gof_info(const INFO_FMT fmt = INFO_FMT::LOGGING) const;
     void print_cur_gof_info(const V3C_UNIT_TYPE type, const INFO_FMT fmt = INFO_FMT::LOGGING) const;
 
+    // Error reporting
+    ERROR_TYPE get_error_flag() const;
+    const char* get_error_msg() const;
+    void reset_error_flag() const;
+
   private:
 
-    friend void send_bitstream(V3C_State<V3C_Sender>* state);
-    friend void send_gof(V3C_State<V3C_Sender>* state);
-    friend void send_unit(V3C_State<V3C_Sender>* state, V3C_UNIT_TYPE type);
-    friend void receive_bitstream(V3C_State<V3C_Receiver>* state, const uint8_t v3c_size_precision, const uint8_t size_precisions[NUM_V3C_UNIT_TYPES], const size_t expected_num_gofs, const size_t num_nalus[NUM_V3C_UNIT_TYPES], const HeaderStruct header_defs[NUM_V3C_UNIT_TYPES], int timeout);
-    friend void receive_gof(V3C_State<V3C_Receiver>* state, const uint8_t size_precisions[NUM_V3C_UNIT_TYPES], const size_t num_nalus[NUM_V3C_UNIT_TYPES], const HeaderStruct header_defs[NUM_V3C_UNIT_TYPES], int timeout);
-    friend void receive_unit(V3C_State<V3C_Receiver>* state, const V3C_UNIT_TYPE unit_type, const uint8_t size_precision, const size_t expected_size, const HeaderStruct header_def, int timeout);
+    friend ERROR_TYPE send_bitstream(V3C_State<V3C_Sender>* state);
+    friend ERROR_TYPE send_gof(V3C_State<V3C_Sender>* state);
+    friend ERROR_TYPE send_unit(V3C_State<V3C_Sender>* state, V3C_UNIT_TYPE type);
+    friend ERROR_TYPE receive_bitstream(V3C_State<V3C_Receiver>* state, const uint8_t v3c_size_precision, const uint8_t size_precisions[NUM_V3C_UNIT_TYPES], const size_t expected_num_gofs, const size_t num_nalus[NUM_V3C_UNIT_TYPES], const HeaderStruct header_defs[NUM_V3C_UNIT_TYPES], int timeout);
+    friend ERROR_TYPE receive_gof(V3C_State<V3C_Receiver>* state, const uint8_t size_precisions[NUM_V3C_UNIT_TYPES], const size_t num_nalus[NUM_V3C_UNIT_TYPES], const HeaderStruct header_defs[NUM_V3C_UNIT_TYPES], int timeout);
+    friend ERROR_TYPE receive_unit(V3C_State<V3C_Receiver>* state, const V3C_UNIT_TYPE unit_type, const uint8_t size_precision, const size_t expected_size, const HeaderStruct header_def, int timeout);
 
     void init_connection(INIT_FLAGS flags, const char* endpoint_address, uint16_t port);
     void init_cur_gof();
@@ -75,20 +80,25 @@ namespace v3cRTPLib {
 
     Sample_Stream<SAMPLE_STREAM_TYPE::V3C>* data_;
     void* cur_gof_it_;
+
+    ERROR_TYPE set_error(ERROR_TYPE error, std::string msg) const;
+    mutable ERROR_TYPE error_;
+    mutable std::string error_msg_;
   };
 
 
 
   // Functions that operate on V3C_State
-  void send_bitstream(V3C_State<V3C_Sender>* state);
-  void send_gof(V3C_State<V3C_Sender>* state);
-  void send_unit(V3C_State<V3C_Sender>* state, V3C_UNIT_TYPE type);
+  ERROR_TYPE send_bitstream(V3C_State<V3C_Sender>* state);
+  ERROR_TYPE send_gof(V3C_State<V3C_Sender>* state);
+  ERROR_TYPE send_unit(V3C_State<V3C_Sender>* state, V3C_UNIT_TYPE type);
 
-  void receive_bitstream(V3C_State<V3C_Receiver>* state, const uint8_t size_precision, const uint8_t size_precisions[NUM_V3C_UNIT_TYPES], const size_t expected_num_gofs, const size_t num_nalus[NUM_V3C_UNIT_TYPES], const HeaderStruct header_defs[NUM_V3C_UNIT_TYPES], int timeout);
-  void receive_gof(V3C_State<V3C_Receiver>* state, const uint8_t size_precisions[NUM_V3C_UNIT_TYPES], const size_t num_nalus[NUM_V3C_UNIT_TYPES], const HeaderStruct header_defs[NUM_V3C_UNIT_TYPES], int timeout);
-  void receive_unit(V3C_State<V3C_Receiver>* state, const V3C_UNIT_TYPE unit_type, const uint8_t size_precision, const size_t expected_size, const HeaderStruct header_def, int timeout);
+  ERROR_TYPE receive_bitstream(V3C_State<V3C_Receiver>* state, const uint8_t size_precision, const uint8_t size_precisions[NUM_V3C_UNIT_TYPES], const size_t expected_num_gofs, const size_t num_nalus[NUM_V3C_UNIT_TYPES], const HeaderStruct header_defs[NUM_V3C_UNIT_TYPES], int timeout);
+  ERROR_TYPE receive_gof(V3C_State<V3C_Receiver>* state, const uint8_t size_precisions[NUM_V3C_UNIT_TYPES], const size_t num_nalus[NUM_V3C_UNIT_TYPES], const HeaderStruct header_defs[NUM_V3C_UNIT_TYPES], int timeout);
+  ERROR_TYPE receive_unit(V3C_State<V3C_Receiver>* state, const V3C_UNIT_TYPE unit_type, const uint8_t size_precision, const size_t expected_size, const HeaderStruct header_def, int timeout);
 
   // Explicitly define necessary instantiations so code is linked properly
   extern template class V3C_State<V3C_Sender>;
   extern template class V3C_State<V3C_Receiver>;
+
 }

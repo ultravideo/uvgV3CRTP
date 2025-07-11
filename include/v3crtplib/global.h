@@ -56,6 +56,18 @@ namespace v3cRTPLib {
     bool b;
   };
 
+  // V3C error state flags
+  enum class ERROR_TYPE {
+    OK = 0,
+    // Critical
+    GENERAL,  // Un-specified error
+    // Non-critical
+    TIMEOUT,    // Receiving has timed out 
+    DATA,       // Data related error, most likely data not initilized
+    CONNECTION, // Connection related error, most likely connections not initialized
+    EOS,        // End of stream reached
+  };
+
   enum class SAMPLE_STREAM_TYPE {
     V3C,
     NAL

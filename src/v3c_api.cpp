@@ -14,6 +14,37 @@ namespace v3cRTPLib {
   template class V3C_State<V3C_Sender>;
   template class V3C_State<V3C_Receiver>;
 
+
+  // Some macros for handling exceptions
+#define V3C_STATE_TRY(state)         \
+  auto& _err = state->error_;         \
+  auto& _err_msg = state->error_msg_; \
+  try
+#define V3C_STATE_CATCH(return_error)                            \
+  catch (const TimeoutException& e) {                            \
+    _err = ERROR_TYPE::TIMEOUT;                                  \
+    _err_msg = std::string("Timeout: ") + e.what();              \
+  }                                                              \
+  catch (const std::exception& e) {                              \
+    _err = ERROR_TYPE::GENERAL;                                  \
+    _err_msg = std::string("Undefined exception: ") + e.what();  \
+  }                                                              \
+  catch (...) {                                                  \
+    _err = ERROR_TYPE::GENERAL;                                  \
+    _err_msg = std::string("Unknown exception");                 \
+  }                                                              \
+  if constexpr (return_error) {                                  \
+    return _err;                                                 \
+  }
+
+  template<typename T>
+  ERROR_TYPE V3C_State<T>::set_error(ERROR_TYPE error, std::string msg) const {
+    error_ = error;
+    error_msg_ = std::string(msg);
+    return error_;
+  }
+
+
   namespace {
     using Iterator = typename Sample_Stream<SAMPLE_STREAM_TYPE::V3C>::Iterator;
   }
@@ -32,20 +63,20 @@ namespace v3cRTPLib {
   }
 
   template<typename T>
-  V3C_State<T>::V3C_State(INIT_FLAGS flags, const char* endpoint_address, uint16_t port): connection_(nullptr), data_(nullptr), cur_gof_it_(nullptr)
+  V3C_State<T>::V3C_State(INIT_FLAGS flags, const char* endpoint_address, uint16_t port): connection_(nullptr), data_(nullptr), cur_gof_it_(nullptr), error_(ERROR_TYPE::OK), error_msg_("")
   {
     init_connection(flags, endpoint_address, port);
   }
 
   template<typename T>
-  V3C_State<T>::V3C_State(const uint8_t size_precision, INIT_FLAGS flags, const char* endpoint_address, uint16_t port) : connection_(nullptr), data_(nullptr), cur_gof_it_(nullptr)
+  V3C_State<T>::V3C_State(const uint8_t size_precision, INIT_FLAGS flags, const char* endpoint_address, uint16_t port) : connection_(nullptr), data_(nullptr), cur_gof_it_(nullptr), error_(ERROR_TYPE::OK), error_msg_("")
   {
     init_connection(flags, endpoint_address, port);
     init_sample_stream(size_precision);
   }
   
   template<typename T>
-  V3C_State<T>::V3C_State(const char* bitstream, size_t len, INIT_FLAGS flags, const char* endpoint_address, uint16_t port) : connection_(nullptr), data_(nullptr), cur_gof_it_(nullptr)
+  V3C_State<T>::V3C_State(const char* bitstream, size_t len, INIT_FLAGS flags, const char* endpoint_address, uint16_t port) : connection_(nullptr), data_(nullptr), cur_gof_it_(nullptr), error_(ERROR_TYPE::OK), error_msg_("")
   {
     init_connection(flags, endpoint_address, port);
     init_sample_stream(bitstream, len);
@@ -78,7 +109,7 @@ namespace v3cRTPLib {
   {
     if (connection_)
     {
-      //TODO: give error
+      set_error(ERROR_TYPE::CONNECTION, "A connection object already exists");
       return;
     }
     connection_ = new T(flags, endpoint_address, port);
@@ -89,7 +120,7 @@ namespace v3cRTPLib {
   {
     if (cur_gof_it_ || !data_)
     {
-      //TODO: give error
+      set_error(ERROR_TYPE::DATA, "Gof iterator already initialized or no data exists");
       return;
     }
 
@@ -101,7 +132,7 @@ namespace v3cRTPLib {
   {
     if (!data_)
     {
-      //TODO: give error
+      set_error(ERROR_TYPE::DATA, "No data exists");
       return nullptr;
     }
     if (length) *length = data_->size();
@@ -113,7 +144,7 @@ namespace v3cRTPLib {
   {
     if (!data_ || !cur_gof_it_)
     {
-      //TODO: give error
+      set_error(ERROR_TYPE::DATA, "Gof iterator not initialized or no data exists");
       return nullptr;
     }
     if (length) *length = data_->size(get_it(cur_gof_it_));
@@ -125,7 +156,7 @@ namespace v3cRTPLib {
   {
     if (!data_ || !cur_gof_it_)
     {
-      //TODO: give error
+      set_error(ERROR_TYPE::DATA, "Gof iterator not initialized or no data exists");
       return nullptr;
     }
     if (length) *length = data_->size(get_it(cur_gof_it_), type);
@@ -133,30 +164,45 @@ namespace v3cRTPLib {
   }
 
   template<typename T>
-  void V3C_State<T>::next_gof()
+  ERROR_TYPE V3C_State<T>::next_gof()
   {
-    if (!data_)
+    if (!data_ || !cur_gof_it_)
     {
-      //TODO: give error
-      return;
+      return set_error(ERROR_TYPE::DATA, "Gof iterator not initialized or no data exists");
     }
     ++get_it(cur_gof_it_);
+
+    if (get_it(cur_gof_it_) == data_->end()) return set_error(ERROR_TYPE::EOS, "End of stream reached");
+
+    return ERROR_TYPE::OK;
   }
 
 
-  void send_bitstream(V3C_State<V3C_Sender>* state)
+  ERROR_TYPE send_bitstream(V3C_State<V3C_Sender>* state)
   {
-    state->connection_->send_bitstream(*state->data_);
+    V3C_STATE_TRY(state)
+    {
+      state->connection_->send_bitstream(*state->data_);
+    }
+    V3C_STATE_CATCH(true)
   }
 
-  void send_gof(V3C_State<V3C_Sender>* state)
+  ERROR_TYPE send_gof(V3C_State<V3C_Sender>* state)
   {
-    state->connection_->send_gof(*get_it(state->cur_gof_it_));
+    V3C_STATE_TRY(state)
+    {
+      state->connection_->send_gof(*get_it(state->cur_gof_it_));
+    }
+    V3C_STATE_CATCH(true)
   }
 
-  void send_unit(V3C_State<V3C_Sender>* state, V3C_UNIT_TYPE type)
+  ERROR_TYPE send_unit(V3C_State<V3C_Sender>* state, V3C_UNIT_TYPE type)
   {
-    state->connection_->send_v3c_unit((*get_it(state->cur_gof_it_)).get(type));
+    V3C_STATE_TRY(state)
+    {
+      state->connection_->send_v3c_unit((*get_it(state->cur_gof_it_)).get(type));
+    }
+    V3C_STATE_CATCH(true)
   }
 
 
@@ -242,87 +288,98 @@ namespace v3cRTPLib {
   }
 
 
-  void receive_bitstream(V3C_State<V3C_Receiver>* state, const uint8_t v3c_size_precision, const uint8_t size_precisions[NUM_V3C_UNIT_TYPES], const size_t expected_num_gofs, const size_t num_nalus[NUM_V3C_UNIT_TYPES], const HeaderStruct header_defs[NUM_V3C_UNIT_TYPES], int timeout)
+  ERROR_TYPE receive_bitstream(V3C_State<V3C_Receiver>* state, const uint8_t v3c_size_precision, const uint8_t size_precisions[NUM_V3C_UNIT_TYPES], const size_t expected_num_gofs, const size_t num_nalus[NUM_V3C_UNIT_TYPES], const HeaderStruct header_defs[NUM_V3C_UNIT_TYPES], int timeout)
   {
-    if (state->data_)
+    V3C_STATE_TRY(state)
     {
-      //TODO: give error that existing data would be replaced
-      return;
-    }
+      if (state->data_)
+      {
+        return state->set_error(ERROR_TYPE::DATA, "No data exists");
+      }
 
-    state->data_ = new Sample_Stream<SAMPLE_STREAM_TYPE::V3C>(
-      state->connection_->receive_bitstream(
-        v3c_size_precision,
-        array_to_enum_map<V3C_UNIT_TYPE, uint8_t, NUM_V3C_UNIT_TYPES>(size_precisions),
-        expected_num_gofs,
-        array_to_enum_map<V3C_UNIT_TYPE, size_t, NUM_V3C_UNIT_TYPES>(num_nalus),
-        make_header_map_from_struct_array(header_defs),
-        timeout)
-    );
-
-    state->init_cur_gof();
-  }
-
-  void receive_gof(V3C_State<V3C_Receiver>* state, const uint8_t size_precisions[NUM_V3C_UNIT_TYPES], const size_t num_nalus[NUM_V3C_UNIT_TYPES], const HeaderStruct header_defs[NUM_V3C_UNIT_TYPES], int timeout)
-  {
-    if (!state->data_)
-    {
-      //TODO: give error
-      return;
-    }
-    try {
-      state->data_->push_back(
-        state->connection_->receive_gof(
+      state->data_ = new Sample_Stream<SAMPLE_STREAM_TYPE::V3C>(
+        state->connection_->receive_bitstream(
+          v3c_size_precision,
           array_to_enum_map<V3C_UNIT_TYPE, uint8_t, NUM_V3C_UNIT_TYPES>(size_precisions),
+          expected_num_gofs,
           array_to_enum_map<V3C_UNIT_TYPE, size_t, NUM_V3C_UNIT_TYPES>(num_nalus),
           make_header_map_from_struct_array(header_defs),
-          timeout,
-          true
-        )
+          timeout)
       );
-    }
-    catch (const TimeoutException& e)
-    {
-      // Timeout trying to receive anymore gofs
-      std::cerr << "Timeout: " << e.what() << std::endl;
-    }
 
-    if (!state->cur_gof_it_)
-    {
       state->init_cur_gof();
     }
+    V3C_STATE_CATCH(true)
   }
 
-  void receive_unit(V3C_State<V3C_Receiver>* state, const V3C_UNIT_TYPE unit_type, const uint8_t size_precision, const size_t expected_size, const HeaderStruct header_def, int timeout)
+  ERROR_TYPE receive_gof(V3C_State<V3C_Receiver>* state, const uint8_t size_precisions[NUM_V3C_UNIT_TYPES], const size_t num_nalus[NUM_V3C_UNIT_TYPES], const HeaderStruct header_defs[NUM_V3C_UNIT_TYPES], int timeout)
   {
-    if (!state->data_)
+    V3C_STATE_TRY(state)
     {
-      //TODO: give error
-      return;
-    }
+      if (!state->data_)
+      {
+        return state->set_error(ERROR_TYPE::DATA, "No data exists");
 
-    try {
-      state->data_->push_back(
-        state->connection_->receive_v3c_unit(
-          unit_type,
-          size_precision,
-          expected_size,
-          make_header_from_struct(header_def),
-          timeout
-        )
-      );
-    }
-    catch (const TimeoutException& e)
-    {
-      // Timeout trying to receive v3c unit
-      std::cerr << "Timeout: " << e.what() << " in unit type id " << static_cast<int>(unit_type) << std::endl;
-      return;
-    }
+      }
+      try {
+        state->data_->push_back(
+          state->connection_->receive_gof(
+            array_to_enum_map<V3C_UNIT_TYPE, uint8_t, NUM_V3C_UNIT_TYPES>(size_precisions),
+            array_to_enum_map<V3C_UNIT_TYPE, size_t, NUM_V3C_UNIT_TYPES>(num_nalus),
+            make_header_map_from_struct_array(header_defs),
+            timeout,
+            true
+          )
+        );
+      }
+      catch (const TimeoutException& e)
+      {
+        // Timeout trying to receive anymore gofs
+        std::cerr << "Timeout: " << e.what() << std::endl;
+        throw e;
+      }
 
-    if (!state->cur_gof_it_)
-    {
-      state->init_cur_gof();
+      if (!state->cur_gof_it_)
+      {
+        state->init_cur_gof();
+      }
     }
+    V3C_STATE_CATCH(true)
+  }
+
+  ERROR_TYPE receive_unit(V3C_State<V3C_Receiver>* state, const V3C_UNIT_TYPE unit_type, const uint8_t size_precision, const size_t expected_size, const HeaderStruct header_def, int timeout)
+  {
+    V3C_STATE_TRY(state)
+    {
+      if (!state->data_)
+      {
+        return state->set_error(ERROR_TYPE::DATA, "No data exists");
+      }
+
+      try {
+        state->data_->push_back(
+          state->connection_->receive_v3c_unit(
+            unit_type,
+            size_precision,
+            expected_size,
+            make_header_from_struct(header_def),
+            timeout
+          )
+        );
+      }
+      catch (const TimeoutException& e)
+      {
+        // Timeout trying to receive v3c unit
+        std::cerr << "Timeout: " << e.what() << " in unit type id " << static_cast<int>(unit_type) << std::endl;
+        throw TimeoutException(std::string(e.what()) + " in unit type id " + std::to_string(unit_type));
+      }
+
+      if (!state->cur_gof_it_)
+      {
+        state->init_cur_gof();
+      }
+    }
+    V3C_STATE_CATCH(true)
   }
 
   template<typename D>
@@ -455,5 +512,21 @@ namespace v3cRTPLib {
   void V3C_State<T>::print_cur_gof_info(const V3C_UNIT_TYPE type, const INFO_FMT fmt) const
   {
     print_info(this, static_cast<char*(V3C_State<T>::*)(size_t*, V3C_UNIT_TYPE, INFO_FMT)const>(&V3C_State<T>::get_cur_gof_info_string), type, fmt);
+  }
+  template<typename T>
+  ERROR_TYPE V3C_State<T>::get_error_flag() const
+  {
+    return error_;
+  }
+  template<typename T>
+  const char * V3C_State<T>::get_error_msg() const
+  {
+    return error_msg_.c_str();
+  }
+  template<typename T>
+  void V3C_State<T>::reset_error_flag() const
+  {
+    error_ = ERROR_TYPE::OK;
+    error_msg_ = std::string("");
   }
 }

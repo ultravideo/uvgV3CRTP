@@ -131,7 +131,7 @@ namespace v3cRTPLib {
     }
     else
     {
-      return SAMPLE_STREAM_HDR_LEN;
+      return (type != V3C_UNDEF) ? SAMPLE_STREAM_HDR_LEN : 0;
     }
   }
 
