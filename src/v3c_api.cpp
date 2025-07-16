@@ -447,7 +447,8 @@ namespace v3cRTPLib {
             size_precision,
             expected_size,
             make_header_from_struct(header_def),
-            timeout
+            timeout,
+            true // TODO: size is taken as the number of nalus add option to give size in bytes?
           )
         );
         state->is_gof_it_valid_ = false; // Might allocate a new gof so it may not be valid anymore
