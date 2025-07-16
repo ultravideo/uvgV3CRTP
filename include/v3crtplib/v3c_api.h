@@ -38,23 +38,31 @@ namespace v3cRTPLib {
     V3C_State(const char* bitstream, size_t len, INIT_FLAGS flags = INIT_FLAGS::ALL, const char* endpoint_address = "127.0.0.1", uint16_t port = 8890);
     ~V3C_State();
 
+    // For initing data stream
+    void init_sample_stream(const uint8_t size_precision);
+    void init_sample_stream(const char* bitstream, size_t len);
+
     // (Caller responsible for freeing char*)
     char* get_bitstream(size_t* length = nullptr) const;
     char* get_bitstream_cur_gof(size_t* length = nullptr) const;
     char* get_bitstream_cur_gof_unit(const V3C_UNIT_TYPE type, size_t* length = nullptr) const;
 
+    // Functions for manipulating current gof pointer of the state
+    ERROR_TYPE first_gof();// Resets cur gof iterator
+    ERROR_TYPE last_gof(); // Resets cur gof iterator
     ERROR_TYPE next_gof();
+    ERROR_TYPE prev_gof();
 
-    void init_sample_stream(const uint8_t size_precision);
-    void init_sample_stream(const char* bitstream, size_t len);
+    // Checking if cur gof has the specified unit type unit in it. If errors occur set error flag
+    bool cur_gof_has_unit(V3C_UNIT_TYPE unit) const;
 
-    // Functions for bitstream info writing (Caller responsible for freeing char*)
+    // Functions for bitstream info writing (Caller responsible for freeing char*). If errors occur return nullptr and set error flag 
     char* get_bitstream_info_string(size_t* out_len, const INFO_FMT fmt = INFO_FMT::LOGGING) const;
     char* get_cur_gof_info_string(size_t* out_len, const INFO_FMT fmt = INFO_FMT::LOGGING) const;
     char* get_cur_gof_info_string(size_t* out_len, const V3C_UNIT_TYPE type, const INFO_FMT fmt = INFO_FMT::LOGGING) const;
 
-    // Print current state (Sample stream etc.) to cout
-    void print_state(const bool print_nalus = false, size_t num_gofs = std::numeric_limits<size_t>::max()) const;
+    // Print current state (Sample stream etc.) to cout. If errors occur set error flag
+    ERROR_TYPE print_state(const bool print_nalus = false, size_t num_gofs = std::numeric_limits<size_t>::max()) const;
     void print_bitstream_info(const INFO_FMT fmt = INFO_FMT::LOGGING) const;
     void print_cur_gof_info(const INFO_FMT fmt = INFO_FMT::LOGGING) const;
     void print_cur_gof_info(const V3C_UNIT_TYPE type, const INFO_FMT fmt = INFO_FMT::LOGGING) const;
@@ -74,12 +82,13 @@ namespace v3cRTPLib {
     friend ERROR_TYPE receive_unit(V3C_State<V3C_Receiver>* state, const V3C_UNIT_TYPE unit_type, const uint8_t size_precision, const size_t expected_size, const HeaderStruct header_def, int timeout);
 
     void init_connection(INIT_FLAGS flags, const char* endpoint_address, uint16_t port);
-    void init_cur_gof();
+    void init_cur_gof(bool to_last = false);
 
     T* connection_;
 
     Sample_Stream<SAMPLE_STREAM_TYPE::V3C>* data_;
     void* cur_gof_it_;
+    bool is_gof_it_valid_;
 
     ERROR_TYPE set_error(ERROR_TYPE error, std::string msg) const;
     mutable ERROR_TYPE error_;

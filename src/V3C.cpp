@@ -360,6 +360,18 @@ namespace v3cRTPLib {
       if (has_field(data, INFO_FIELDS::ATLAS_NAL_SIZE_PREC)) process_prec<F>(stream, "AtlasNAL", get_as<uint8_t>(data, INFO_FIELDS::ATLAS_NAL_SIZE_PREC));
       if (has_field(data, INFO_FIELDS::VIDEO_NAL_SIZE_PREC)) process_prec<F>(stream, "Video", get_as<uint8_t>(data, INFO_FIELDS::VIDEO_NAL_SIZE_PREC));
     }
+    else if constexpr (std::is_same<DataClass, V3C_Gof>::value || std::is_same<DataClass, V3C_Unit>::value)
+    {
+      if (has_field(data, INFO_FIELDS::NUM_VPS)) process_num<F>(stream, "VPSs", get_as<size_t>(data, INFO_FIELDS::NUM_VPS));
+      if (has_field(data, INFO_FIELDS::NUM_AD_NALU))  process_num<F>(stream, "AD_NALU", get_as<size_t>(data, INFO_FIELDS::NUM_AD_NALU));
+      if (has_field(data, INFO_FIELDS::NUM_OVD_NALU)) process_num<F>(stream, "OVD_NALU", get_as<size_t>(data, INFO_FIELDS::NUM_OVD_NALU));
+      if (has_field(data, INFO_FIELDS::NUM_GVD_NALU)) process_num<F>(stream, "GVD_NALU", get_as<size_t>(data, INFO_FIELDS::NUM_GVD_NALU));
+      if (has_field(data, INFO_FIELDS::NUM_AVD_NALU)) process_num<F>(stream, "AVD_NALU", get_as<size_t>(data, INFO_FIELDS::NUM_AVD_NALU));
+      if (has_field(data, INFO_FIELDS::NUM_CAD_NALU)) process_num<F>(stream, "CAD_NALU", get_as<size_t>(data, INFO_FIELDS::NUM_PVD_NALU));
+      if (has_field(data, INFO_FIELDS::NUM_PVD_NALU)) process_num<F>(stream, "PVD_NALU", get_as<size_t>(data, INFO_FIELDS::NUM_PVD_NALU));
+      if (has_field(data, INFO_FIELDS::ATLAS_NAL_SIZE_PREC)) process_prec<F>(stream, "AtlasNAL", get_as<uint8_t>(data, INFO_FIELDS::ATLAS_NAL_SIZE_PREC));
+      if (has_field(data, INFO_FIELDS::VIDEO_NAL_SIZE_PREC)) process_prec<F>(stream, "Video", get_as<uint8_t>(data, INFO_FIELDS::VIDEO_NAL_SIZE_PREC));
+    }
 
     postample<F>(stream, data);
   }

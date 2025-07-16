@@ -146,14 +146,13 @@ int main(int argc, char* argv[]) {
     v3cRTPLib::INIT_FLAGS::AVD,
     "127.0.0.1", 8890 //Receiver address and port
   ); // Create a new state in a receiver configuration
-  //state.init_sample_stream(v3c_size_precision); //Don't init sample stream here since receive_bistream() will create one
-  std::cout << "Done" << std::endl;
 
   // Define necessary information for receiving a v3c stream
   uint8_t v3c_size_precision   = AUTO_PRECISION_MODE ? static_cast<uint8_t>(-1) : V3C_SIZE_PRECISION;
   uint8_t atlas_size_precision = AUTO_PRECISION_MODE ? static_cast<uint8_t>(-1) : AtlasNAL_SIZE_PRECISION;
   uint8_t video_size_precision = Video_SIZE_PRECISION;//AUTO_PRECISION_MODE ? static_cast<uint8_t>(-1) : Video_SIZE_PRECISION;
   
+  size_t expected_number_of_gof = EXPECTED_NUM_GOFs;
   size_t num_vps                = EXPECTED_NUM_VPSs;
   size_t num_ad_nalu            = EXPECTED_NUM_AD_NALU;
   size_t num_ovd_nalu           = EXPECTED_NUM_OVD_NALU;
@@ -191,6 +190,14 @@ int main(int argc, char* argv[]) {
     {v3cRTPLib::V3C_PVD, 0, 0},
     {v3cRTPLib::V3C_CAD, 0},
   };
+
+  if (out_of_band_available)
+  {
+    //TODO: get out of band info
+  }
+
+  state.init_sample_stream(v3c_size_precision); //Init sample stream here since receive_gof() assumes data is initialized
+  std::cout << "Done" << std::endl;
   //
   // ************************************************************************************
 
@@ -198,14 +205,42 @@ int main(int argc, char* argv[]) {
   //
   std::cout << "Receiving bitstream... " << std::endl;
 
-  while (state.get_error_flag() == v3cRTPLib::ERROR_TYPE::OK)
+  while (state.get_error_flag() == v3cRTPLib::ERROR_TYPE::OK && expected_number_of_gof > 0)
   {
     if (out_of_band_available)
     {
       //TODO: Get out of band info
     }
-    std::cout << "  Receiving GoF" << std::endl;
+    std::cout << "  Receiving GoF...";
     v3cRTPLib::receive_gof(&state, size_precisions, num_nalus, header_defs, TIMEOUT);
+
+    if (!out_of_band_available)
+    {
+      //Increment VPS id in headers when a new vps is expected (headers should be given as out-of-band info)
+      state.last_gof();
+      if (state.cur_gof_has_unit(v3cRTPLib::V3C_VPS) && num_nalus[v3cRTPLib::V3C_VPS] > 0)
+      {
+        num_nalus[v3cRTPLib::V3C_VPS] -= 1;
+        if (num_nalus[v3cRTPLib::V3C_VPS] != 0)
+        {
+          for (auto& unit_header : header_defs)
+          {
+            unit_header.vuh_v3c_parameter_set_id += 1;
+          }
+        }
+      }
+    }
+    if (state.get_error_flag() == v3cRTPLib::ERROR_TYPE::OK)
+    {
+      state.last_gof();
+      std::cout << " Received:" << std::endl;
+      state.print_cur_gof_info();
+    }
+    else
+    {
+      std::cout << std::endl;
+    }
+    expected_number_of_gof -= 1;
   }
 
   std::cout << "Stopping receiving: " << state.get_error_msg() << std::endl;
