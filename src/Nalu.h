@@ -1,11 +1,11 @@
 #pragma once
 
-#include "v3crtplib/global.h"
+#include "uvgv3crtp/global.h"
 
 #include <cstring>
 #include <memory>
 
-namespace v3cRTPLib {
+namespace uvgV3CRTP {
 
   class Nalu
   {

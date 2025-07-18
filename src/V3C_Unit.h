@@ -1,6 +1,6 @@
 #pragma once
 
-#include "v3crtplib/global.h"
+#include "uvgv3crtp/global.h"
 #include "Nalu.h"
 #include "Sample_Stream.h"
 
@@ -10,7 +10,7 @@
 #include <utility>
 #include <type_traits>
 
-namespace v3cRTPLib {
+namespace uvgV3CRTP {
 
   class V3C_Unit
   {

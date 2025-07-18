@@ -3,7 +3,7 @@
 #include <cstdint>
 #include <cstddef>
 
-namespace v3cRTPLib {
+namespace uvgV3CRTP {
 
   // vuh_unit_type definitions:
   enum V3C_UNIT_TYPE {

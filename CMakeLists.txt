@@ -8,16 +8,16 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 include(cmake/ProjectDetails.cmake)
-project(v3crtplib
-        VERSION ${v3crtplib_VER}
-        DESCRIPTION ${v3crtplib_DESCR}
+project(uvgv3crtp
+        VERSION ${uvgv3crtp_VER}
+        DESCRIPTION ${uvgv3crtp_DESCR}
         LANGUAGES CXX)
 
 include(GNUInstallDirs)
 
-option(V3CRTPLIB_DISABLE_EXAMPLES "Do not build examples" OFF)
-option(V3CRTPLIB_DISABLE_INSTALL "Do not install the library" OFF)
-option(V3CRTPLIB_DISABLE_WERROR "Ignore compiler warnings" ON)
+option(UVGV3CRTP_DISABLE_EXAMPLES "Do not build examples" OFF)
+option(UVGV3CRTP_DISABLE_INSTALL "Do not install the library" OFF)
+option(UVGV3CRTP_DISABLE_WERROR "Ignore compiler warnings" ON)
 
 # Take care of external dependencies (e.g. uvgRTP)
 include(dependencies/FindDependencies.cmake)
@@ -35,8 +35,8 @@ set_target_properties(${PROJECT_NAME} PROPERTIES
                                       SOVERSION "${PROJECT_VERSION_MAJOR}"
                                       VERSION "${LIBRARY_VERSION}")
 
-set(V3CRTPLIB_CXX_FLAGS "")
-set(V3CRTPLIB_LINKER_FLAGS "")
+set(UVGV3CRTP_CXX_FLAGS "")
+set(UVGV3CRTP_LINKER_FLAGS "")
 
 target_sources(${PROJECT_NAME} PRIVATE
     src/V3C.cpp           src/V3C.h
@@ -48,9 +48,9 @@ target_sources(${PROJECT_NAME} PRIVATE
     src/V3C_Sender.cpp    src/V3C_Sender.h
     src/v3c_api.cpp       
 
-    include/v3crtplib/v3c_api.h
-    include/v3crtplib/version.h
-    include/v3crtplib/global.h
+    include/uvgv3crtp/v3c_api.h
+    include/uvgv3crtp/version.h
+    include/uvgv3crtp/global.h
 )
 
 source_group(src src/.*)
@@ -79,7 +79,7 @@ endif()
 if(MSVC)
     target_compile_options(${PROJECT_NAME} PRIVATE /Zc:__cplusplus /W4)
 else()
-    if (V3CRTPLIB_DISABLE_WERROR)
+    if (UVGV3CRTP_DISABLE_WERROR)
         target_compile_options(${PROJECT_NAME} PRIVATE -Wall -Wextra -Wpedantic)
     else ()
         target_compile_options(${PROJECT_NAME} PRIVATE -Wall -Wextra -Wpedantic -Werror)
@@ -91,9 +91,9 @@ if (UNIX)
     # Try finding if pkg-config installed in the system
     find_package(PkgConfig)
     if(PkgConfig_FOUND)
-        list(APPEND V3CRTPLIB_LINKER_FLAGS "-lv3crtplib")
+        list(APPEND UVGV3CRTP_LINKER_FLAGS "-luvgv3crtp")
         if(CMAKE_USE_PTHREADS_INIT AND NOT CMAKE_HAVE_LIBC_PTHREAD)
-            list(APPEND V3CRTPLIB_LINKER_FLAGS "-lpthread")
+            list(APPEND UVGV3CRTP_LINKER_FLAGS "-lpthread")
         endif()
         # Check PKG_CONFIG_PATH, if not defined, use lib/pkgconfig
         if(NOT DEFINED ENV{PKG_CONFIG_PATH})
@@ -102,11 +102,11 @@ if (UNIX)
         endif(NOT DEFINED ENV{PKG_CONFIG_PATH})
 
         # Generate and install .pc file
-        string(REPLACE ";" " " V3CRTPLIB_CXX_FLAGS "${V3CRTPLIB_CXX_FLAGS}")
-        string(REPLACE ";" " " V3CRTPLIB_LINKER_FLAGS "${V3CRTPLIB_LINKER_FLAGS}")
-        configure_file("cmake/v3crtplib.pc.in" "v3crtplib.pc" @ONLY)
-        if (NOT V3CRTPLIB_DISABLE_INSTALL)
-            install(FILES ${CMAKE_CURRENT_BINARY_DIR}/v3crtplib.pc DESTINATION ${PKG_CONFIG_PATH}/)
+        string(REPLACE ";" " " UVGV3CRTP_CXX_FLAGS "${UVGV3CRTP_CXX_FLAGS}")
+        string(REPLACE ";" " " UVGV3CRTP_LINKER_FLAGS "${UVGV3CRTP_LINKER_FLAGS}")
+        configure_file("cmake/uvgv3crtp.pc.in" "uvgv3crtp.pc" @ONLY)
+        if (NOT UVGV3CRTP_DISABLE_INSTALL)
+            install(FILES ${CMAKE_CURRENT_BINARY_DIR}/uvgv3crtp.pc DESTINATION ${PKG_CONFIG_PATH}/)
         endif()
     else()
         message("pkg-config not found. Not generating pc file")
@@ -117,11 +117,11 @@ if(APPLE)
     target_link_libraries(${PROJECT_NAME} PRIVATE "-framework Security")
 endif()
 
-if (NOT V3CRTPLIB_DISABLE_EXAMPLES)
+if (NOT UVGV3CRTP_DISABLE_EXAMPLES)
     add_subdirectory(examples EXCLUDE_FROM_ALL)
 endif()
 
-if (NOT V3CRTPLIB_DISABLE_INSTALL)
+if (NOT UVGV3CRTP_DISABLE_INSTALL)
     # Install
     #
     # Define install target, install libraries and archives (static libraries) to "<prefix>/..."
@@ -136,8 +136,8 @@ if (NOT V3CRTPLIB_DISABLE_INSTALL)
                 DESTINATION ${CMAKE_INSTALL_BINDIR}
                 COMPONENT ${PROJECT_NAME}_Runtime)
 
-    #Copy all header files to the <prefix>/include/v3crtplib directory
-    file(GLOB DEPLOY_FILES_AND_DIRS "${CMAKE_SOURCE_DIR}/include/v3crtplib/*")
+    #Copy all header files to the <prefix>/include/uvgv3crtp directory
+    file(GLOB DEPLOY_FILES_AND_DIRS "${CMAKE_SOURCE_DIR}/include/uvgv3crtp/*")
     install(FILES ${DEPLOY_FILES_AND_DIRS}
             DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME}/
             COMPONENT ${PROJECT_NAME}_Develop)
@@ -155,13 +155,13 @@ if (NOT V3CRTPLIB_DISABLE_INSTALL)
             NAMESPACE ${PROJECT_NAME}::
             )
 
-    #Copy "cmake/v3crtplibConfig.cmake" to "${CMAKE_CURRENT_BINARY_DIR}/v3crtplib/v3crtplibConfig.cmake"
+    #Copy "cmake/uvgv3crtpConfig.cmake" to "${CMAKE_CURRENT_BINARY_DIR}/uvgv3crtp/uvgv3crtpConfig.cmake"
     configure_file(cmake/${PROJECT_NAME}Config.cmake
             "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}/${PROJECT_NAME}Config.cmake"
             COPYONLY
             )
 
-    #Copy "cmake/v3crtplibMacros.cmake" to "${CMAKE_CURRENT_BINARY_DIR}/v3crtplib/v3crtplibMacros.cmake"
+    #Copy "cmake/uvgv3crtpMacros.cmake" to "${CMAKE_CURRENT_BINARY_DIR}/uvgv3crtp/uvgv3crtpMacros.cmake"
     configure_file(cmake/${PROJECT_NAME}Macros.cmake
             "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}/${PROJECT_NAME}Macros.cmake"
             COPYONLY

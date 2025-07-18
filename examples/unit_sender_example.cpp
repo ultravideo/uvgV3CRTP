@@ -1,12 +1,12 @@
-#include <v3crtplib/version.h>
-#include <v3crtplib/v3c_api.h>
+#include <uvgv3crtp/version.h>
+#include <uvgv3crtp/v3c_api.h>
 
 #include <iostream>
 #include <fstream>
 #include <bitset>
 #include <cstdlib>
 
-static void compare_bitstreams(v3cRTPLib::V3C_State<v3cRTPLib::V3C_Sender>& state, std::unique_ptr<char[]>& buf, size_t length)
+static void compare_bitstreams(uvgV3CRTP::V3C_State<uvgV3CRTP::V3C_Sender>& state, std::unique_ptr<char[]>& buf, size_t length)
 {
   std::cout << "Check bitstream was parsed correctly..." << std::endl;
   size_t rec_len = 0;
@@ -34,7 +34,7 @@ static void compare_bitstreams(v3cRTPLib::V3C_State<v3cRTPLib::V3C_Sender>& stat
 }
 
 int main(int argc, char* argv[]) {
-  std::cout << "V3C RTP lib version: " << v3cRTPLib::get_version() << std::endl;
+  std::cout << "V3C RTP lib version: " << uvgV3CRTP::get_version() << std::endl;
   
   if (argc < 2) {
     std::cout << "Enter bitstream file name as input parameter" << std::endl;
@@ -84,12 +84,12 @@ int main(int argc, char* argv[]) {
   // ******** Initialize sample stream with input bitstream ***********
   //
   std::cout << "Initialize state... ";
-  v3cRTPLib::V3C_State<v3cRTPLib::V3C_Sender> state(buf.get(), length,
-    v3cRTPLib::INIT_FLAGS::VPS |
-    v3cRTPLib::INIT_FLAGS::AD  |
-    v3cRTPLib::INIT_FLAGS::OVD |
-    v3cRTPLib::INIT_FLAGS::GVD |
-    v3cRTPLib::INIT_FLAGS::AVD,
+  uvgV3CRTP::V3C_State<uvgV3CRTP::V3C_Sender> state(buf.get(), length,
+    uvgV3CRTP::INIT_FLAGS::VPS |
+    uvgV3CRTP::INIT_FLAGS::AD  |
+    uvgV3CRTP::INIT_FLAGS::OVD |
+    uvgV3CRTP::INIT_FLAGS::GVD |
+    uvgV3CRTP::INIT_FLAGS::AVD,
     "127.0.0.1", 8890 //Receiver address and port
   ); // Create a new state in a sender configuration
   //state.init_sample_stream(buf.get(), length); // sample stream already initialized when creating state
@@ -109,7 +109,7 @@ int main(int argc, char* argv[]) {
   state.print_bitstream_info();
 
   //size_t len = 0;
-  //auto info = std::unique_ptr<char, decltype(&free)>(state.get_bitstream_info_string(&len, v3cRTPLib::INFO_FMT::PARAM), &free);
+  //auto info = std::unique_ptr<char, decltype(&free)>(state.get_bitstream_info_string(&len, uvgV3CRTP::INFO_FMT::PARAM), &free);
   //std::cout << info.get() << std::endl;
   //
   // **************************************
@@ -118,15 +118,15 @@ int main(int argc, char* argv[]) {
   //
   std::cout << "Sending bitstream... " << std::endl;
 
-  while (state.get_error_flag() == v3cRTPLib::ERROR_TYPE::OK)
+  while (state.get_error_flag() == uvgV3CRTP::ERROR_TYPE::OK)
   {
-    for (uint8_t id = 0; id < v3cRTPLib::NUM_V3C_UNIT_TYPES; id++)
+    for (uint8_t id = 0; id < uvgV3CRTP::NUM_V3C_UNIT_TYPES; id++)
     {
-      if (!state.cur_gof_has_unit(v3cRTPLib::V3C_UNIT_TYPE(id))) continue;
+      if (!state.cur_gof_has_unit(uvgV3CRTP::V3C_UNIT_TYPE(id))) continue;
 
       // TODO: send side-channel info
 
-      v3cRTPLib::send_unit(&state, v3cRTPLib::V3C_UNIT_TYPE(id));
+      uvgV3CRTP::send_unit(&state, uvgV3CRTP::V3C_UNIT_TYPE(id));
       std::cout << "  Unit of type " << (int)id << " sent" << std::endl;
     }
 

@@ -3,7 +3,7 @@
 
 #include <numeric>
 
-namespace v3cRTPLib {
+namespace uvgV3CRTP {
 
 
   V3C_Unit& V3C_Gof::get(const V3C_UNIT_TYPE type)

@@ -1,12 +1,12 @@
-#include <v3crtplib/version.h>
-#include <v3crtplib/v3c_api.h>
+#include <uvgv3crtp/version.h>
+#include <uvgv3crtp/v3c_api.h>
 
 #include <iostream>
 #include <fstream>
 #include <bitset>
 #include <cstdlib>
 
-static void compare_bitstreams(v3cRTPLib::V3C_State<v3cRTPLib::V3C_Sender>& state, std::unique_ptr<char[]>& buf, size_t length)
+static void compare_bitstreams(uvgV3CRTP::V3C_State<uvgV3CRTP::V3C_Sender>& state, std::unique_ptr<char[]>& buf, size_t length)
 {
   std::cout << "Check bitstream was parsed correctly..." << std::endl;
   size_t rec_len = 0;
@@ -34,7 +34,7 @@ static void compare_bitstreams(v3cRTPLib::V3C_State<v3cRTPLib::V3C_Sender>& stat
 }
 
 int main(int argc, char* argv[]) {
-  std::cout << "V3C RTP lib version: " << v3cRTPLib::get_version() << std::endl;
+  std::cout << "V3C RTP lib version: " << uvgV3CRTP::get_version() << std::endl;
   
   if (argc < 2) {
     std::cout << "Enter bitstream file name as input parameter" << std::endl;
@@ -84,7 +84,7 @@ int main(int argc, char* argv[]) {
   // ******** Initialize sample stream with input bitstream ***********
   //
   std::cout << "Initialize state... ";
-  v3cRTPLib::V3C_State<v3cRTPLib::V3C_Sender> state(buf.get(), length); // Create a new state in a sender configuration
+  uvgV3CRTP::V3C_State<uvgV3CRTP::V3C_Sender> state(buf.get(), length); // Create a new state in a sender configuration
   //state.init_sample_stream(buf.get(), length); // sample stream already initialized when creating state
   std::cout << "Done" << std::endl;
   //
@@ -102,7 +102,7 @@ int main(int argc, char* argv[]) {
   state.print_bitstream_info();
 
   //size_t len = 0;
-  //auto info = std::unique_ptr<char, decltype(&free)>(state.get_bitstream_info_string(&len, v3cRTPLib::INFO_FMT::PARAM), &free);
+  //auto info = std::unique_ptr<char, decltype(&free)>(state.get_bitstream_info_string(&len, uvgV3CRTP::INFO_FMT::PARAM), &free);
   //std::cout << info.get() << std::endl;
   //
   // **************************************
@@ -110,7 +110,7 @@ int main(int argc, char* argv[]) {
   // ******** Send sample stream **********
   //
   std::cout << "Sending bitstream... ";
-  v3cRTPLib::send_bitstream(&state);
+  uvgV3CRTP::send_bitstream(&state);
   std::cout << "Done" << std::endl;
   //
   // **************************************

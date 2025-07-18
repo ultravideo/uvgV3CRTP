@@ -1,13 +1,13 @@
 #pragma once
 
-#include "v3crtplib/global.h"
+#include "uvgv3crtp/global.h"
 
 #include <memory>
 #include <type_traits>
 #include <iostream>
 #include <limits>
 
-namespace v3cRTPLib {
+namespace uvgV3CRTP {
 
   //Forward declaration
   class V3C_Sender;

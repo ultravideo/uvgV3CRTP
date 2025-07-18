@@ -12,7 +12,7 @@
 #include <string>
 #include <atomic>
 
-namespace v3cRTPLib {
+namespace uvgV3CRTP {
 
   class V3C_Sender :
     public V3C

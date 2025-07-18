@@ -12,7 +12,7 @@
 #include <string>
 #include <map>
 
-namespace v3cRTPLib {
+namespace uvgV3CRTP {
 
   class V3C_Receiver :
     public V3C

@@ -10,10 +10,10 @@
 #include <map>
 #include <exception>
 
-#include "v3crtplib/global.h"
+#include "uvgv3crtp/global.h"
 #include "Sample_Stream.h"
 
-namespace v3cRTPLib {
+namespace uvgV3CRTP {
 
   // Forward decleration
   class V3C_GOF;

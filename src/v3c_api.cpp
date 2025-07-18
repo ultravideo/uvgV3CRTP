@@ -1,4 +1,4 @@
-#include "v3crtplib/v3c_api.h"
+#include "uvgv3crtp/v3c_api.h"
 
 #include "V3C_Receiver.h"
 #include "V3C_Sender.h"
@@ -9,7 +9,7 @@
 #include <array>
 #include <sstream>
 
-namespace v3cRTPLib {
+namespace uvgV3CRTP {
 
   template class V3C_State<V3C_Sender>;
   template class V3C_State<V3C_Receiver>;
@@ -136,7 +136,7 @@ namespace v3cRTPLib {
   }
 
   template<typename T>
-  char* v3cRTPLib::V3C_State<T>::get_bitstream(size_t* length) const
+  char* V3C_State<T>::get_bitstream(size_t* length) const
   {
     if (!data_)
     {
@@ -293,24 +293,24 @@ namespace v3cRTPLib {
   {
     switch (V3C_Unit::V3C_Unit_Header::vuh_to_type(hs.vuh_unit_type))
     {
-    case v3cRTPLib::V3C_VPS:
-      return V3C_Unit::V3C_Unit_Header(v3cRTPLib::V3C_VPS);
+    case V3C_VPS:
+      return V3C_Unit::V3C_Unit_Header(V3C_VPS);
 
-    case v3cRTPLib::V3C_AD:
+    case V3C_AD:
       return V3C_Unit::V3C_Unit_Header(
         hs.vuh_unit_type,
         hs.vuh_v3c_parameter_set_id,
         hs.vuh_atlas_id
       );
 
-    case v3cRTPLib::V3C_OVD:
+    case V3C_OVD:
       return V3C_Unit::V3C_Unit_Header(
         hs.vuh_unit_type,
         hs.vuh_v3c_parameter_set_id,
         hs.vuh_atlas_id
       );
 
-    case v3cRTPLib::V3C_GVD:
+    case V3C_GVD:
       return V3C_Unit::V3C_Unit_Header(
         hs.vuh_unit_type,
         hs.vuh_v3c_parameter_set_id,
@@ -319,7 +319,7 @@ namespace v3cRTPLib {
         hs.vuh_auxiliary_video_flag
       );
 
-    case v3cRTPLib::V3C_AVD:
+    case V3C_AVD:
       return V3C_Unit::V3C_Unit_Header(
         hs.vuh_unit_type,
         hs.vuh_v3c_parameter_set_id,
@@ -330,14 +330,14 @@ namespace v3cRTPLib {
         hs.vuh_auxiliary_video_flag
       );
 
-    case v3cRTPLib::V3C_PVD:
+    case V3C_PVD:
       return V3C_Unit::V3C_Unit_Header(
         hs.vuh_unit_type,
         hs.vuh_v3c_parameter_set_id,
         hs.vuh_atlas_id
       );
 
-    case v3cRTPLib::V3C_CAD:
+    case V3C_CAD:
       return V3C_Unit::V3C_Unit_Header(
         hs.vuh_unit_type,
         hs.vuh_v3c_parameter_set_id

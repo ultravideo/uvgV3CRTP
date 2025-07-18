@@ -2,7 +2,7 @@
 
 #include <stdexcept>
 
-namespace v3cRTPLib {
+namespace uvgV3CRTP {
 
   Nalu::Nalu(const uint8_t nal_unit_type, const uint8_t nal_layer_id, const uint8_t nal_temporal_id, const char * const payload, const size_t payload_len, const V3C_UNIT_TYPE type):
     nal_unit_type_(nal_unit_type),
@@ -97,25 +97,25 @@ namespace v3cRTPLib {
   {
     switch (type)
     {
-    case v3cRTPLib::V3C_VPS:
+    case V3C_VPS:
       parse_header<V3C_VPS>();
       break;
-    case v3cRTPLib::V3C_AD:
+    case V3C_AD:
       parse_header<V3C_AD>();
       break;
-    case v3cRTPLib::V3C_OVD:
+    case V3C_OVD:
       parse_header<V3C_OVD>();
       break;
-    case v3cRTPLib::V3C_GVD:
+    case V3C_GVD:
       parse_header<V3C_GVD>();
       break;
-    case v3cRTPLib::V3C_AVD:
+    case V3C_AVD:
       parse_header<V3C_AVD>();
       break;
-    case v3cRTPLib::V3C_PVD:
+    case V3C_PVD:
       parse_header<V3C_PVD>();
       break;
-    case v3cRTPLib::V3C_CAD:
+    case V3C_CAD:
       parse_header<V3C_CAD>();
       break;
     default:
@@ -128,25 +128,25 @@ namespace v3cRTPLib {
   {
     switch (type)
     {
-    case v3cRTPLib::V3C_VPS:
+    case V3C_VPS:
       write_header<V3C_VPS>();
       break;
-    case v3cRTPLib::V3C_AD:
+    case V3C_AD:
       write_header<V3C_AD>();
       break;
-    case v3cRTPLib::V3C_OVD:
+    case V3C_OVD:
       write_header<V3C_OVD>();
       break;
-    case v3cRTPLib::V3C_GVD:
+    case V3C_GVD:
       write_header<V3C_GVD>();
       break;
-    case v3cRTPLib::V3C_AVD:
+    case V3C_AVD:
       write_header<V3C_AVD>();
       break;
-    case v3cRTPLib::V3C_PVD:
+    case V3C_PVD:
       write_header<V3C_PVD>();
       break;
-    case v3cRTPLib::V3C_CAD:
+    case V3C_CAD:
       write_header<V3C_CAD>();
       break;
     default:

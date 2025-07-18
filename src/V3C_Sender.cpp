@@ -2,7 +2,7 @@
 
 #include <stdexcept>
 
-namespace v3cRTPLib {
+namespace uvgV3CRTP {
 
   V3C_Sender::V3C_Sender(const INIT_FLAGS flags, const char * receiver_address, const uint16_t dst_port, int stream_flags): V3C(flags, receiver_address, dst_port, (stream_flags | RCE_SEND_ONLY))
   {

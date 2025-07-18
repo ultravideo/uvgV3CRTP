@@ -1,5 +1,5 @@
-#include <v3crtplib/version.h>
-#include <v3crtplib/v3c_api.h>
+#include <uvgv3crtp/version.h>
+#include <uvgv3crtp/v3c_api.h>
 
 #include <iostream>
 #include <fstream>
@@ -21,7 +21,7 @@ constexpr int TIMEOUT = 5000;
 constexpr bool AUTO_PRECISION_MODE = true;
 
 
-static void compare_bitstreams(v3cRTPLib::V3C_State<v3cRTPLib::V3C_Receiver>& state, std::unique_ptr<char[]>& buf, size_t length)
+static void compare_bitstreams(uvgV3CRTP::V3C_State<uvgV3CRTP::V3C_Receiver>& state, std::unique_ptr<char[]>& buf, size_t length)
 {
   std::cout << "Check bitstream was parsed correctly..." << std::endl;
   size_t rec_len = 0;
@@ -49,7 +49,7 @@ static void compare_bitstreams(v3cRTPLib::V3C_State<v3cRTPLib::V3C_Receiver>& st
 }
 
 int main(int argc, char* argv[]) {
-  std::cout << "V3C RTP lib version: " << v3cRTPLib::get_version() << std::endl;
+  std::cout << "V3C RTP lib version: " << uvgV3CRTP::get_version() << std::endl;
 
   bool orig_available = false;
   bool out_of_band_available = false;
@@ -138,12 +138,12 @@ int main(int argc, char* argv[]) {
   // ******** Initialize sample stream with default values or out_of_band info ***********
   //
   std::cout << "Initialize state... ";
-  v3cRTPLib::V3C_State<v3cRTPLib::V3C_Receiver> state(
-    v3cRTPLib::INIT_FLAGS::VPS |
-    v3cRTPLib::INIT_FLAGS::AD |
-    v3cRTPLib::INIT_FLAGS::OVD |
-    v3cRTPLib::INIT_FLAGS::GVD |
-    v3cRTPLib::INIT_FLAGS::AVD
+  uvgV3CRTP::V3C_State<uvgV3CRTP::V3C_Receiver> state(
+    uvgV3CRTP::INIT_FLAGS::VPS |
+    uvgV3CRTP::INIT_FLAGS::AD |
+    uvgV3CRTP::INIT_FLAGS::OVD |
+    uvgV3CRTP::INIT_FLAGS::GVD |
+    uvgV3CRTP::INIT_FLAGS::AVD
   ); // Create a new state in a receiver configuration
   //state.init_sample_stream(v3c_size_precision); //Don't init sample stream here since receive_bistream() will create one
   std::cout << "Done" << std::endl;
@@ -168,7 +168,7 @@ int main(int argc, char* argv[]) {
   }
 
   // Auto size precision if set to 0 (may not match orig bitstream)
-  uint8_t size_precisions[v3cRTPLib::NUM_V3C_UNIT_TYPES] = {
+  uint8_t size_precisions[uvgV3CRTP::NUM_V3C_UNIT_TYPES] = {
     0,
     atlas_size_precision,
     video_size_precision,
@@ -177,7 +177,7 @@ int main(int argc, char* argv[]) {
     video_size_precision,
     atlas_size_precision,
   };
-  size_t num_nalus[v3cRTPLib::NUM_V3C_UNIT_TYPES] = {
+  size_t num_nalus[uvgV3CRTP::NUM_V3C_UNIT_TYPES] = {
     num_vps,
     num_ad_nalu,
     num_ovd_nalu,
@@ -186,14 +186,14 @@ int main(int argc, char* argv[]) {
     num_pvd_nalu,
     num_cad_nalu,
   };
-  v3cRTPLib::HeaderStruct header_defs[v3cRTPLib::NUM_V3C_UNIT_TYPES] = {
-    {v3cRTPLib::V3C_VPS},
-    {v3cRTPLib::V3C_AD, 0, 0},
-    {v3cRTPLib::V3C_OVD, 0, 0},
-    {v3cRTPLib::V3C_GVD, 0, 0, 0, 0, 0, false},
-    {v3cRTPLib::V3C_AVD, 0, 0, 0, 0, 0, false},
-    {v3cRTPLib::V3C_PVD, 0, 0},
-    {v3cRTPLib::V3C_CAD, 0},
+  uvgV3CRTP::HeaderStruct header_defs[uvgV3CRTP::NUM_V3C_UNIT_TYPES] = {
+    {uvgV3CRTP::V3C_VPS},
+    {uvgV3CRTP::V3C_AD, 0, 0},
+    {uvgV3CRTP::V3C_OVD, 0, 0},
+    {uvgV3CRTP::V3C_GVD, 0, 0, 0, 0, 0, false},
+    {uvgV3CRTP::V3C_AVD, 0, 0, 0, 0, 0, false},
+    {uvgV3CRTP::V3C_PVD, 0, 0},
+    {uvgV3CRTP::V3C_CAD, 0},
   };
   //
   // ************************************************************************************
@@ -201,7 +201,7 @@ int main(int argc, char* argv[]) {
   // ******* Receive sample stream ********
   //
   std::cout << "Receiving bitstream... ";
-  v3cRTPLib::receive_bitstream(&state, v3c_size_precision, size_precisions, expected_number_of_gof, num_nalus, header_defs, TIMEOUT);
+  uvgV3CRTP::receive_bitstream(&state, v3c_size_precision, size_precisions, expected_number_of_gof, num_nalus, header_defs, TIMEOUT);
   std::cout << "Done" << std::endl;
   //
   // **************************************
@@ -221,7 +221,7 @@ int main(int argc, char* argv[]) {
   state.print_bitstream_info();
 
   //size_t len = 0;
-  //auto info = std::unique_ptr<char, decltype(&free)>(state.get_bitstream_info_string(&len, v3cRTPLib::INFO_FMT::PARAM), &free);
+  //auto info = std::unique_ptr<char, decltype(&free)>(state.get_bitstream_info_string(&len, uvgV3CRTP::INFO_FMT::PARAM), &free);
   //std::cout << info.get() << std::endl;
   //
   // **************************************

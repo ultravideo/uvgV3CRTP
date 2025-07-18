@@ -3,7 +3,7 @@
 #include <bitset>
 #include <utility>
 
-namespace v3cRTPLib {
+namespace uvgV3CRTP {
 
   //V3C_Receiver::V3C_Receiver()
   //{

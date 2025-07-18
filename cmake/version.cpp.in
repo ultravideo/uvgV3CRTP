@@ -1,21 +1,21 @@
-#include "v3crtplib/version.h"
+#include "uvgv3crtp/version.h"
 
 #include <cstdint>
 #include <string>
 
-namespace v3cRTPLib {
+namespace uvgV3CRTP {
 
-#ifdef V3CRTPLIB_RELEASE_COMMIT
-    std::string get_version() { return "@v3crtplib_VERSION@-release"; }
+#ifdef UVGV3CRTP_RELEASE_COMMIT
+    std::string get_version() { return "@uvgv3crtp_VERSION@-release"; }
 #else
-    std::string get_version() { return "@v3crtplib_VERSION@-@v3crtplib_GIT_HASH@"; }
+    std::string get_version() { return "@uvgv3crtp_VERSION@-@uvgv3crtp_GIT_HASH@"; }
 #endif
 
-uint16_t get_version_major() { return @v3crtplib_VERSION_MAJOR@; }
+uint16_t get_version_major() { return @uvgv3crtp_VERSION_MAJOR@; }
 
-uint16_t get_version_minor() { return @v3crtplib_VERSION_MINOR@; }
+uint16_t get_version_minor() { return @uvgv3crtp_VERSION_MINOR@; }
 
-uint16_t get_version_patch() { return @v3crtplib_VERSION_PATCH@; }
+uint16_t get_version_patch() { return @uvgv3crtp_VERSION_PATCH@; }
 
-std::string get_git_hash() {return "@v3crtplib_GIT_HASH@";}
+std::string get_git_hash() {return "@uvgv3crtp_GIT_HASH@";}
 }

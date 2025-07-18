@@ -9,7 +9,7 @@
 #include <sstream>
 #include <stdexcept>
 
-namespace v3cRTPLib {
+namespace uvgV3CRTP {
 
   // Explicitly define necessary instantiations so code is linked properly
   template void V3C::write_out_of_band_info<Sample_Stream<SAMPLE_STREAM_TYPE::V3C>>(std::ostream&, Sample_Stream<SAMPLE_STREAM_TYPE::V3C> const&, INFO_FMT);
@@ -182,19 +182,19 @@ namespace v3cRTPLib {
   {
     switch (type)
     {
-    case v3cRTPLib::V3C_VPS:
+    case V3C_VPS:
       return RTP_FORMAT_GENERIC;
-    case v3cRTPLib::V3C_AD:
+    case V3C_AD:
       return RTP_FORMAT_ATLAS;
-    case v3cRTPLib::V3C_OVD:
+    case V3C_OVD:
       return RTP_FORMAT_H265;
-    case v3cRTPLib::V3C_GVD:
+    case V3C_GVD:
       return RTP_FORMAT_H265;
-    case v3cRTPLib::V3C_AVD:
+    case V3C_AVD:
       return RTP_FORMAT_H265;
-    case v3cRTPLib::V3C_PVD:
+    case V3C_PVD:
       return RTP_FORMAT_H265;
-    case v3cRTPLib::V3C_CAD:
+    case V3C_CAD:
       return RTP_FORMAT_ATLAS;
     default:
       return RTP_FORMAT_GENERIC;
@@ -211,19 +211,19 @@ namespace v3cRTPLib {
   {
     switch (type)
     {
-    case v3cRTPLib::V3C_VPS:
+    case V3C_VPS:
       return RTP_NO_FLAGS;
-    case v3cRTPLib::V3C_AD:
+    case V3C_AD:
       return RTP_NO_FLAGS;
-    case v3cRTPLib::V3C_OVD:
+    case V3C_OVD:
       return RTP_NO_H26X_SCL;
-    case v3cRTPLib::V3C_GVD:
+    case V3C_GVD:
       return RTP_NO_H26X_SCL;
-    case v3cRTPLib::V3C_AVD:
+    case V3C_AVD:
       return RTP_NO_H26X_SCL;
-    case v3cRTPLib::V3C_PVD:
+    case V3C_PVD:
       return RTP_NO_H26X_SCL;
-    case v3cRTPLib::V3C_CAD:
+    case V3C_CAD:
       return RTP_NO_FLAGS;
     default:
       return RTP_NO_FLAGS;
@@ -426,30 +426,30 @@ namespace v3cRTPLib {
   {
     switch (data.type())
     {
-    case v3cRTPLib::V3C_VPS:
+    case V3C_VPS:
       get_as(info_data, INFO_FIELDS::NUM_VPS) += 1;
       break;
-    case v3cRTPLib::V3C_AD:
+    case V3C_AD:
       get_as(info_data, INFO_FIELDS::NUM_AD_NALU) = data.num_nalus();
       get_as<uint8_t>(info_data, INFO_FIELDS::ATLAS_NAL_SIZE_PREC) = data.nal_size_precision();
       break;
-    case v3cRTPLib::V3C_OVD:
+    case V3C_OVD:
       get_as(info_data, INFO_FIELDS::NUM_OVD_NALU) = data.num_nalus();
       get_as<uint8_t>(info_data, INFO_FIELDS::VIDEO_NAL_SIZE_PREC) = data.nal_size_precision();
       break;
-    case v3cRTPLib::V3C_GVD:
+    case V3C_GVD:
       get_as(info_data, INFO_FIELDS::NUM_GVD_NALU) = data.num_nalus();
       get_as<uint8_t>(info_data, INFO_FIELDS::VIDEO_NAL_SIZE_PREC) = data.nal_size_precision();
       break;
-    case v3cRTPLib::V3C_AVD:
+    case V3C_AVD:
       get_as(info_data, INFO_FIELDS::NUM_AVD_NALU) = data.num_nalus();
       get_as<uint8_t>(info_data, INFO_FIELDS::VIDEO_NAL_SIZE_PREC) = data.nal_size_precision();
       break;
-    case v3cRTPLib::V3C_PVD:
+    case V3C_PVD:
       get_as(info_data, INFO_FIELDS::NUM_PVD_NALU) = data.num_nalus();
       get_as<uint8_t>(info_data, INFO_FIELDS::VIDEO_NAL_SIZE_PREC) = data.nal_size_precision();
       break;
-    case v3cRTPLib::V3C_CAD:
+    case V3C_CAD:
       get_as(info_data, INFO_FIELDS::NUM_CAD_NALU) = data.num_nalus();
       get_as<uint8_t>(info_data, INFO_FIELDS::ATLAS_NAL_SIZE_PREC) = data.nal_size_precision();
       break;

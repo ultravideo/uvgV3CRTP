@@ -5,7 +5,7 @@
 #include <cassert>
 #include <stdexcept>
 
-namespace v3cRTPLib {
+namespace uvgV3CRTP {
 
 
   //template<typename Header, typename T, typename>

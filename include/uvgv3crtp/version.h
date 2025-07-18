@@ -3,7 +3,7 @@
 #include <cstdint>
 #include <string>
 
-namespace v3cRTPLib {
+namespace uvgV3CRTP {
 std::string get_version();
 uint16_t get_version_major();
 uint16_t get_version_minor();

@@ -2,12 +2,12 @@
 
 #include <map>
 
-#include "v3crtplib/global.h"
+#include "uvgv3crtp/global.h"
 //#include "V3C_Unit.h"
 
 #include <cstddef>
 
-namespace v3cRTPLib {
+namespace uvgV3CRTP {
 
   // Forward declare
   class V3C_Unit;

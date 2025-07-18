@@ -1,6 +1,6 @@
 #pragma once
 
-#include "v3crtplib/global.h"
+#include "uvgv3crtp/global.h"
 #include "V3C_Gof.h"
 //#include "V3C_Unit.h"
 #include "Nalu.h"
@@ -10,7 +10,7 @@
 #include <memory>
 #include <cstdlib>
 
-namespace v3cRTPLib {
+namespace uvgV3CRTP {
    //Forward declaration
   //class V3C_Gof;
   class V3C_Unit;

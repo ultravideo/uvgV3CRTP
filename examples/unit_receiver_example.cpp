@@ -1,5 +1,5 @@
-#include <v3crtplib/version.h>
-#include <v3crtplib/v3c_api.h>
+#include <uvgv3crtp/version.h>
+#include <uvgv3crtp/v3c_api.h>
 
 #include <iostream>
 #include <fstream>
@@ -21,7 +21,7 @@ constexpr int TIMEOUT = 5000;
 constexpr bool AUTO_PRECISION_MODE = false;
 
 
-static void compare_bitstreams(v3cRTPLib::V3C_State<v3cRTPLib::V3C_Receiver>& state, std::unique_ptr<char[]>& buf, size_t length)
+static void compare_bitstreams(uvgV3CRTP::V3C_State<uvgV3CRTP::V3C_Receiver>& state, std::unique_ptr<char[]>& buf, size_t length)
 {
   std::cout << "Check bitstream was parsed correctly..." << std::endl;
   size_t rec_len = 0;
@@ -49,7 +49,7 @@ static void compare_bitstreams(v3cRTPLib::V3C_State<v3cRTPLib::V3C_Receiver>& st
 }
 
 int main(int argc, char* argv[]) {
-  std::cout << "V3C RTP lib version: " << v3cRTPLib::get_version() << std::endl;
+  std::cout << "V3C RTP lib version: " << uvgV3CRTP::get_version() << std::endl;
 
   bool orig_available = false;
   bool out_of_band_available = false;
@@ -138,13 +138,13 @@ int main(int argc, char* argv[]) {
   // ******** Initialize sample stream with default values or out_of_band info ***********
   //
   std::cout << "Initialize state... ";
-  v3cRTPLib::V3C_UNIT_TYPE expected_units[] = { v3cRTPLib::V3C_VPS, v3cRTPLib::V3C_AD, v3cRTPLib::V3C_OVD, v3cRTPLib::V3C_GVD, v3cRTPLib::V3C_AVD };
-  v3cRTPLib::V3C_State<v3cRTPLib::V3C_Receiver> state(
-    v3cRTPLib::INIT_FLAGS::VPS |
-    v3cRTPLib::INIT_FLAGS::AD  |
-    v3cRTPLib::INIT_FLAGS::OVD |
-    v3cRTPLib::INIT_FLAGS::GVD |
-    v3cRTPLib::INIT_FLAGS::AVD,
+  uvgV3CRTP::V3C_UNIT_TYPE expected_units[] = { uvgV3CRTP::V3C_VPS, uvgV3CRTP::V3C_AD, uvgV3CRTP::V3C_OVD, uvgV3CRTP::V3C_GVD, uvgV3CRTP::V3C_AVD };
+  uvgV3CRTP::V3C_State<uvgV3CRTP::V3C_Receiver> state(
+    uvgV3CRTP::INIT_FLAGS::VPS |
+    uvgV3CRTP::INIT_FLAGS::AD  |
+    uvgV3CRTP::INIT_FLAGS::OVD |
+    uvgV3CRTP::INIT_FLAGS::GVD |
+    uvgV3CRTP::INIT_FLAGS::AVD,
     "127.0.0.1", 8890 //Receiver address and port
   ); // Create a new state in a receiver configuration
 
@@ -164,7 +164,7 @@ int main(int argc, char* argv[]) {
 
 
   // Auto size precision if set to 0 (may not match orig bitstream)
-  uint8_t size_precisions[v3cRTPLib::NUM_V3C_UNIT_TYPES] = {
+  uint8_t size_precisions[uvgV3CRTP::NUM_V3C_UNIT_TYPES] = {
     0,
     atlas_size_precision,
     video_size_precision,
@@ -173,7 +173,7 @@ int main(int argc, char* argv[]) {
     video_size_precision,
     atlas_size_precision,
   };
-  size_t num_nalus[v3cRTPLib::NUM_V3C_UNIT_TYPES] = {
+  size_t num_nalus[uvgV3CRTP::NUM_V3C_UNIT_TYPES] = {
     num_vps,
     num_ad_nalu,
     num_ovd_nalu,
@@ -182,14 +182,14 @@ int main(int argc, char* argv[]) {
     num_pvd_nalu,
     num_cad_nalu,
   };
-  v3cRTPLib::HeaderStruct header_defs[v3cRTPLib::NUM_V3C_UNIT_TYPES] = {
-    {v3cRTPLib::V3C_VPS},
-    {v3cRTPLib::V3C_AD, 0, 0},
-    {v3cRTPLib::V3C_OVD, 0, 0},
-    {v3cRTPLib::V3C_GVD, 0, 0, 0, 0, 0, false},
-    {v3cRTPLib::V3C_AVD, 0, 0, 0, 0, 0, false},
-    {v3cRTPLib::V3C_PVD, 0, 0},
-    {v3cRTPLib::V3C_CAD, 0},
+  uvgV3CRTP::HeaderStruct header_defs[uvgV3CRTP::NUM_V3C_UNIT_TYPES] = {
+    {uvgV3CRTP::V3C_VPS},
+    {uvgV3CRTP::V3C_AD, 0, 0},
+    {uvgV3CRTP::V3C_OVD, 0, 0},
+    {uvgV3CRTP::V3C_GVD, 0, 0, 0, 0, 0, false},
+    {uvgV3CRTP::V3C_AVD, 0, 0, 0, 0, 0, false},
+    {uvgV3CRTP::V3C_PVD, 0, 0},
+    {uvgV3CRTP::V3C_CAD, 0},
   };
 
   if (out_of_band_available)
@@ -206,7 +206,7 @@ int main(int argc, char* argv[]) {
   //
   std::cout << "Receiving bitstream... " << std::endl;
 
-  while (state.get_error_flag() == v3cRTPLib::ERROR_TYPE::OK && expected_number_of_gof > 0)
+  while (state.get_error_flag() == uvgV3CRTP::ERROR_TYPE::OK && expected_number_of_gof > 0)
   {
     for (auto unit_type : expected_units)
     {
@@ -215,21 +215,21 @@ int main(int argc, char* argv[]) {
         //TODO: Get out of band info
       }
       std::cout << "  Receiving Unit...";
-      v3cRTPLib::receive_unit(&state, unit_type, size_precisions[unit_type], num_nalus[unit_type], header_defs[unit_type], TIMEOUT);
+      uvgV3CRTP::receive_unit(&state, unit_type, size_precisions[unit_type], num_nalus[unit_type], header_defs[unit_type], TIMEOUT);
 
       if (!out_of_band_available)
       {
         //Increment VPS id in headers when a new vps is expected (headers should be given as out-of-band info)
-        if ((unit_type == v3cRTPLib::V3C_VPS) && num_nalus[v3cRTPLib::V3C_VPS] != 0)
+        if ((unit_type == uvgV3CRTP::V3C_VPS) && num_nalus[uvgV3CRTP::V3C_VPS] != 0)
         {
-          num_nalus[v3cRTPLib::V3C_VPS] -= 1;
+          num_nalus[uvgV3CRTP::V3C_VPS] -= 1;
         }
-        else if (num_nalus[v3cRTPLib::V3C_VPS] != 0)
+        else if (num_nalus[uvgV3CRTP::V3C_VPS] != 0)
         {
           header_defs[unit_type].vuh_v3c_parameter_set_id += 1;
         }
       }
-      if (state.get_error_flag() == v3cRTPLib::ERROR_TYPE::OK)
+      if (state.get_error_flag() == uvgV3CRTP::ERROR_TYPE::OK)
       {
         state.last_gof();
         std::cout << " Received:" << std::endl;
@@ -262,7 +262,7 @@ int main(int argc, char* argv[]) {
   state.print_bitstream_info();
 
   //size_t len = 0;
-  //auto info = std::unique_ptr<char, decltype(&free)>(state.get_bitstream_info_string(&len, v3cRTPLib::INFO_FMT::PARAM), &free);
+  //auto info = std::unique_ptr<char, decltype(&free)>(state.get_bitstream_info_string(&len, uvgV3CRTP::INFO_FMT::PARAM), &free);
   //std::cout << info.get() << std::endl;
   //
   // **************************************

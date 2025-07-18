@@ -7,7 +7,7 @@
 #include <numeric>
 #include <exception>
 
-namespace v3cRTPLib {
+namespace uvgV3CRTP {
 
   // Explicitly define necessary instantiations so code is linked properly
   template class Sample_Stream<SAMPLE_STREAM_TYPE::V3C>;
@@ -24,7 +24,7 @@ namespace v3cRTPLib {
   }
 
   template <typename SampleType, template <typename> class StreamType>
-  const SampleType & v3cRTPLib::SampleStreamIterator<SampleType, StreamType>::operator*() const
+  const SampleType & SampleStreamIterator<SampleType, StreamType>::operator*() const
   {
     return it->second;
   }
