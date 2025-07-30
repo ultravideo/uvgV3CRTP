@@ -44,6 +44,13 @@ namespace uvgV3CRTP {
   }
 
   template <typename SampleType, template <typename> class StreamType>
+  SampleStreamIterator<SampleType, StreamType>& SampleStreamIterator<SampleType, StreamType>::operator+=(difference_type n)
+  {
+    it += n;
+    return *this;
+  }
+
+  template <typename SampleType, template <typename> class StreamType>
   bool SampleStreamIterator<SampleType, StreamType>::operator==(const SampleStreamIterator & other) const
   {
     return it == other.it;
@@ -333,13 +340,13 @@ namespace uvgV3CRTP {
     // Start copying data from v3c units
     for (Iterator it = stream_.begin(); it != stream_.end(); ++it)
     {
-      if (ptr + (*it).size() > len) std::length_error(std::string("Error: about to exceed allocated memory in ") + __func__ +
+      if (ptr + (*it).size() > len) throw std::length_error(std::string("Error: about to exceed allocated memory in ") + __func__ +
         " at " + __FILE__ + ":" + std::to_string(__LINE__));
       // Write current gof
       ptr += write_bitstream(&bitstream.get()[ptr], it);
     }
 
-    if (ptr != len) std::logic_error(std::string("Error: size mismatch in ") + __func__ +
+    if (ptr != len) throw std::logic_error(std::string("Error: size mismatch in ") + __func__ +
       " at " + __FILE__ + ":" + std::to_string(__LINE__));
 
     return bitstream;
@@ -352,7 +359,7 @@ namespace uvgV3CRTP {
 
     size_t ptr = write_bitstream(bitstream.get(), gof_it);
 
-    if (ptr != len) std::logic_error(std::string("Error: size mismatch in ") + __func__ +
+    if (ptr != len) throw std::logic_error(std::string("Error: size mismatch in ") + __func__ +
       " at " + __FILE__ + ":" + std::to_string(__LINE__));
 
     return bitstream;
@@ -365,7 +372,7 @@ namespace uvgV3CRTP {
 
     size_t ptr = write_bitstream(bitstream.get(), gof_it, unit_type);
     
-    if (ptr != len) std::logic_error(std::string("Error: size mismatch in ") + __func__ +
+    if (ptr != len) throw std::logic_error(std::string("Error: size mismatch in ") + __func__ +
       " at " + __FILE__ + ":" + std::to_string(__LINE__));
 
     return bitstream;

@@ -19,10 +19,18 @@ namespace uvgV3CRTP {
   template <typename SampleType, template <typename> class StreamType>
   class SampleStreamIterator {
   public:
+    // Define the iterator traits
+    using iterator_category = typename StreamType<SampleType>::const_iterator::iterator_category;
+    using value_type = SampleType;
+    using difference_type = typename StreamType<SampleType>::const_iterator::difference_type;
+    using pointer = value_type*;
+    using reference = value_type&;
+
     SampleStreamIterator(typename StreamType<SampleType>::const_iterator it);
     const SampleType& operator*() const;
     SampleStreamIterator& operator++();
     SampleStreamIterator& operator--();
+    SampleStreamIterator& operator+=(difference_type n);
     bool operator==(const SampleStreamIterator& other) const;
     bool operator!=(const SampleStreamIterator& other) const;
 

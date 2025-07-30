@@ -65,7 +65,7 @@ namespace uvgV3CRTP {
     TIMEOUT,    // Receiving has timed out 
     DATA,       // Data related error, most likely data not initilized
     CONNECTION, // Connection related error, most likely connections not initialized
-    EOS,        // End of stream reached
+    EOS,        // End of stream reached, cur_gof points to end()
     INVALID_IT  // Current iterator is invalid, need to (re-)initialize it
   };
 

@@ -8,6 +8,7 @@
 #include <utility>
 #include <array>
 #include <sstream>
+#include <iterator>
 
 namespace uvgV3CRTP {
 
@@ -44,6 +45,33 @@ namespace uvgV3CRTP {
     return error_;
   }
 
+  template<typename T>
+  bool V3C_State<T>::validate_data() const
+  {
+    if (!data_)
+    {
+      set_error(ERROR_TYPE::DATA, "No data exists");
+      return false;
+    }
+    return true;
+  }
+
+  template<typename T>
+  bool V3C_State<T>::validate_cur_gof(bool check_eos) const
+  {
+    if (!cur_gof_it_ || !is_gof_it_valid_)
+    {
+      set_error(ERROR_TYPE::INVALID_IT, "Gof iterator not initialized correctly");
+      return false;
+    }
+    else if (check_eos && get_it(cur_gof_it_) == data_->end())
+    {
+      set_error(ERROR_TYPE::EOS, "End of stream reached");
+      return false;
+    }
+    return true;
+  }
+
 
   namespace {
     using Iterator = typename Sample_Stream<SAMPLE_STREAM_TYPE::V3C>::Iterator;
@@ -63,20 +91,20 @@ namespace uvgV3CRTP {
   }
 
   template<typename T>
-  V3C_State<T>::V3C_State(INIT_FLAGS flags, const char* endpoint_address, uint16_t port): connection_(nullptr), data_(nullptr), cur_gof_it_(nullptr), is_gof_it_valid_(false), error_(ERROR_TYPE::OK), error_msg_("")
+  V3C_State<T>::V3C_State(INIT_FLAGS flags, const char* endpoint_address, uint16_t port): connection_(nullptr), flags_(flags), data_(nullptr), cur_gof_it_(nullptr), is_gof_it_valid_(false), error_(ERROR_TYPE::OK), error_msg_("")
   {
     init_connection(flags, endpoint_address, port);
   }
 
   template<typename T>
-  V3C_State<T>::V3C_State(const uint8_t size_precision, INIT_FLAGS flags, const char* endpoint_address, uint16_t port) : connection_(nullptr), data_(nullptr), cur_gof_it_(nullptr), is_gof_it_valid_(false), error_(ERROR_TYPE::OK), error_msg_("")
+  V3C_State<T>::V3C_State(const uint8_t size_precision, INIT_FLAGS flags, const char* endpoint_address, uint16_t port) : connection_(nullptr), flags_(flags), data_(nullptr), cur_gof_it_(nullptr), is_gof_it_valid_(false), error_(ERROR_TYPE::OK), error_msg_("")
   {
     init_connection(flags, endpoint_address, port);
     init_sample_stream(size_precision);
   }
   
   template<typename T>
-  V3C_State<T>::V3C_State(const char* bitstream, size_t len, INIT_FLAGS flags, const char* endpoint_address, uint16_t port) : connection_(nullptr), data_(nullptr), cur_gof_it_(nullptr), is_gof_it_valid_(false), error_(ERROR_TYPE::OK), error_msg_("")
+  V3C_State<T>::V3C_State(const char* bitstream, size_t len, INIT_FLAGS flags, const char* endpoint_address, uint16_t port) : connection_(nullptr), flags_(flags), data_(nullptr), cur_gof_it_(nullptr), is_gof_it_valid_(false), error_(ERROR_TYPE::OK), error_msg_("")
   {
     init_connection(flags, endpoint_address, port);
     init_sample_stream(bitstream, len);
@@ -98,10 +126,10 @@ namespace uvgV3CRTP {
   }
 
   template<typename T>
-  void V3C_State<T>::init_sample_stream(const char * bitstream, size_t len)
+  ERROR_TYPE V3C_State<T>::init_sample_stream(const char * bitstream, size_t len)
   {
     data_ = new Sample_Stream<SAMPLE_STREAM_TYPE::V3C>(V3C::parse_bitstream(bitstream, len));
-    init_cur_gof();
+    return init_cur_gof();
   }
 
   template<typename T>
@@ -116,33 +144,37 @@ namespace uvgV3CRTP {
   }
 
   template<typename T>
-  void V3C_State<T>::init_cur_gof(bool to_last)
+  ERROR_TYPE V3C_State<T>::init_cur_gof(size_t to, bool reverse)
   {
     if ((cur_gof_it_ && is_gof_it_valid_) || !data_)
     {
-      set_error(ERROR_TYPE::DATA, "Gof iterator already initialized or no data exists");
-      return;
+      return set_error(ERROR_TYPE::DATA, "Gof iterator already initialized or no data exists");
     }
-    if (cur_gof_it_ && !is_gof_it_valid_) delete get_it_ptr(cur_gof_it_);
-    if (to_last)
+    if (cur_gof_it_ && !is_gof_it_valid_) {
+      delete get_it_ptr(cur_gof_it_);
+      cur_gof_it_ = nullptr;
+    }
+    if (to >= data_->num_samples()) {
+      return set_error(ERROR_TYPE::INVALID_IT, "Invalid iterator position: " + std::to_string(to) + ", data has only " + std::to_string(data_->num_samples()) + " GoFs");
+    }
+    if (reverse)
     {
-      cur_gof_it_ = unget_it_ptr(new Iterator(--(data_->end())));
+      cur_gof_it_ = unget_it_ptr(new Iterator(std::prev(data_->end(), to + 1)));
     }
     else
     {
-      cur_gof_it_ = unget_it_ptr(new Iterator(data_->begin()));
+      cur_gof_it_ = unget_it_ptr(new Iterator(std::next(data_->begin(), to)));
     }
     is_gof_it_valid_ = true;
+
+    return ERROR_TYPE::OK;
   }
 
   template<typename T>
   char* V3C_State<T>::get_bitstream(size_t* length) const
   {
-    if (!data_)
-    {
-      set_error(ERROR_TYPE::DATA, "No data exists");
-      return nullptr;
-    }
+    if (!validate_data()) return nullptr;
+
     if (length) *length = data_->size();
     return data_->get_bitstream().release();
   }
@@ -150,16 +182,9 @@ namespace uvgV3CRTP {
   template<typename T>
   char* V3C_State<T>::get_bitstream_cur_gof(size_t* length) const
   {
-    if (!data_)
-    {
-      set_error(ERROR_TYPE::DATA, "No data exists");
-      return nullptr;
-    }
-    else if (!cur_gof_it_ || !is_gof_it_valid_)
-    {
-      set_error(ERROR_TYPE::INVALID_IT, "Gof iterator not initialized correctly");
-      return nullptr;
-    }
+    if (!validate_data()) return nullptr;
+    if (!validate_cur_gof()) return nullptr;
+
     if (length) *length = data_->size(get_it(cur_gof_it_));
     return data_->get_bitstream(get_it(cur_gof_it_)).release();
   }
@@ -167,16 +192,9 @@ namespace uvgV3CRTP {
   template<typename T>
   char* V3C_State<T>::get_bitstream_cur_gof_unit(const V3C_UNIT_TYPE type, size_t* length) const
   {
-    if (!data_)
-    {
-      set_error(ERROR_TYPE::DATA, "No data exists");
-      return nullptr;
-    } 
-    else if (!cur_gof_it_ || !is_gof_it_valid_)
-    {
-      set_error(ERROR_TYPE::INVALID_IT, "Gof iterator not initialized correctly");
-      return nullptr;
-    }
+    if (!validate_data()) return nullptr;
+    if (!validate_cur_gof()) return nullptr;
+
     if (length) *length = data_->size(get_it(cur_gof_it_), type);
     return data_->get_bitstream(get_it(cur_gof_it_), type).release();
   }
@@ -184,40 +202,36 @@ namespace uvgV3CRTP {
   template<typename T>
   ERROR_TYPE V3C_State<T>::first_gof()
   {
-    if (!data_)
-    {
-      return set_error(ERROR_TYPE::DATA, "No data exists");
-    }
-    is_gof_it_valid_ = false; //Invalidate iterator so it can be initialized
-    init_cur_gof();
+    if (!validate_data()) return get_error_flag();
 
-    return ERROR_TYPE::OK;
+    is_gof_it_valid_ = false; //Invalidate iterator so it can be initialized
+    return init_cur_gof();
   }
 
   template<typename T>
   ERROR_TYPE V3C_State<T>::last_gof()
   {
-    if (!data_ )
-    {
-      return set_error(ERROR_TYPE::DATA, "No data exists");
-    }
-    is_gof_it_valid_ = false; //Invalidate iterator so it can be initialized
-    init_cur_gof(true);
+    if (!validate_data()) return get_error_flag();
 
-    return ERROR_TYPE::OK;
+    is_gof_it_valid_ = false; //Invalidate iterator so it can be initialized
+    return init_cur_gof(0, true);
+  }
+
+  template<typename T>
+  ERROR_TYPE V3C_State<T>::gof_at(size_t i)
+  {
+    if (!validate_data()) return get_error_flag();
+
+    is_gof_it_valid_ = false; //Invalidate iterator so it can be initialized
+    return init_cur_gof(i);
   }
 
   template<typename T>
   ERROR_TYPE V3C_State<T>::next_gof()
   {
-    if (!data_)
-    {
-      return set_error(ERROR_TYPE::DATA, "No data exists");
-    } 
-    else if (!cur_gof_it_ || !is_gof_it_valid_)
-    {
-      return set_error(ERROR_TYPE::INVALID_IT, "Gof iterator not initialized correctly");
-    }
+    if (!validate_data()) return get_error_flag();
+    if (!validate_cur_gof(false)) return get_error_flag();
+
     ++get_it(cur_gof_it_);
 
     if (get_it(cur_gof_it_) == data_->end()) return set_error(ERROR_TYPE::EOS, "End of stream reached");
@@ -228,14 +242,9 @@ namespace uvgV3CRTP {
   template<typename T>
   ERROR_TYPE V3C_State<T>::prev_gof()
   {
-    if (!data_)
-    {
-      return set_error(ERROR_TYPE::DATA, "No data exists");
-    } 
-    else if (!cur_gof_it_ || !is_gof_it_valid_)
-    {
-      return set_error(ERROR_TYPE::INVALID_IT, "Gof iterator not initialized correctly");
-    }
+    if (!validate_data()) return get_error_flag();
+    if (!validate_cur_gof(false)) return get_error_flag();
+
     // Only decrement iterator if not at the first element
     if (get_it(cur_gof_it_) != data_->begin()) --get_it(cur_gof_it_);
 
@@ -247,22 +256,30 @@ namespace uvgV3CRTP {
   template<typename T>
   bool V3C_State<T>::cur_gof_has_unit(V3C_UNIT_TYPE unit) const
   {
-    if (!data_)
-    {
-      set_error(ERROR_TYPE::DATA, "No data exists");
-      return false;
-    } 
-    else if (!cur_gof_it_ || !is_gof_it_valid_)
-    {
-      set_error(ERROR_TYPE::INVALID_IT, "Gof iterator not initialized correctly");
-      return false;
-    }
+    if (!validate_data()) return false;
+    if (!validate_cur_gof()) return false;
+
     return (*get_it(cur_gof_it_)).find(unit) != (*get_it(cur_gof_it_)).end();
+  }
+
+  template<typename T>
+  bool V3C_State<T>::cur_gof_is_full() const
+  {
+    if (!validate_data()) return false;
+    if (!validate_cur_gof()) return false;
+
+    for (const auto type : V3C::unit_types_from_init_flag(flags_))
+    {
+      if (!cur_gof_has_unit(type)) return false;
+    }
+    return true;
   }
 
 
   ERROR_TYPE send_bitstream(V3C_State<V3C_Sender>* state)
   {
+    if (!state->validate_data()) return state->get_error_flag();
+
     V3C_STATE_TRY(state)
     {
       state->connection_->send_bitstream(*state->data_);
@@ -272,6 +289,9 @@ namespace uvgV3CRTP {
 
   ERROR_TYPE send_gof(V3C_State<V3C_Sender>* state)
   {
+    if (!state->validate_data()) return state->get_error_flag();
+    if (!state->validate_cur_gof()) return state->get_error_flag();
+
     V3C_STATE_TRY(state)
     {
       state->connection_->send_gof(*get_it(state->cur_gof_it_));
@@ -281,6 +301,9 @@ namespace uvgV3CRTP {
 
   ERROR_TYPE send_unit(V3C_State<V3C_Sender>* state, V3C_UNIT_TYPE type)
   {
+    if (!state->validate_data()) return state->get_error_flag();
+    if (!state->validate_cur_gof()) return state->get_error_flag();
+
     V3C_STATE_TRY(state)
     {
       state->connection_->send_v3c_unit((*get_it(state->cur_gof_it_)).get(type));
@@ -373,6 +396,8 @@ namespace uvgV3CRTP {
 
   ERROR_TYPE receive_bitstream(V3C_State<V3C_Receiver>* state, const uint8_t v3c_size_precision, const uint8_t size_precisions[NUM_V3C_UNIT_TYPES], const size_t expected_num_gofs, const size_t num_nalus[NUM_V3C_UNIT_TYPES], const HeaderStruct header_defs[NUM_V3C_UNIT_TYPES], int timeout)
   {
+    if (!state->validate_data()) return state->get_error_flag();
+
     V3C_STATE_TRY(state)
     {
       if (state->data_)
@@ -397,6 +422,8 @@ namespace uvgV3CRTP {
 
   ERROR_TYPE receive_gof(V3C_State<V3C_Receiver>* state, const uint8_t size_precisions[NUM_V3C_UNIT_TYPES], const size_t num_nalus[NUM_V3C_UNIT_TYPES], const HeaderStruct header_defs[NUM_V3C_UNIT_TYPES], int timeout)
   {
+    if (!state->validate_data()) return state->get_error_flag();
+    
     V3C_STATE_TRY(state)
     {
       if (!state->data_)
@@ -405,6 +432,7 @@ namespace uvgV3CRTP {
 
       }
       try {
+        state->is_gof_it_valid_ = false;
         state->data_->push_back(
           state->connection_->receive_gof(
             array_to_enum_map<V3C_UNIT_TYPE, uint8_t, NUM_V3C_UNIT_TYPES>(size_precisions),
@@ -414,7 +442,6 @@ namespace uvgV3CRTP {
             true
           )
         );
-        state->is_gof_it_valid_ = false;
       }
       catch (const TimeoutException& e)
       {
@@ -433,6 +460,8 @@ namespace uvgV3CRTP {
 
   ERROR_TYPE receive_unit(V3C_State<V3C_Receiver>* state, const V3C_UNIT_TYPE unit_type, const uint8_t size_precision, const size_t expected_size, const HeaderStruct header_def, int timeout)
   {
+    if (!state->validate_data()) return state->get_error_flag();
+    
     V3C_STATE_TRY(state)
     {
       if (!state->data_)
@@ -441,6 +470,7 @@ namespace uvgV3CRTP {
       }
 
       try {
+        state->is_gof_it_valid_ = false; // Might allocate a new gof so it may not be valid anymore
         state->data_->push_back(
           state->connection_->receive_v3c_unit(
             unit_type,
@@ -451,7 +481,6 @@ namespace uvgV3CRTP {
             true // TODO: size is taken as the number of nalus add option to give size in bytes?
           )
         );
-        state->is_gof_it_valid_ = false; // Might allocate a new gof so it may not be valid anymore
       }
       catch (const TimeoutException& e)
       {
@@ -487,11 +516,7 @@ namespace uvgV3CRTP {
   template<typename T>
   char * V3C_State<T>::get_bitstream_info_string(size_t* out_len, const INFO_FMT fmt) const
   {
-    if (!data_)
-    {
-      set_error(ERROR_TYPE::DATA, "No data exists");
-      return nullptr;
-    } 
+    if (!validate_data()) return nullptr;
 
     return write_info(*data_, out_len, fmt);
   }
@@ -499,16 +524,8 @@ namespace uvgV3CRTP {
   template<typename T>
   char * V3C_State<T>::get_cur_gof_info_string(size_t* out_len, const INFO_FMT fmt) const
   {
-    if (!data_)
-    {
-      set_error(ERROR_TYPE::DATA, "No data exists");
-      return nullptr;
-    }
-    else if (!cur_gof_it_ || !is_gof_it_valid_)
-    {
-      set_error(ERROR_TYPE::INVALID_IT, "Gof iterator not initialized correctly");
-      return nullptr;
-    }
+    if (!validate_data()) return nullptr;
+    if (!validate_cur_gof()) return nullptr;
 
     return write_info(*get_it(cur_gof_it_), out_len, fmt);
   }
@@ -516,16 +533,8 @@ namespace uvgV3CRTP {
   template<typename T>
   char * V3C_State<T>::get_cur_gof_info_string(size_t* out_len, const V3C_UNIT_TYPE type, const INFO_FMT fmt) const
   {
-    if (!data_)
-    {
-      set_error(ERROR_TYPE::DATA, "No data exists");
-      return nullptr;
-    } 
-    else if (!cur_gof_it_ || !is_gof_it_valid_)
-    {
-      set_error(ERROR_TYPE::INVALID_IT, "Gof iterator not initialized correctly");
-      return nullptr;
-    }
+    if (!validate_data()) return nullptr;
+    if (!validate_cur_gof()) return nullptr;
 
     return write_info((*get_it(cur_gof_it_)).get(type), out_len, fmt);
   }
@@ -534,14 +543,8 @@ namespace uvgV3CRTP {
   template<typename T>
   ERROR_TYPE V3C_State<T>::print_state(const bool print_nalus, size_t num_gofs) const
   {
-    if (!data_)
-    {
-      return set_error(ERROR_TYPE::DATA, "No data exists");
-    }
-    else if (!cur_gof_it_ || !is_gof_it_valid_)
-    {
-      return set_error(ERROR_TYPE::INVALID_IT, "Gof iterator not initialized correctly");
-    }
+    if (!validate_data()) return get_error_flag();
+    if (!validate_cur_gof(false)) return get_error_flag();
 
     std::cout << "Sample stream of size " << data_->size() << " (v3c size precision: " << (int)data_->size_precision() << ") with state:" << std::endl;
     size_t gof_ind = 0;
