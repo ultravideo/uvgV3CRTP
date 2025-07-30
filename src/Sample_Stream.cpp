@@ -97,6 +97,17 @@ namespace uvgV3CRTP {
     stream_.emplace_back(std::move(size_map), std::move(gof));
   }
 
+  void Sample_Stream<SAMPLE_STREAM_TYPE::V3C>::push_back(Sample_Stream<SAMPLE_STREAM_TYPE::V3C>&& other)
+  {
+    // Insert existing stream from other to the end of this stream
+    stream_.insert(stream_.end(),
+      std::make_move_iterator(other.stream_.begin()),
+      std::make_move_iterator(other.stream_.end()));
+    
+    // Clear other stream
+    other.stream_.clear();
+  }
+
   /* Calculate GOF size
     *
     + 1 byte of Sample Stream Precision
@@ -324,6 +335,17 @@ namespace uvgV3CRTP {
   {
     const auto size = unit.size();
     stream_.emplace_back( size, std::move(unit));
+  }
+
+  void Sample_Stream<SAMPLE_STREAM_TYPE::NAL>::push_back(Sample_Stream<SAMPLE_STREAM_TYPE::NAL>&& other)
+  {
+    // Insert existing stream from other to the end of this stream
+    stream_.insert(stream_.end(),
+      std::make_move_iterator(other.stream_.begin()),
+      std::make_move_iterator(other.stream_.end()));
+
+    // Clear other stream
+    other.stream_.clear();
   }
 
 

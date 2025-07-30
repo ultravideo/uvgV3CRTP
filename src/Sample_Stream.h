@@ -65,6 +65,7 @@ namespace uvgV3CRTP {
 
     void push_back(V3C_Unit&& unit);
     void push_back(V3C_Gof&& gof);
+    void push_back(Sample_Stream<SAMPLE_STREAM_TYPE::V3C>&& other);
 
     size_t size() const;
     size_t size(Iterator gof_it) const;
@@ -114,6 +115,7 @@ namespace uvgV3CRTP {
     Sample_Stream& operator=(Sample_Stream&&) = default;
 
     void push_back(Nalu&& unit);
+    void push_back(Sample_Stream<SAMPLE_STREAM_TYPE::NAL>&& other);
 
     size_t size() const;
     size_t num_samples() const;
