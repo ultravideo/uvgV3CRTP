@@ -57,6 +57,17 @@ namespace uvgV3CRTP {
   }
 
   template<typename T>
+  bool V3C_State<T>::validate_nodata() const
+  {
+    if (data_)
+    {
+      set_error(ERROR_TYPE::DATA, "Data already exists");
+      return false;
+    }
+    return true;
+  }
+
+  template<typename T>
   bool V3C_State<T>::validate_cur_gof(bool check_eos) const
   {
     if (!cur_gof_it_ || !is_gof_it_valid_)
@@ -115,21 +126,59 @@ namespace uvgV3CRTP {
   V3C_State<T>::~V3C_State()
   {
     if (connection_) delete connection_;
-    if (data_)       delete data_;
-    if (cur_gof_it_) delete get_it_ptr(cur_gof_it_);
+    clear_sample_stream();
   }
 
   template<typename T>
-  void V3C_State<T>::init_sample_stream(const uint8_t size_precision)
+  ERROR_TYPE V3C_State<T>::init_sample_stream(const uint8_t size_precision)
   {
+    if (!validate_nodata()) return get_error_flag();
     data_ = new Sample_Stream<SAMPLE_STREAM_TYPE::V3C>(size_precision);
+    return ERROR_TYPE::OK;
   }
 
   template<typename T>
   ERROR_TYPE V3C_State<T>::init_sample_stream(const char * bitstream, size_t len)
   {
+    if (!validate_nodata()) return get_error_flag();
     data_ = new Sample_Stream<SAMPLE_STREAM_TYPE::V3C>(V3C::parse_bitstream(bitstream, len));
     return init_cur_gof();
+  }
+
+  template<typename T>
+  ERROR_TYPE V3C_State<T>::append_to_sample_stream(const char* bitstream, size_t len, bool has_sample_stream_headers)
+  {
+    if (!validate_data()) return get_error_flag();
+    // Adding to sample stream will invalidate the current gof iterator
+    is_gof_it_valid_ = false;
+    V3C_STATE_TRY(this)
+    {
+      if (has_sample_stream_headers)
+      {
+        data_->push_back(
+          V3C::parse_bitstream(bitstream, len)
+        );
+      }
+      else
+      {
+        data_->push_back(
+          V3C_Unit(bitstream, len)
+        );
+      }
+    }
+    V3C_STATE_CATCH(true)
+  
+    return ERROR_TYPE::OK;
+  }
+
+  template<typename T>
+  void V3C_State<T>::clear_sample_stream()
+  {
+    if (data_)       delete data_;
+    if (cur_gof_it_) delete get_it_ptr(cur_gof_it_);
+    data_ = nullptr;
+    cur_gof_it_ = nullptr;
+    is_gof_it_valid_ = false;
   }
 
   template<typename T>
@@ -396,15 +445,10 @@ namespace uvgV3CRTP {
 
   ERROR_TYPE receive_bitstream(V3C_State<V3C_Receiver>* state, const uint8_t v3c_size_precision, const uint8_t size_precisions[NUM_V3C_UNIT_TYPES], const size_t expected_num_gofs, const size_t num_nalus[NUM_V3C_UNIT_TYPES], const HeaderStruct header_defs[NUM_V3C_UNIT_TYPES], int timeout)
   {
-    if (!state->validate_data()) return state->get_error_flag();
+    if (!state->validate_nodata()) return state->get_error_flag();
 
     V3C_STATE_TRY(state)
     {
-      if (state->data_)
-      {
-        return state->set_error(ERROR_TYPE::DATA, "No data exists");
-      }
-
       state->data_ = new Sample_Stream<SAMPLE_STREAM_TYPE::V3C>(
         state->connection_->receive_bitstream(
           v3c_size_precision,

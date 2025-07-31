@@ -38,10 +38,13 @@ namespace uvgV3CRTP {
     V3C_State(const char* bitstream, size_t len, INIT_FLAGS flags = INIT_FLAGS::ALL, const char* endpoint_address = "127.0.0.1", uint16_t port = 8890);
     ~V3C_State();
 
-    // For initing and appending data stream
-    void init_sample_stream(const uint8_t size_precision);
+    // For initing data stream
+    ERROR_TYPE init_sample_stream(const uint8_t size_precision);
     ERROR_TYPE init_sample_stream(const char* bitstream, size_t len);
-    //ERROR_TYPE append_to_sample_stream(const char* bitstream, size_t len, bool is_sample_stream = false);
+    // Append to sample stream. If has_sample_stream_headers is true, the bitstream should contain sample stream headers, otherwise bitstream should contain one V3C unit of size len
+    ERROR_TYPE append_to_sample_stream(const char* bitstream, size_t len, bool has_sample_stream_headers = false);
+
+    void clear_sample_stream(); // Clear sample stream data, i.e. delete data_ and cur_gof_it_
 
     // (Caller responsible for freeing char*)
     char* get_bitstream(size_t* length = nullptr) const;
@@ -99,6 +102,7 @@ namespace uvgV3CRTP {
     mutable std::string error_msg_;
 
     bool validate_data() const;
+    bool validate_nodata() const;
     bool validate_cur_gof(bool check_eos = true) const;
   };
 

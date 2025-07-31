@@ -100,10 +100,16 @@ namespace uvgV3CRTP {
   void Sample_Stream<SAMPLE_STREAM_TYPE::V3C>::push_back(Sample_Stream<SAMPLE_STREAM_TYPE::V3C>&& other)
   {
     // Insert existing stream from other to the end of this stream
-    stream_.insert(stream_.end(),
-      std::make_move_iterator(other.stream_.begin()),
-      std::make_move_iterator(other.stream_.end()));
-    
+    for (auto& [size_map, gof] : other.stream_)
+    {
+      // Push v3c units back individually in case of partial gofs
+      for (auto& [type, unit] : gof)
+      {
+        // Push each unit to this stream
+        this->push_back(std::move(unit));
+      }
+    }
+
     // Clear other stream
     other.stream_.clear();
   }
