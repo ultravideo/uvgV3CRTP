@@ -38,6 +38,24 @@ namespace uvgV3CRTP {
     return _err;                                                 \
   }
 
+  namespace {
+    using Iterator = typename Sample_Stream<SAMPLE_STREAM_TYPE::V3C>::Iterator;
+  }
+
+  static inline Iterator& get_it(void * it_ptr)
+  {
+    return *(static_cast<Iterator*>(it_ptr));
+  }
+  static inline Iterator* get_it_ptr(void * it_ptr)
+  {
+    return static_cast<Iterator*>(it_ptr);
+  }
+  static inline void* unget_it_ptr(Iterator * it_ptr)
+  {
+    return static_cast<void *>(it_ptr);
+  }
+
+
   template<typename T>
   ERROR_TYPE V3C_State<T>::set_error(ERROR_TYPE error, std::string msg) const {
     error_ = error;
@@ -83,23 +101,6 @@ namespace uvgV3CRTP {
     return true;
   }
 
-
-  namespace {
-    using Iterator = typename Sample_Stream<SAMPLE_STREAM_TYPE::V3C>::Iterator;
-  }
-
-  static inline Iterator& get_it(void * it_ptr)
-  {
-    return *(static_cast<Iterator*>(it_ptr));
-  }
-  static inline Iterator* get_it_ptr(void * it_ptr)
-  {
-    return static_cast<Iterator*>(it_ptr);
-  }
-  static inline void* unget_it_ptr(Iterator * it_ptr)
-  {
-    return static_cast<void *>(it_ptr);
-  }
 
   template<typename T>
   V3C_State<T>::V3C_State(INIT_FLAGS flags, const char* endpoint_address, uint16_t port): connection_(nullptr), flags_(flags), data_(nullptr), cur_gof_it_(nullptr), is_gof_it_valid_(false), error_(ERROR_TYPE::OK), error_msg_("")
