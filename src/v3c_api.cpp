@@ -103,20 +103,41 @@ namespace uvgV3CRTP {
 
 
   template<typename T>
-  V3C_State<T>::V3C_State(INIT_FLAGS flags, const char* endpoint_address, uint16_t port): connection_(nullptr), flags_(flags), data_(nullptr), cur_gof_it_(nullptr), is_gof_it_valid_(false), error_(ERROR_TYPE::OK), error_msg_("")
+  V3C_State<T>::V3C_State(INIT_FLAGS flags, const char* endpoint_address, uint16_t port):
+    connection_(nullptr), 
+    flags_(flags), 
+    data_(nullptr), 
+    cur_gof_it_(nullptr), 
+    is_gof_it_valid_(false),
+    cur_gof_ind_(0),
+    error_(ERROR_TYPE::OK), error_msg_("")
   {
     init_connection(flags, endpoint_address, port);
   }
 
   template<typename T>
-  V3C_State<T>::V3C_State(const uint8_t size_precision, INIT_FLAGS flags, const char* endpoint_address, uint16_t port) : connection_(nullptr), flags_(flags), data_(nullptr), cur_gof_it_(nullptr), is_gof_it_valid_(false), error_(ERROR_TYPE::OK), error_msg_("")
+  V3C_State<T>::V3C_State(const uint8_t size_precision, INIT_FLAGS flags, const char* endpoint_address, uint16_t port) :
+    connection_(nullptr), 
+    flags_(flags), 
+    data_(nullptr), 
+    cur_gof_it_(nullptr), 
+    is_gof_it_valid_(false), 
+    cur_gof_ind_(0),
+    error_(ERROR_TYPE::OK), error_msg_("")
   {
     init_connection(flags, endpoint_address, port);
     init_sample_stream(size_precision);
   }
   
   template<typename T>
-  V3C_State<T>::V3C_State(const char* bitstream, size_t len, INIT_FLAGS flags, const char* endpoint_address, uint16_t port) : connection_(nullptr), flags_(flags), data_(nullptr), cur_gof_it_(nullptr), is_gof_it_valid_(false), error_(ERROR_TYPE::OK), error_msg_("")
+  V3C_State<T>::V3C_State(const char* bitstream, size_t len, INIT_FLAGS flags, const char* endpoint_address, uint16_t port) :
+    connection_(nullptr), 
+    flags_(flags), 
+    data_(nullptr), 
+    cur_gof_it_(nullptr), 
+    is_gof_it_valid_(false), 
+    cur_gof_ind_(0),
+    error_(ERROR_TYPE::OK), error_msg_("")
   {
     init_connection(flags, endpoint_address, port);
     init_sample_stream(bitstream, len);
@@ -169,7 +190,7 @@ namespace uvgV3CRTP {
     }
     V3C_STATE_CATCH(true)
   
-    return ERROR_TYPE::OK;
+    return gof_at(cur_gof_ind_);
   }
 
   template<typename T>
@@ -180,6 +201,7 @@ namespace uvgV3CRTP {
     data_ = nullptr;
     cur_gof_it_ = nullptr;
     is_gof_it_valid_ = false;
+    cur_gof_ind_ = 0;
   }
 
   template<typename T>
@@ -210,10 +232,12 @@ namespace uvgV3CRTP {
     if (reverse)
     {
       cur_gof_it_ = unget_it_ptr(new Iterator(std::prev(data_->end(), to + 1)));
+      cur_gof_ind_ = data_->num_samples() - to - 1; // Reverse index
     }
     else
     {
       cur_gof_it_ = unget_it_ptr(new Iterator(std::next(data_->begin(), to)));
+      cur_gof_ind_ = to;
     }
     is_gof_it_valid_ = true;
 
@@ -283,6 +307,7 @@ namespace uvgV3CRTP {
     if (!validate_cur_gof(false)) return get_error_flag();
 
     ++get_it(cur_gof_it_);
+    ++cur_gof_ind_;
 
     if (get_it(cur_gof_it_) == data_->end()) return set_error(ERROR_TYPE::EOS, "End of stream reached");
 
@@ -296,7 +321,11 @@ namespace uvgV3CRTP {
     if (!validate_cur_gof(false)) return get_error_flag();
 
     // Only decrement iterator if not at the first element
-    if (get_it(cur_gof_it_) != data_->begin()) --get_it(cur_gof_it_);
+    if (get_it(cur_gof_it_) != data_->begin())
+    {
+      --get_it(cur_gof_it_);
+      --cur_gof_ind_;
+    }
 
     if (get_it(cur_gof_it_) == data_->end()) return set_error(ERROR_TYPE::EOS, "End of stream reached");
 
@@ -490,7 +519,7 @@ namespace uvgV3CRTP {
       }
       catch (const TimeoutException& e)
       {
-        // Timeout trying to receive anymore gofs
+        // Timeout trying to receive more gofs
         std::cerr << "Timeout: " << e.what() << std::endl;
         throw e;
       }
@@ -498,6 +527,10 @@ namespace uvgV3CRTP {
       if (!state->cur_gof_it_)
       {
         state->init_cur_gof();
+      }
+      else
+      {
+        state->gof_at(state->cur_gof_ind_); // Reset gof to previous position
       }
     }
     V3C_STATE_CATCH(true)
@@ -537,6 +570,10 @@ namespace uvgV3CRTP {
       if (!state->cur_gof_it_)
       {
         state->init_cur_gof();
+      }
+      else
+      {
+        state->gof_at(state->cur_gof_ind_); // Reset gof to previous position
       }
     }
     V3C_STATE_CATCH(true)
@@ -593,20 +630,21 @@ namespace uvgV3CRTP {
 
     std::cout << "Sample stream of size " << data_->size() << " (v3c size precision: " << (int)data_->size_precision() << ") with state:" << std::endl;
     size_t gof_ind = 0;
-    for (auto it = data_->begin(); it != data_->end(); ++it)
+    for (const auto& gof: *data_)
     {
-      if (gof_ind >= num_gofs) {
+      if (gof_ind >= num_gofs) 
+      {
         std::cout << "." << std::endl << "." << std::endl << "." << std::endl << "(showing only the first " << (int)num_gofs << " Gofs)" << std::endl;
         break;
       }
 
       std::cout << "|--Gof #" << gof_ind;
-      if (it == get_it(cur_gof_it_)) std::cout << " [cur gof]";
+      if (gof_ind == cur_gof_ind_) std::cout << " [cur gof]";
       std::cout << std::endl;
 
-      for (const auto&[type, unit] : *it)
+      for (const auto& [type, unit] : gof) 
       {
-        switch (type)
+        switch (type) 
         {
         case V3C_VPS:
           std::cout << "|  |--V3C unit of type VPS ";

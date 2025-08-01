@@ -96,6 +96,7 @@ namespace uvgV3CRTP {
     Sample_Stream<SAMPLE_STREAM_TYPE::V3C>* data_;
     void* cur_gof_it_;
     bool is_gof_it_valid_;
+    size_t cur_gof_ind_;
 
     ERROR_TYPE set_error(ERROR_TYPE error, std::string msg) const;
     mutable ERROR_TYPE error_;
