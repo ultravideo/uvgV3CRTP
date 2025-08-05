@@ -630,6 +630,7 @@ namespace uvgV3CRTP {
 
     std::cout << "Sample stream of size " << data_->size() << " (v3c size precision: " << (int)data_->size_precision() << ") with state:" << std::endl;
     size_t gof_ind = 0;
+    size_t ptr = SAMPLE_STREAM_HDR_LEN; // Track bitstream pointer, start at size precision
     for (const auto& gof: *data_)
     {
       if (gof_ind >= num_gofs) 
@@ -638,7 +639,7 @@ namespace uvgV3CRTP {
         break;
       }
 
-      std::cout << "|--Gof #" << gof_ind;
+      std::cout << "|--Gof #" << gof_ind << " (bitstream pos: " << (int)ptr << ", size (in sample stream): " << gof.size() << " (" << data_->size(std::next(data_->begin(), gof_ind)) << "))";
       if (gof_ind == cur_gof_ind_) std::cout << " [cur gof]";
       std::cout << std::endl;
 
@@ -673,7 +674,7 @@ namespace uvgV3CRTP {
           std::cout << "    not a valid unit type";
           break;
         }
-        std::cout << "(nal size precision: " << (int)unit.nal_size_precision() << ", size: " << unit.size();
+        std::cout << "(bitstream pos: " << (int)ptr << ", nal size precision: " << (int)unit.nal_size_precision() << ", size: " << unit.size();
         if (type != V3C_VPS)
         {
           std::cout << ", num nalu: " << unit.num_nalus();
@@ -687,6 +688,7 @@ namespace uvgV3CRTP {
             std::cout << "|  |  |--NAL unit of type " << (int)nal.get().nal_unit_type() << " (size: " << nal.get().size() << ")" << std::endl;
           }
         }
+        ptr += data_->size(std::next(data_->begin(), gof_ind), type);
       }
 
       gof_ind++;
