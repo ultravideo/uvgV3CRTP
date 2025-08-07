@@ -137,7 +137,7 @@ namespace uvgV3CRTP {
 
   uint8_t V3C::parse_size_precision(const char * const bitstream)
   {
-    return (bitstream[0] >> 5) + 1;
+    return ((bitstream[0] >> 5) & 0b111) + 1;
   }
 
   size_t V3C::write_size_precision(char * const bitstream, const uint8_t precision)
