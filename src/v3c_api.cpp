@@ -188,7 +188,7 @@ namespace uvgV3CRTP {
         );
       }
     }
-    V3C_STATE_CATCH(true)
+    V3C_STATE_CATCH(false)
   
     return gof_at(cur_gof_ind_);
   }
