@@ -54,7 +54,9 @@ int main(int argc, char* argv[]) {
   bool orig_available = false;
   bool out_of_band_available = false;
   std::unique_ptr<char[]> buf;
+  std::unique_ptr<char[]> outofband_buf;
   size_t length = 0;
+  size_t outofband_len = 0;
   if (argc >= 2) {
     //TODO: read orig bitstream for comparison
     std::cout << "Reading input bitstream... ";
@@ -96,47 +98,47 @@ int main(int argc, char* argv[]) {
     orig_available = true;
   }
   if (argc >= 3) {
-    //TODO: read out-of-band data
-    //std::cout << "Reading input bitstream... ";
-    //// Open file
-    //std::ifstream bitstream(argv[1]);
+    std::cout << "Reading out-of-band info... ";
+    // Open file
+    std::ifstream outofband(argv[2]);
 
-    //if (!bitstream.is_open()) {
-    //  //TODO: Raise exception
-    //  return EXIT_FAILURE;
-    //}
+    if (!outofband.is_open()) {
+      std::cerr << std::endl << "File open failed. Make sure sender has been started and has written out-of-band info.";
+      return EXIT_FAILURE;
+    }
 
-    ////get length of file
-    //bitstream.seekg(0, bitstream.end);
-    //size_t length = bitstream.tellg();
-    //bitstream.seekg(0, bitstream.beg);
+    //get length of file
+    outofband.seekg(0, outofband.end);
+    outofband_len = outofband.tellg();
+    outofband.seekg(0, outofband.beg);
 
-    ///* Read the file and its size */
-    //if (length == 0) {
-    //  return EXIT_FAILURE; //TODO: Raise exception
-    //}
-    //std::cout << "Done" << std::endl;
+    /* Read the file and its size */
+    if (outofband_len == 0) {
+      std::cerr << std::endl << "File empty. Make sure sender has been started and has written out-of-band info.";
+      return EXIT_FAILURE;
+    }
+    std::cout << "Done" << std::endl;
 
-    //std::cout << "Reading file to buffer... ";
-    //auto buf = std::make_unique<char[]>(length);
-    //if (buf == nullptr) return EXIT_FAILURE;//TODO: Raise exception
+    std::cout << "Reading out of band info to buffer... ";
+    outofband_buf = std::make_unique<char[]>(outofband_len);
+    if (outofband_buf == nullptr) return EXIT_FAILURE;//TODO: Raise exception
 
-    //// read into char*
-    //if (!(bitstream.read(buf.get(), length))) // read up to the size of the buffer
-    //{
-    //  if (!bitstream.eof())
-    //  {
-    //    //TODO: Raise exception
-    //    buf = nullptr; // Release allocated memory before returning nullptr
-    //    return EXIT_FAILURE;
-    //  }
-    //}
-    //std::cout << "Done" << std::endl;
+    // read into char*
+    if (!(outofband.read(outofband_buf.get(), outofband_len))) // read up to the size of the buffer
+    {
+      if (!outofband.eof())
+      {
+        //TODO: Raise exception
+        outofband_buf = nullptr; // Release allocated memory before returning nullptr
+        return EXIT_FAILURE;
+      }
+    }
+    std::cout << "Done" << std::endl;
     out_of_band_available = true;
   }
 
-  // ******** Initialize sample stream with default values or out_of_band info ***********
-  //
+// ******** Initialize sample stream with default values or out_of_band info ***********
+//
   std::cout << "Initialize state... ";
   uvgV3CRTP::V3C_State<uvgV3CRTP::V3C_Receiver> state(
     uvgV3CRTP::INIT_FLAGS::VPS |
@@ -164,7 +166,24 @@ int main(int argc, char* argv[]) {
 
   if (out_of_band_available)
   {
-    //TODO: set outofband info
+    std::cout << "Parsing out-of-band info... ";
+
+    uvgV3CRTP::BitstreamInfo outofband_info = {};
+    if (!uvgV3CRTP::parse_out_of_band_info(outofband_buf.get(), outofband_len, uvgV3CRTP::INFO_FMT::RAW, outofband_info))
+    {
+        std::cerr << std::endl << "Failed to parse out-of-band info" << std::endl;
+        return EXIT_FAILURE;
+    }
+    expected_number_of_gof = outofband_info.num_gofs;
+    num_vps = outofband_info.num_vps;
+    num_ad_nalu = outofband_info.num_ad_nalu;
+    num_ovd_nalu = outofband_info.num_ovd_nalu;
+    num_gvd_nalu = outofband_info.num_gvd_nalu;
+    num_avd_nalu = outofband_info.num_avd_nalu;
+    num_pvd_nalu = outofband_info.num_pvd_nalu;
+    num_cad_nalu = outofband_info.num_cad_nalu;
+
+    std::cout << "Done" << std::endl;
   }
 
   // Auto size precision if set to 0 (may not match orig bitstream)
@@ -195,16 +214,16 @@ int main(int argc, char* argv[]) {
     {uvgV3CRTP::V3C_PVD, 0, 0},
     {uvgV3CRTP::V3C_CAD, 0},
   };
-  //
-  // ************************************************************************************
+//
+// ************************************************************************************
 
-  // ******* Receive sample stream ********
-  //
+// ******* Receive sample stream ********
+//
   std::cout << "Receiving bitstream... ";
   uvgV3CRTP::receive_bitstream(&state, v3c_size_precision, size_precisions, expected_number_of_gof, num_nalus, header_defs, TIMEOUT);
   std::cout << "Done" << std::endl;
-  //
-  // **************************************
+//
+// **************************************
 
   if (orig_available)
   {
@@ -212,8 +231,8 @@ int main(int argc, char* argv[]) {
     compare_bitstreams(state, buf, length);
   }
 
-  // ******** Print info about sample stream **********
-  //
+// ******** Print info about sample stream **********
+//
   // Print state and bitstream info
   state.print_state(false);
 
@@ -223,8 +242,8 @@ int main(int argc, char* argv[]) {
   //size_t len = 0;
   //auto info = std::unique_ptr<char, decltype(&free)>(state.get_bitstream_info_string(&len, uvgV3CRTP::INFO_FMT::PARAM), &free);
   //std::cout << info.get() << std::endl;
-  //
-  // **************************************
+//
+// **************************************
 
   return EXIT_SUCCESS;
 }

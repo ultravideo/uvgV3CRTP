@@ -355,6 +355,79 @@ namespace uvgV3CRTP {
   }
 
 
+  bool parse_out_of_band_info(const char* const in_data, size_t len, INFO_FMT fmt, BitstreamInfo& out_info)
+  {
+    if (fmt != INFO_FMT::RAW && fmt != INFO_FMT::BASE64)
+    {
+      //TODO: Give error
+      return false; // Only RAW and BASE64 formats are supported
+    }
+
+    // Write in data to string stream
+    std::stringstream stream;
+    stream.write(in_data, len);
+
+    // Parse the out-of-band info
+    auto out_data = V3C::read_out_of_band_info<Sample_Stream<SAMPLE_STREAM_TYPE::V3C>>(stream, fmt);
+    std::string output = stream.str();
+
+    // copy output to out_info
+    if(out_data.find(INFO_FIELDS::V3C_SIZE_PREC) != out_data.end())
+    {
+      out_info.v3c_size_precision = out_data[INFO_FIELDS::V3C_SIZE_PREC].ui8;
+    }
+    if(out_data.find(INFO_FIELDS::VIDEO_NAL_SIZE_PREC) != out_data.end())
+    {
+      out_info.video_nal_size_precision = out_data[INFO_FIELDS::VIDEO_NAL_SIZE_PREC].ui8;
+    }
+    if(out_data.find(INFO_FIELDS::ATLAS_NAL_SIZE_PREC) != out_data.end())
+    {
+      out_info.atlas_nal_size_precision = out_data[INFO_FIELDS::ATLAS_NAL_SIZE_PREC].ui8;
+    }
+    if(out_data.find(INFO_FIELDS::NUM_GOF) != out_data.end())
+    {
+      out_info.num_gofs = out_data[INFO_FIELDS::NUM_GOF].s;
+    }
+    if(out_data.find(INFO_FIELDS::NUM_VPS) != out_data.end())
+    {
+      out_info.num_vps = out_data[INFO_FIELDS::NUM_VPS].s;
+    }
+    if(out_data.find(INFO_FIELDS::NUM_AD_NALU) != out_data.end())
+    {
+      out_info.num_ad_nalu = out_data[INFO_FIELDS::NUM_AD_NALU].s;
+    }
+    if(out_data.find(INFO_FIELDS::NUM_OVD_NALU) != out_data.end())
+    {
+      out_info.num_ovd_nalu = out_data[INFO_FIELDS::NUM_OVD_NALU].s;
+    }
+    if(out_data.find(INFO_FIELDS::NUM_GVD_NALU) != out_data.end())
+    {
+      out_info.num_gvd_nalu = out_data[INFO_FIELDS::NUM_GVD_NALU].s;
+    }
+    if(out_data.find(INFO_FIELDS::NUM_AVD_NALU) != out_data.end())
+    {
+      out_info.num_avd_nalu = out_data[INFO_FIELDS::NUM_AVD_NALU].s;
+    }
+    if(out_data.find(INFO_FIELDS::NUM_PVD_NALU) != out_data.end())
+    {
+      out_info.num_pvd_nalu = out_data[INFO_FIELDS::NUM_PVD_NALU].s;
+    }
+    if(out_data.find(INFO_FIELDS::NUM_CAD_NALU) != out_data.end())
+    {
+      out_info.num_cad_nalu = out_data[INFO_FIELDS::NUM_CAD_NALU].s;
+    }
+    if(out_data.find(INFO_FIELDS::VAR_NAL_PREC) != out_data.end())
+    {
+      out_info.var_nal_prec = out_data[INFO_FIELDS::VAR_NAL_PREC].b;
+    }
+    if(out_data.find(INFO_FIELDS::VAR_NAL_NUM) != out_data.end())
+    {
+      out_info.var_nal_num = out_data[INFO_FIELDS::VAR_NAL_NUM].b;
+    }
+
+    return true;
+  }
+
   ERROR_TYPE send_bitstream(V3C_State<V3C_Sender>* state)
   {
     if (!state->validate_data()) return state->get_error_flag();

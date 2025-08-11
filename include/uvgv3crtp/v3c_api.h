@@ -29,6 +29,22 @@ namespace uvgV3CRTP {
     bool vuh_auxiliary_video_flag;
   };
 
+  struct BitstreamInfo {
+    size_t num_gofs;
+    size_t num_vps;
+    size_t num_ad_nalu;
+    size_t num_ovd_nalu;
+    size_t num_gvd_nalu;
+    size_t num_avd_nalu;
+    size_t num_pvd_nalu;
+    size_t num_cad_nalu;
+    uint8_t v3c_size_precision;
+    uint8_t video_nal_size_precision;
+    uint8_t atlas_nal_size_precision;
+    bool var_nal_prec;
+    bool var_nal_num;
+  };
+
   template <typename T>
   class V3C_State {
   public:
@@ -107,7 +123,8 @@ namespace uvgV3CRTP {
     bool validate_cur_gof(bool check_eos = true) const;
   };
 
-
+  // Functions for parsing out-of-band info
+  bool parse_out_of_band_info(const char* const in_data, size_t len, INFO_FMT fmt, BitstreamInfo& out_info);
 
   // Functions that operate on V3C_State
   ERROR_TYPE send_bitstream(V3C_State<V3C_Sender>* state);

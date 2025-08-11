@@ -15,6 +15,7 @@ namespace uvgV3CRTP {
   template void V3C::write_out_of_band_info<Sample_Stream<SAMPLE_STREAM_TYPE::V3C>>(std::ostream&, Sample_Stream<SAMPLE_STREAM_TYPE::V3C> const&, INFO_FMT);
   template void V3C::write_out_of_band_info<V3C_Gof>(std::ostream&, V3C_Gof const&, INFO_FMT);
   template void V3C::write_out_of_band_info<V3C_Unit>(std::ostream&, V3C_Unit const&, INFO_FMT);
+  template V3C::InfoDataType V3C::read_out_of_band_info<Sample_Stream<SAMPLE_STREAM_TYPE::V3C>>(std::istream&, INFO_FMT);
   template size_t V3C::sample_stream_header_size<SAMPLE_STREAM_TYPE::V3C>(V3C_UNIT_TYPE type);
   template size_t V3C::sample_stream_header_size<SAMPLE_STREAM_TYPE::NAL>(V3C_UNIT_TYPE type);
 
@@ -273,12 +274,23 @@ namespace uvgV3CRTP {
   {
     if constexpr (F == INFO_FMT::RAW)
     {
+      assert(field); //Suppress warnings
       in >> value;
     }
     else
     {
-      in >> field;
-      in >> value;
+      auto field_it = std::istreambuf_iterator<char>(in);
+      std::string in_field(field);
+      std::string field_str(field_it, std::next(field_it, in_field.size()));
+      if (field_str == in_field)
+      {
+        // Read the value if the field matches
+        in >> value;
+      }
+      else
+      {
+        throw std::runtime_error("Field mismatch: expected '" + in_field + "' but got '" + field_str + "'");
+      }
     }
   }
 
@@ -325,9 +337,9 @@ namespace uvgV3CRTP {
   }
 
   template <INFO_FMT F = INFO_FMT::LOGGING, typename Stream, typename T>
-  static inline void postample(Stream&, T& data)
+  static inline void postample(Stream&, T&)
   {
-
+    
   }
   template <INFO_FMT F = INFO_FMT::LOGGING, typename T>
   static inline void postample(std::ostream& ostream, T& data)
