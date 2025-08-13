@@ -89,6 +89,13 @@ namespace uvgV3CRTP {
       static uint8_t type_to_vuh(const V3C_UNIT_TYPE type);
     };
 
+    V3C_Unit():
+      header_(V3C_Unit_Header()),
+      payload_(static_cast<uint8_t>(-1), get_sample_stream_header_size())
+    {
+      // Default constructor for V3C_Unit, not a valid unit
+    }
+
     //V3C_Unit(const V3C_Unit_Header& header, uint8_t size_precision);
     // size_precision template needed to disambiguate from other constructor
     template<typename Header, typename T, typename = typename std::enable_if_t<std::is_same_v<T, uint8_t>>>

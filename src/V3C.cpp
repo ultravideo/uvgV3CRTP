@@ -261,11 +261,18 @@ namespace uvgV3CRTP {
     if constexpr (F == INFO_FMT::RAW)
     {
       assert(field); //Suppress warnings
-      out << value;
+      out.write(reinterpret_cast<const char*>(&value), sizeof(TV));
     }
     else
     {
-      out << field << value << std::endl;
+      if constexpr (std::is_integral<typename std::decay<TV>::type>::value)
+      {
+        out << field << static_cast<int>(value) << std::endl;
+      }
+      else 
+      {
+        out << field << value << std::endl;
+      }
     }
   }
 
@@ -275,13 +282,13 @@ namespace uvgV3CRTP {
     if constexpr (F == INFO_FMT::RAW)
     {
       assert(field); //Suppress warnings
-      in >> value;
+      in.read(reinterpret_cast<char*>(&value), sizeof(TV));
     }
     else
     {
-      auto field_it = std::istreambuf_iterator<char>(in);
       std::string in_field(field);
-      std::string field_str(field_it, std::next(field_it, in_field.size()));
+      std::string field_str(in_field.size(), '\0');
+      in.read(&field_str[0], in_field.size());
       if (field_str == in_field)
       {
         // Read the value if the field matches
@@ -321,7 +328,7 @@ namespace uvgV3CRTP {
     {
       tmp << "  " << field << " nalu size precision: ";
     }
-    process<F>(out, tmp.str().c_str(), static_cast<int>(std::forward<TV>(value)));
+    process<F>(out, tmp.str().c_str(), std::forward<TV>(value));
   }
 
   template <INFO_FMT F, typename Stream>
@@ -344,11 +351,14 @@ namespace uvgV3CRTP {
   template <INFO_FMT F = INFO_FMT::LOGGING, typename T>
   static inline void postample(std::ostream& ostream, T& data)
   {
-    if (has_field(data, INFO_FIELDS::VAR_NAL_PREC) && get_as<bool>(data, INFO_FIELDS::VAR_NAL_PREC)) {
-      ostream << "  Warning: Variable nal size precision between GOFs!" << std::endl;
-    }
-    if (has_field(data, INFO_FIELDS::VAR_NAL_NUM) && get_as<bool>(data, INFO_FIELDS::VAR_NAL_NUM)) {
-      ostream << "  Warning: Variable number of nals between GOFs!" << std::endl;
+    if constexpr (F == INFO_FMT::LOGGING)
+    {
+      if (has_field(data, INFO_FIELDS::VAR_NAL_PREC) && get_as<bool>(data, INFO_FIELDS::VAR_NAL_PREC)) {
+        ostream << "  Warning: Variable nal size precision between GOFs!" << std::endl;
+      }
+      if (has_field(data, INFO_FIELDS::VAR_NAL_NUM) && get_as<bool>(data, INFO_FIELDS::VAR_NAL_NUM)) {
+        ostream << "  Warning: Variable number of nals between GOFs!" << std::endl;
+      }
     }
   }
 
@@ -469,12 +479,11 @@ namespace uvgV3CRTP {
       break;
     }
   }
-  
 
-  template<typename DataClass>
-  void V3C::write_out_of_band_info(std::ostream & stream, const DataClass & data, INFO_FMT fmt)
+  template<typename Stream, typename DataClass>
+  static V3C::InfoDataType _out_of_band_info(Stream& stream, const DataClass& data, INFO_FMT fmt)
   {
-    InfoDataType info_data;
+    V3C::InfoDataType info_data;
     switch (fmt)
     {
     case INFO_FMT::PARAM:
@@ -494,28 +503,19 @@ namespace uvgV3CRTP {
       process_out_of_band_info<INFO_FMT::LOGGING, DataClass>(stream, info_data);
       break;
     }
+    return info_data;
+  }
+  
+  template<typename DataClass>
+  void V3C::write_out_of_band_info(std::ostream & stream, const DataClass & data, INFO_FMT fmt)
+  {
+    _out_of_band_info(stream, std::move(data), fmt);
   }
 
   template<typename DataClass>
   V3C::InfoDataType V3C::read_out_of_band_info(std::istream & stream, INFO_FMT fmt)
   {
-    InfoDataType info_data;
-    switch (fmt)
-    {
-    case INFO_FMT::PARAM:
-      process_out_of_band_info<INFO_FMT::PARAM, DataClass>(stream, info_data);
-      break;
-    case INFO_FMT::RAW:
-      process_out_of_band_info<INFO_FMT::RAW, DataClass>(stream, info_data);
-      break;
-    case INFO_FMT::BASE64:
-      process_out_of_band_info<INFO_FMT::BASE64, DataClass>(stream, info_data);
-      break;
-    default:
-      process_out_of_band_info<INFO_FMT::LOGGING, DataClass>(stream, info_data);
-      break;
-    }
-    return info_data;
+    return _out_of_band_info(stream, DataClass(), fmt);
   }
 
   size_t V3C::combineBytes(const uint8_t *const bytes, const uint8_t num_bytes) {

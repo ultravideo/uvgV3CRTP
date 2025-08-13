@@ -54,7 +54,7 @@ namespace uvgV3CRTP {
     using StreamType = std::vector<std::pair<std::map<V3C_UNIT_TYPE, size_t>, ST>>;
     using Iterator = SampleStreamIterator<SampleType, StreamType>;
 
-    Sample_Stream(const uint8_t size_precision) : size_precision_(size_precision) {}
+    Sample_Stream(const uint8_t size_precision = static_cast<uint8_t>(-1)) : size_precision_(size_precision) {}
     ~Sample_Stream() = default;
 
     Sample_Stream(const Sample_Stream&) = delete;
