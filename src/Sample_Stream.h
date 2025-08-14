@@ -9,6 +9,7 @@
 #include <vector>
 #include <memory>
 #include <cstdlib>
+#include <stdexcept>
 
 namespace uvgV3CRTP {
    //Forward declaration
@@ -54,7 +55,12 @@ namespace uvgV3CRTP {
     using StreamType = std::vector<std::pair<std::map<V3C_UNIT_TYPE, size_t>, ST>>;
     using Iterator = SampleStreamIterator<SampleType, StreamType>;
 
-    Sample_Stream(const uint8_t size_precision = static_cast<uint8_t>(-1)) : size_precision_(size_precision) {}
+    Sample_Stream(const uint8_t size_precision = static_cast<uint8_t>(-1)) : size_precision_(size_precision) 
+    {
+      if (size_precision_ > MAX_V3C_SIZE_PREC && size_precision_ != static_cast<uint8_t>(-1)) {
+        throw std::invalid_argument("Size precision needs to be [1,8] or (uint8_t)-1.");
+      }
+    }
     ~Sample_Stream() = default;
 
     Sample_Stream(const Sample_Stream&) = delete;
@@ -105,7 +111,12 @@ namespace uvgV3CRTP {
     using StreamType = std::vector<std::pair<size_t, ST>>;
     using Iterator = SampleStreamIterator<SampleType, StreamType>;
 
-    Sample_Stream(const uint8_t size_precision, const size_t header_size) : header_size(header_size), size_precision_(size_precision) {}
+    Sample_Stream(const uint8_t size_precision, const size_t header_size) : header_size(header_size), size_precision_(size_precision) 
+    {
+      if (size_precision_ > MAX_V3C_SIZE_PREC && size_precision_ != static_cast<uint8_t>(-1)) {
+        throw std::invalid_argument("Size precision needs to be [1,8] or (uint8_t)-1.");
+      }
+    }
     ~Sample_Stream() = default;
 
     Sample_Stream(const Sample_Stream&) = delete;

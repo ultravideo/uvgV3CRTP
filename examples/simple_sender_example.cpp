@@ -7,6 +7,10 @@
 #include <cstdlib>
 #include <thread>
 
+
+constexpr uvgV3CRTP::INFO_FMT info_format = uvgV3CRTP::INFO_FMT::PARAM;//uvgV3CRTP::INFO_FMT::RAW; // Format for out-of-band info file
+
+
 static void compare_bitstreams(uvgV3CRTP::V3C_State<uvgV3CRTP::V3C_Sender>& state, std::unique_ptr<char[]>& buf, size_t length)
 {
   std::cout << "Check bitstream was parsed correctly..." << std::endl;
@@ -87,6 +91,11 @@ int main(int argc, char* argv[]) {
   std::cout << "Initialize state... ";
   uvgV3CRTP::V3C_State<uvgV3CRTP::V3C_Sender> state(buf.get(), length); // Create a new state in a sender configuration
   //state.init_sample_stream(buf.get(), length); // sample stream already initialized when creating state
+
+  if(state.get_error_flag() != uvgV3CRTP::ERROR_TYPE::OK) {
+    std::cerr << "Error initializing sample stream: " << state.get_error_msg() << std::endl;
+    return EXIT_FAILURE;
+  }
   std::cout << "Done" << std::endl;
 //
 // ******************************************************************
@@ -105,6 +114,11 @@ int main(int argc, char* argv[]) {
   //size_t len = 0;
   //auto info = std::unique_ptr<char, decltype(&free)>(state.get_bitstream_info_string(&len, uvgV3CRTP::INFO_FMT::PARAM), &free);
   //std::cout << info.get() << std::endl;
+  
+  if (state.get_error_flag() != uvgV3CRTP::ERROR_TYPE::OK) {
+    std::cerr << "Error printing state: " << state.get_error_msg() << std::endl;
+    return EXIT_FAILURE;
+  }
 //
 // **************************************
 
@@ -112,10 +126,14 @@ int main(int argc, char* argv[]) {
 //
   if (argc >= 3) { // If an out-of-band file is specified write out-of-band info to it
     size_t len = 0;
-    auto out_info = std::unique_ptr<char, decltype(&free)>(state.get_bitstream_info_string(&len, uvgV3CRTP::INFO_FMT::RAW), &free);
+    auto out_info = std::unique_ptr<char, decltype(&free)>(state.get_bitstream_info_string(&len, info_format), &free);
+    if (out_info == nullptr) {
+      std::cerr << "Error: Could not get out-of-band info string: " << state.get_error_msg() << std::endl;
+      return EXIT_FAILURE;
+    }
 
     std::cout << "Writing out-of-band info to file... ";
-    std::ofstream out_of_band_file(argv[2]);
+    std::ofstream out_of_band_file(argv[2], (info_format == uvgV3CRTP::INFO_FMT::RAW ? std::ios::out | std::ios::binary : std::ios::out));
     if (!out_of_band_file.is_open()) {
       std::cerr << "Error: Could not open out-of-band file for writing." << std::endl;
       return EXIT_FAILURE;
@@ -135,6 +153,11 @@ int main(int argc, char* argv[]) {
 //
   std::cout << "Sending bitstream... ";
   uvgV3CRTP::send_bitstream(&state);
+
+  if (state.get_error_flag() != uvgV3CRTP::ERROR_TYPE::OK) {
+    std::cerr << "Error sending bitstream: " << state.get_error_msg() << std::endl;
+    return EXIT_FAILURE;
+  }
   std::cout << "Done" << std::endl;
 //
 // **************************************

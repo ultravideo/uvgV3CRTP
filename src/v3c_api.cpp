@@ -26,6 +26,14 @@ namespace uvgV3CRTP {
     _err = ERROR_TYPE::TIMEOUT;                                  \
     _err_msg = std::string("Timeout: ") + e.what();              \
   }                                                              \
+  catch (const ConnectionException& e) {                         \
+    _err = ERROR_TYPE::CONNECTION;                               \
+    _err_msg = std::string("Connection error: ") + e.what();     \
+  }                                                              \
+  catch (const ParseException& e) {                              \
+    _err = ERROR_TYPE::PARSE;                                    \
+    _err_msg = std::string("Parse error: ") + e.what();          \
+  }                                                              \
   catch (const std::exception& e) {                              \
     _err = ERROR_TYPE::GENERAL;                                  \
     _err_msg = std::string("Undefined exception: ") + e.what();  \
@@ -583,22 +591,22 @@ namespace uvgV3CRTP {
     V3C_STATE_CATCH(true)
   }
 
-
-  bool parse_out_of_band_info(const char* const in_data, size_t len, INFO_FMT fmt, BitstreamInfo& out_info)
+  template<typename T>
+  ERROR_TYPE V3C_State<T>::parse_bitstream_info_string(const char* const in_data, size_t len, INFO_FMT fmt, BitstreamInfo& out_info)
   {
     //if (fmt != INFO_FMT::RAW && fmt != INFO_FMT::BASE64)
     //{
     //  std::cerr << "Error: Only RAW and BASE64 formats are supported for out-of-band info parsing." << std::endl;
     //  return false; // Only RAW and BASE64 formats are supported
     //}
+    V3C_STATE_TRY(this)
+    {
+      // Write in data to string stream
+      std::stringstream stream(fmt == INFO_FMT::RAW ? std::ios::in | std::ios::out | std::ios::binary : std::ios::in | std::ios::out);
+      stream.write(in_data, len);
 
-    // Write in data to string stream
-    std::stringstream stream(fmt == INFO_FMT::RAW ? std::ios::in | std::ios::out | std::ios::binary : std::ios::in | std::ios::out);
-    stream.write(in_data, len);
-
-    try {
       // Parse the out-of-band info
-      auto out_data = V3C::read_out_of_band_info<Sample_Stream<SAMPLE_STREAM_TYPE::V3C>>(stream, fmt);
+      auto out_data = V3C::read_out_of_band_info<Sample_Stream<SAMPLE_STREAM_TYPE::V3C>>(stream, fmt, flags_);
 
       // copy output to out_info
       if (out_data.find(INFO_FIELDS::V3C_SIZE_PREC) != out_data.end())
@@ -654,12 +662,7 @@ namespace uvgV3CRTP {
         out_info.var_nal_num = out_data[INFO_FIELDS::VAR_NAL_NUM].b;
       }
     }
-    catch (const std::exception& e) {
-      std::cerr << "Error parsing out-of-band info: " << e.what() << std::endl;
-      return false; // Parsing failed
-    }
-
-    return true;
+    V3C_STATE_CATCH(true)
   }
 
   template<typename D>

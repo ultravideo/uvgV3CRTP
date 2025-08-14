@@ -37,6 +37,7 @@ namespace uvgV3CRTP {
     V3C& operator=(V3C&&) = default;
 
     static std::vector<V3C_UNIT_TYPE> unit_types_from_init_flag(const INIT_FLAGS flags);
+    static INIT_FLAGS init_flags_from_unit_types(const std::vector<V3C_UNIT_TYPE>& unit_types);
     
     static Sample_Stream<SAMPLE_STREAM_TYPE::V3C> parse_bitstream(const char * const bitstream, const size_t len);
 
@@ -56,7 +57,7 @@ namespace uvgV3CRTP {
     template <typename DataClass>
     static void write_out_of_band_info(std::ostream& out_stream, const DataClass& data, INFO_FMT fmt = INFO_FMT::LOGGING);
     template <typename DataClass>
-    static InfoDataType read_out_of_band_info(std::istream& in_stream, INFO_FMT fmt = INFO_FMT::LOGGING);
+    static InfoDataType read_out_of_band_info(std::istream& in_stream, INFO_FMT fmt = INFO_FMT::LOGGING, INIT_FLAGS init_flags = INIT_FLAGS::NUL);
 
 
     protected:
@@ -84,11 +85,33 @@ namespace uvgV3CRTP {
     std::string message_;
   };
 
+  class ParseException : public std::exception
+  {
+  public:
+    explicit ParseException(const std::string& msg) : message_(msg) {}
+    virtual const char* what() const noexcept override {
+      return message_.c_str();
+    }
+  private:
+    std::string message_;
+  };
+
+  class ConnectionException : public std::exception
+  {
+  public:
+    explicit ConnectionException(const std::string& msg) : message_(msg) {}
+    virtual const char* what() const noexcept override {
+      return message_.c_str();
+    }
+  private:
+    std::string message_;
+  };
+
   // Explicitly define necessary instantiations so code is linked properly
   extern template void V3C::write_out_of_band_info<Sample_Stream<SAMPLE_STREAM_TYPE::V3C>>(std::ostream&, Sample_Stream<SAMPLE_STREAM_TYPE::V3C> const&, INFO_FMT);
   extern template void V3C::write_out_of_band_info<V3C_Gof>(std::ostream&, V3C_Gof const&, INFO_FMT);
   extern template void V3C::write_out_of_band_info<V3C_Unit>(std::ostream&, V3C_Unit const&, INFO_FMT);
-  extern template V3C::InfoDataType V3C::read_out_of_band_info<Sample_Stream<SAMPLE_STREAM_TYPE::V3C>>(std::istream&, INFO_FMT);
+  extern template V3C::InfoDataType V3C::read_out_of_band_info<Sample_Stream<SAMPLE_STREAM_TYPE::V3C>>(std::istream&, INFO_FMT, INIT_FLAGS);
   extern template size_t V3C::sample_stream_header_size<SAMPLE_STREAM_TYPE::V3C>(V3C_UNIT_TYPE type);
   extern template size_t V3C::sample_stream_header_size<SAMPLE_STREAM_TYPE::NAL>(V3C_UNIT_TYPE type);
 }

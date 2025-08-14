@@ -15,7 +15,7 @@ namespace uvgV3CRTP {
   template void V3C::write_out_of_band_info<Sample_Stream<SAMPLE_STREAM_TYPE::V3C>>(std::ostream&, Sample_Stream<SAMPLE_STREAM_TYPE::V3C> const&, INFO_FMT);
   template void V3C::write_out_of_band_info<V3C_Gof>(std::ostream&, V3C_Gof const&, INFO_FMT);
   template void V3C::write_out_of_band_info<V3C_Unit>(std::ostream&, V3C_Unit const&, INFO_FMT);
-  template V3C::InfoDataType V3C::read_out_of_band_info<Sample_Stream<SAMPLE_STREAM_TYPE::V3C>>(std::istream&, INFO_FMT);
+  template V3C::InfoDataType V3C::read_out_of_band_info<Sample_Stream<SAMPLE_STREAM_TYPE::V3C>>(std::istream&, INFO_FMT, INIT_FLAGS);
   template size_t V3C::sample_stream_header_size<SAMPLE_STREAM_TYPE::V3C>(V3C_UNIT_TYPE type);
   template size_t V3C::sample_stream_header_size<SAMPLE_STREAM_TYPE::NAL>(V3C_UNIT_TYPE type);
 
@@ -25,13 +25,18 @@ namespace uvgV3CRTP {
     /* Create the necessary uvgRTP media streams */
     session_ = ctx_.create_session(std::string(endpoint_address));
 
-    // TODO: error handling if create_session fails
+    if (!session_) {
+      throw ConnectionException("Failed to create uvgRTP session. Check address.");
+    }
 
     // Init v3c streams
     stream_flags |= RCE_NO_H26X_PREPEND_SC;
 
     for (auto unit_type : unit_types_from_init_flag(init_flags)) {
       streams_[unit_type] = session_->create_stream(port, get_format(unit_type), stream_flags);
+      if (!streams_[unit_type]) {
+        throw ConnectionException("RTP stream creation failed. Check ports and stream flags.");
+      }
     }
   }
 
@@ -41,13 +46,18 @@ namespace uvgV3CRTP {
     std::pair<std::string, std::string> addresses(local_address, remote_address);
     session_ = ctx_.create_session(addresses);
 
-    // TODO: error handling if create_session fails
+    if (!session_) {
+      throw ConnectionException("Failed to create uvgRTP session. Check address.");
+    }
 
     // Init v3c streams
     stream_flags |= RCE_NO_H26X_PREPEND_SC;
 
     for (auto unit_type : unit_types_from_init_flag(init_flags)) {
       streams_[unit_type] = session_->create_stream(src_port, dst_port, get_format(unit_type), stream_flags);
+      if (!streams_[unit_type]) {
+        throw ConnectionException("RTP stream creation failed. Check ports and stream flags.");
+      }
     }
   }
 
@@ -81,13 +91,48 @@ namespace uvgV3CRTP {
     return out;
   }
 
+  INIT_FLAGS V3C::init_flags_from_unit_types(const std::vector<V3C_UNIT_TYPE>& unit_types)
+  {
+    INIT_FLAGS flags = INIT_FLAGS::NUL;
+    for (const auto& type : unit_types)
+    {
+      switch (type)
+      {
+      case V3C_VPS:
+        flags = flags | INIT_FLAGS::VPS;
+        break;
+      case V3C_AD:
+        flags = flags | INIT_FLAGS::AD;
+        break;
+      case V3C_OVD:
+        flags = flags | INIT_FLAGS::OVD;
+        break;
+      case V3C_GVD:
+        flags = flags | INIT_FLAGS::GVD;
+        break;
+      case V3C_AVD:
+        flags = flags | INIT_FLAGS::AVD;
+        break;
+      case V3C_PVD:
+        flags = flags | INIT_FLAGS::PVD;
+        break;
+      case V3C_CAD:
+        flags = flags | INIT_FLAGS::CAD;
+        break;
+      default:
+        throw std::invalid_argument("Invalid V3C unit type in init_flags_from_unit_types");
+      }
+    }
+    return flags;
+  }
+
   Sample_Stream<SAMPLE_STREAM_TYPE::V3C> V3C::parse_bitstream(const char * const bitstream, const size_t len)
   {
     // First byte should be the v3c sample stream header
     uint8_t v3c_size_precision = parse_size_precision(bitstream);
     if (!(0 < v3c_size_precision && v3c_size_precision <= 8))
     {
-      throw std::runtime_error(
+      throw ParseException(
         std::string("Error parsing bitstream in ") + __func__ +
         " at " + __FILE__ + ":" + std::to_string(__LINE__) + " with error: sample stream precision should be in range[1, 8]"
       );
@@ -113,7 +158,7 @@ namespace uvgV3CRTP {
       }
       catch (const std::exception& e)
       {
-        throw std::runtime_error(
+        throw ParseException(
           std::string("Error parsing bitstream in ") + __func__ +
           " at " + __FILE__ + ":" + std::to_string(__LINE__) + " with error: " + e.what()
         );
@@ -150,6 +195,13 @@ namespace uvgV3CRTP {
 
   size_t V3C::parse_sample_stream_size(const char * const bitstream, const uint8_t precision)
   {
+    if (precision > MAX_V3C_SIZE_PREC || precision <= 0)
+    {
+      throw ParseException(
+        std::string("Error parsing bitstream in ") + __func__ +
+        " at " + __FILE__ + ":" + std::to_string(__LINE__) + " with error: sample stream size precision should be in range[1, 8]"
+      );
+    }
     uint8_t size[MAX_V3C_SIZE_PREC] = { 0 };
     memcpy(size, bitstream, precision);
     size_t combined_size = combineBytes(size, precision);
@@ -160,6 +212,13 @@ namespace uvgV3CRTP {
   size_t V3C::write_sample_stream_size(char * const bitstream, const size_t size, const uint8_t precision)
   {
     if (precision <= 0) return 0;
+    if (precision > MAX_V3C_SIZE_PREC)
+    {
+      throw std::length_error(
+        std::string("Error writing bitstream in ") + __func__ +
+        " at " + __FILE__ + ":" + std::to_string(__LINE__) + " with error: sample stream size precision should be in range[1, 8]"
+      );
+    } 
 
     uint8_t size_arr[MAX_V3C_SIZE_PREC] = { 0 };
 
@@ -174,7 +233,7 @@ namespace uvgV3CRTP {
     if (streams_.find(type) != streams_.end()) {
       return streams_.at(type);
     } else {
-      throw std::runtime_error("Media stream for given type not initialized");
+      throw ConnectionException("Media stream for given type not initialized");
     }
   }
 
@@ -276,8 +335,15 @@ namespace uvgV3CRTP {
     }
   }
 
+  template<typename T>
+  constexpr bool need_integral_conversion()
+  {
+    return std::is_same<typename std::decay<T>::type, std::uint8_t>::value |
+           std::is_same<typename std::decay<T>::type, std::int8_t>::value;
+  }
+
   template<INFO_FMT F = INFO_FMT::LOGGING, typename TF, typename TV>
-  static inline void process(std::istream& in, TF&& field, TV&& value)
+  static inline void process(std::istream& in, TF&& field, TV&& value, const char delim = '\n')
   {
     if constexpr (F == INFO_FMT::RAW)
     {
@@ -292,11 +358,34 @@ namespace uvgV3CRTP {
       if (field_str == in_field)
       {
         // Read the value if the field matches
-        in >> value;
+        if constexpr (need_integral_conversion<TV>())
+        {
+          // If value is interpreted as a char, make sure to convert it to an integer
+          int64_t tmp;
+          in >> tmp >> std::ws; // Read the value as an integer
+          value = static_cast<typename std::decay<TV>::type>(tmp);
+        }
+        else {
+          in >> value >> std::ws; // Consume any whitespace after the value
+        }
+        if (in.peek() == delim) {
+          in.ignore(); // Ignore the delimiter if present (non-whitespace)
+        }
       }
       else
       {
-        throw std::runtime_error("Field mismatch: expected '" + in_field + "' but got '" + field_str + "'");
+        // Try reading from the start in case fields are not in the expected order
+        in.clear(); // Clear any error flags
+        in.seekg(0, std::ios::beg); // Reset the stream position
+        for(std::string line; std::getline(in, line, delim);) {
+          if (line.find(in_field) != std::string::npos) {
+            // Found the field, read the value
+            std::istringstream(line.substr(in_field.size() + 1)) >> value; // Skip the field name and read the value
+            return;
+          }
+        }
+        // Failed to find the field, throw an error
+        throw ParseException("Field mismatch: did not find field '" + in_field + "'");
       }
     }
   }
@@ -307,7 +396,7 @@ namespace uvgV3CRTP {
     std::ostringstream tmp;
     if constexpr (F == INFO_FMT::PARAM)
     {
-      tmp << "constexpr int EXPECTED_NUM_" << field << " = ";
+      tmp << "constexpr size_t EXPECTED_NUM_" << field << " = ";
     }
     else
     {
@@ -513,9 +602,47 @@ namespace uvgV3CRTP {
   }
 
   template<typename DataClass>
-  V3C::InfoDataType V3C::read_out_of_band_info(std::istream & stream, INFO_FMT fmt)
+  static DataClass init_class(INIT_FLAGS init_flags)
+  { 
+    return DataClass();
+  }
+  template<>
+  V3C_Unit init_class<V3C_Unit>(INIT_FLAGS init_flags)
   {
-    return _out_of_band_info(stream, DataClass(), fmt);
+    if (init_flags != INIT_FLAGS::NUL)
+    {
+      return V3C_Unit(V3C::unit_types_from_init_flag(init_flags).front());
+    }
+    return V3C_Unit();
+  }
+  template<>
+  V3C_Gof init_class<V3C_Gof>(INIT_FLAGS init_flags)
+  {
+    auto gof = V3C_Gof();
+    if (init_flags != INIT_FLAGS::NUL)
+    {
+      for (const auto unit_type : V3C::unit_types_from_init_flag(init_flags))
+      {
+        gof.set(init_class<V3C_Unit>(V3C::init_flags_from_unit_types({ unit_type })));
+      }
+    }
+    return gof;
+  }
+  template<>
+  Sample_Stream<SAMPLE_STREAM_TYPE::V3C> init_class<Sample_Stream<SAMPLE_STREAM_TYPE::V3C>>(INIT_FLAGS init_flags)
+  {
+    auto sample_stream = Sample_Stream<SAMPLE_STREAM_TYPE::V3C>();
+    if (init_flags != INIT_FLAGS::NUL)
+    {
+      sample_stream.push_back(init_class<V3C_Gof>(init_flags));
+    }
+    return sample_stream;
+  }
+
+  template<typename DataClass>
+  V3C::InfoDataType V3C::read_out_of_band_info(std::istream & stream, INFO_FMT fmt, INIT_FLAGS init_flags)
+  {
+    return _out_of_band_info(stream, init_class<DataClass>(init_flags), fmt);
   }
 
   size_t V3C::combineBytes(const uint8_t *const bytes, const uint8_t num_bytes) {

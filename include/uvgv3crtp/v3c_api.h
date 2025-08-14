@@ -82,6 +82,8 @@ namespace uvgV3CRTP {
     char* get_bitstream_info_string(size_t* out_len, const INFO_FMT fmt = INFO_FMT::LOGGING) const;
     char* get_cur_gof_info_string(size_t* out_len, const INFO_FMT fmt = INFO_FMT::LOGGING) const;
     char* get_cur_gof_info_string(size_t* out_len, const V3C_UNIT_TYPE type, const INFO_FMT fmt = INFO_FMT::LOGGING) const;
+    // Functions for parsing out-of-band info
+    ERROR_TYPE parse_bitstream_info_string(const char* const in_data, size_t len, INFO_FMT fmt, BitstreamInfo& out_info);
 
     // Print current state (Sample stream etc.) to cout. If errors occur set error flag
     ERROR_TYPE print_state(const bool print_nalus = false, size_t num_gofs = std::numeric_limits<size_t>::max()) const;
@@ -122,9 +124,6 @@ namespace uvgV3CRTP {
     bool validate_nodata() const;
     bool validate_cur_gof(bool check_eos = true) const;
   };
-
-  // Functions for parsing out-of-band info
-  bool parse_out_of_band_info(const char* const in_data, size_t len, INFO_FMT fmt, BitstreamInfo& out_info);
 
   // Functions that operate on V3C_State
   ERROR_TYPE send_bitstream(V3C_State<V3C_Sender>* state);

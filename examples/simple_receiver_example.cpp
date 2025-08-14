@@ -16,10 +16,11 @@ constexpr uint8_t V3C_SIZE_PRECISION = 3;
 constexpr uint8_t AtlasNAL_SIZE_PRECISION = 2;
 constexpr uint8_t Video_SIZE_PRECISION = 4;
 
-constexpr int TIMEOUT = 5000;
+constexpr int TIMEOUT = 6000;
 // Auto size precision may not match orig bitstream
 constexpr bool AUTO_PRECISION_MODE = true;
 
+constexpr uvgV3CRTP::INFO_FMT info_format = uvgV3CRTP::INFO_FMT::PARAM;//uvgV3CRTP::INFO_FMT::RAW; // Format for out-of-band info file
 
 static void compare_bitstreams(uvgV3CRTP::V3C_State<uvgV3CRTP::V3C_Receiver>& state, std::unique_ptr<char[]>& buf, size_t length)
 {
@@ -100,7 +101,7 @@ int main(int argc, char* argv[]) {
   if (argc >= 3) {
     std::cout << "Reading out-of-band info... ";
     // Open file
-    std::ifstream outofband(argv[2]);
+    std::ifstream outofband(argv[2], (info_format == uvgV3CRTP::INFO_FMT::RAW ? std::ios::in | std::ios::binary : std::ios::in));
 
     if (!outofband.is_open()) {
       std::cerr << std::endl << "File open failed. Make sure sender has been started and has written out-of-band info.";
@@ -169,9 +170,9 @@ int main(int argc, char* argv[]) {
     std::cout << "Parsing out-of-band info... ";
 
     uvgV3CRTP::BitstreamInfo outofband_info = {};
-    if (!uvgV3CRTP::parse_out_of_band_info(outofband_buf.get(), outofband_len, uvgV3CRTP::INFO_FMT::RAW, outofband_info))
+    if (state.parse_bitstream_info_string(outofband_buf.get(), outofband_len, info_format, outofband_info) != uvgV3CRTP::ERROR_TYPE::OK)
     {
-        std::cerr << std::endl << "Failed to parse out-of-band info" << std::endl;
+        std::cerr << std::endl << "Failed to parse out-of-band info:" << state.get_error_msg() << std::endl;
         return EXIT_FAILURE;
     }
     expected_number_of_gof = outofband_info.num_gofs;
@@ -182,6 +183,9 @@ int main(int argc, char* argv[]) {
     num_avd_nalu = outofband_info.num_avd_nalu;
     num_pvd_nalu = outofband_info.num_pvd_nalu;
     num_cad_nalu = outofband_info.num_cad_nalu;
+    v3c_size_precision = outofband_info.v3c_size_precision;
+    atlas_size_precision = outofband_info.atlas_nal_size_precision;
+    video_size_precision = outofband_info.video_nal_size_precision;
 
     std::cout << "Done" << std::endl;
   }
@@ -221,6 +225,11 @@ int main(int argc, char* argv[]) {
 //
   std::cout << "Receiving bitstream... ";
   uvgV3CRTP::receive_bitstream(&state, v3c_size_precision, size_precisions, expected_number_of_gof, num_nalus, header_defs, TIMEOUT);
+
+  if (state.get_error_flag() != uvgV3CRTP::ERROR_TYPE::OK) {
+    std::cerr << "Error receiving bitstream: " << state.get_error_msg() << std::endl;
+    return EXIT_FAILURE;
+  }
   std::cout << "Done" << std::endl;
 //
 // **************************************
@@ -242,6 +251,11 @@ int main(int argc, char* argv[]) {
   //size_t len = 0;
   //auto info = std::unique_ptr<char, decltype(&free)>(state.get_bitstream_info_string(&len, uvgV3CRTP::INFO_FMT::PARAM), &free);
   //std::cout << info.get() << std::endl;
+   
+  if(state.get_error_flag() != uvgV3CRTP::ERROR_TYPE::OK) {
+    std::cerr << "Error printing state: " << state.get_error_msg() << std::endl;
+    return EXIT_FAILURE;
+  }
 //
 // **************************************
 

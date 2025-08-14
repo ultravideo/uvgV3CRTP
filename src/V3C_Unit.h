@@ -89,8 +89,8 @@ namespace uvgV3CRTP {
       static uint8_t type_to_vuh(const V3C_UNIT_TYPE type);
     };
 
-    V3C_Unit():
-      header_(V3C_Unit_Header()),
+    V3C_Unit(V3C_UNIT_TYPE type = V3C_VPS):
+      header_(V3C_Unit_Header(type)),
       payload_(static_cast<uint8_t>(-1), get_sample_stream_header_size())
     {
       // Default constructor for V3C_Unit, not a valid unit

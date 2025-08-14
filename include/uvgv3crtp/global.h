@@ -67,6 +67,7 @@ namespace uvgV3CRTP {
     CONNECTION, // Connection related error, most likely connections not initialized
     EOS,        // End of stream reached, cur_gof points to end()
     INVALID_IT, // Current iterator is invalid, need to (re-)initialize it
+    PARSE,      // Parsing error, e.g. parsing out-of-band info or bitstream failed
   };
 
   enum class SAMPLE_STREAM_TYPE {
