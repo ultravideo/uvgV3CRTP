@@ -228,6 +228,16 @@ namespace uvgV3CRTP {
   }
 
 
+  uint32_t V3C::get_new_sampling_instant()
+  {
+    return 0; // TODO: Should be randomly generated
+  }
+
+  uint32_t V3C::calc_new_timestamp(const uint32_t old_timestamp, const uint32_t sample_tick, const uint32_t clock_rate)
+  {
+    return old_timestamp + sample_tick * clock_rate;
+  }
+
   uvgrtp::media_stream* V3C::get_stream(const V3C_UNIT_TYPE type) const
   {
     if (streams_.find(type) != streams_.end()) {

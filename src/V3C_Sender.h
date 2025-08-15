@@ -28,7 +28,7 @@ namespace uvgV3CRTP {
 
   private:
 
-
+    const uint32_t initial_timestamp_ = 0; // Initial timestamp for the first frame sent
   };
 
 }

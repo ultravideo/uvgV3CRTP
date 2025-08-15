@@ -144,7 +144,7 @@ namespace uvgV3CRTP {
 
     const V3C_Unit_Header header_;
     Sample_Stream<SAMPLE_STREAM_TYPE::NAL> payload_;
-
+    uint32_t timestamp_ = 0; // Timestamp for the unit
   };
 
   // Define specialization for template function so code is generated when built as a library

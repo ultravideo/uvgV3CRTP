@@ -45,6 +45,7 @@ namespace uvgV3CRTP {
 
     size_t size_;
     std::unique_ptr<uint8_t[]> bitstream_;
+    uint32_t timestamp_ = 0; // Timestamp for the NALU
   };
 
 }

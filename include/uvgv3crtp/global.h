@@ -105,4 +105,8 @@ namespace uvgV3CRTP {
 
   static constexpr uint8_t NAL_UNIT_HEADER_SIZE = 2;
 
+  // RTP clock for video increments 90000 in RTP payload format RFC
+  constexpr uint32_t RTP_CLOCK_RATE = 90000;
+  constexpr uint32_t DEFAULT_FRAME_RATE = 30;
+
 }

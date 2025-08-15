@@ -58,6 +58,7 @@ namespace uvgV3CRTP {
   private:
 
     std::map<V3C_UNIT_TYPE, V3C_Unit> units_;
+    uint32_t timestamp_ = 0; // Timestamp of the GoF, used for synchronization
   };
 
 }
