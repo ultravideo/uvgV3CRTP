@@ -15,10 +15,13 @@ namespace uvgV3CRTP {
   class V3C_Gof
   {
   public:
-    V3C_Gof() = default;
+    V3C_Gof(const uint32_t timestamp = 0):
+      timestamp_(timestamp)
+    {
+    }
     template <typename FirstUnit, typename... OtherUnits>
-    inline V3C_Gof(FirstUnit && unit, OtherUnits && ...others) :
-      V3C_Gof(std::forward<OtherUnits>(others)...)
+    inline V3C_Gof(FirstUnit && unit, OtherUnits && ...others, const uint32_t timestamp = 0) :
+      V3C_Gof(std::forward<OtherUnits>(others)..., timestamp)
     { 
       set(std::forward<FirstUnit>(unit));
     }

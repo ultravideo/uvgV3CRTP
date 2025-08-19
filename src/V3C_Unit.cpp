@@ -17,9 +17,10 @@ namespace uvgV3CRTP {
   //  generic_payload_ = std::make_unique<char[]>(generic_payload_size_);
   //}
 
-  V3C_Unit::V3C_Unit(const char * const bitstream, const size_t len) : 
+  V3C_Unit::V3C_Unit(const char * const bitstream, const size_t len, const uint32_t timestamp) :
     header_(bitstream),
-    payload_(parse_precision(&bitstream[header_.size()]), get_sample_stream_header_size())
+    payload_(parse_precision(&bitstream[header_.size()]), get_sample_stream_header_size()),
+    timestamp_(timestamp)
   {
     if (type() == V3C_VPS) {
       // Parameter set contains no NAL units, but repurpose NAL for the VPS payload anyway

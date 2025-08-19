@@ -41,7 +41,13 @@ namespace uvgV3CRTP {
   {
     for (const auto& nalu : unit.nalus()) {
       rtp_error_t ret = RTP_OK;
-      ret = this->get_stream(unit.type())->push_frame(nalu.get().bitstream(), nalu.get().size(), this->get_flags(unit.type()));
+      if (nalu.get().get_timestamp() == 0) {
+        ret = this->get_stream(unit.type())->push_frame(nalu.get().bitstream(), nalu.get().size(), this->get_flags(unit.type()));
+      }
+      else
+      {
+        ret = this->get_stream(unit.type())->push_frame(nalu.get().bitstream(), nalu.get().size(), nalu.get().get_timestamp(), this->get_flags(unit.type()));
+      }
       if (ret != RTP_OK) {
         throw std::runtime_error("Failed to send RTP frame");
       }

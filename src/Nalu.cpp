@@ -4,10 +4,11 @@
 
 namespace uvgV3CRTP {
 
-  Nalu::Nalu(const uint8_t nal_unit_type, const uint8_t nal_layer_id, const uint8_t nal_temporal_id, const char * const payload, const size_t payload_len, const V3C_UNIT_TYPE type):
+  Nalu::Nalu(const uint8_t nal_unit_type, const uint8_t nal_layer_id, const uint8_t nal_temporal_id, const char * const payload, const size_t payload_len, const V3C_UNIT_TYPE type, const uint32_t timestamp):
     nal_unit_type_(nal_unit_type),
     nal_layer_id_(nal_layer_id),
-    nal_temporal_id_(nal_temporal_id)
+    nal_temporal_id_(nal_temporal_id),
+    timestamp_(timestamp)
   {
     // Special handling for VPS
     const uint8_t nal_unit_header_size = type == V3C_VPS ? 0 : NAL_UNIT_HEADER_SIZE;
@@ -19,7 +20,8 @@ namespace uvgV3CRTP {
     memcpy(bitstream_.get() + nal_unit_header_size, payload, payload_len);
   }
 
-  Nalu::Nalu(const char * const bitstream, const size_t len, const V3C_UNIT_TYPE type)
+  Nalu::Nalu(const char * const bitstream, const size_t len, const V3C_UNIT_TYPE type, const uint32_t timestamp):
+    timestamp_(timestamp)
   {
     if (type == V3C_VPS) throw std::invalid_argument("This constructor should not be used to initialize VPS payload NALU");
 
@@ -59,6 +61,11 @@ namespace uvgV3CRTP {
   uint8_t Nalu::nal_temporal_id() const
   {
     return nal_temporal_id_;
+  }
+
+  uint32_t Nalu::get_timestamp() const
+  {
+      return timestamp_;
   }
 
   void Nalu::init_bitstream(const size_t len)

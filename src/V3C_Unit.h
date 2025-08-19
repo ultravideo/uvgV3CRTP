@@ -99,12 +99,13 @@ namespace uvgV3CRTP {
     //V3C_Unit(const V3C_Unit_Header& header, uint8_t size_precision);
     // size_precision template needed to disambiguate from other constructor
     template<typename Header, typename T, typename = typename std::enable_if_t<std::is_same_v<T, uint8_t>>>
-    V3C_Unit(Header&& header, const T size_precision) :
+    V3C_Unit(Header&& header, const T size_precision, const uint32_t timestamp = 0) :
       header_(std::forward<Header>(header)),
-      payload_(size_precision, get_sample_stream_header_size())
+      payload_(size_precision, get_sample_stream_header_size()),
+      timestamp_(timestamp)
     {
     }
-    V3C_Unit(const char * const bitstream, const size_t len);
+    V3C_Unit(const char * const bitstream, const size_t len, const uint32_t timestamp = 0);
 
     V3C_Unit(const V3C_Unit&) = delete;
     V3C_Unit& operator=(const V3C_Unit&) = delete;

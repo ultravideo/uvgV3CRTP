@@ -8,6 +8,7 @@
 #include <type_traits>
 #include <sstream>
 #include <stdexcept>
+#include <limits>
 
 namespace uvgV3CRTP {
 
@@ -230,7 +231,11 @@ namespace uvgV3CRTP {
 
   uint32_t V3C::get_new_sampling_instant()
   {
-    return 0; // TODO: Should be randomly generated
+    srand(static_cast<unsigned>(time(NULL)));
+    // Use UINT32_MAX instead of std::numeric_limits<uint32_t>::max() to avoid macro issues
+    uint32_t timestamp = static_cast<uint32_t>(rand() % UINT32_MAX);
+    // get random initial timestamp as per the RTP spec
+    return timestamp != 0 ? timestamp : 1; // 0 assumed "no timestamp set" so avoid it
   }
 
   uint32_t V3C::calc_new_timestamp(const uint32_t old_timestamp, const uint32_t sample_tick, const uint32_t clock_rate)
