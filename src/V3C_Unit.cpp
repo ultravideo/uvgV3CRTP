@@ -171,6 +171,16 @@ namespace uvgV3CRTP {
 
   void V3C_Unit::push_back(Nalu && nalu)
   {
+    if (payload_.num_samples() == 0 && timestamp_ == 0)
+    {
+      // If timestamp is not set and this is the first nalu, set the v3c units timestamp to the nalus timestamp
+      timestamp_ = nalu.get_timestamp();
+    }
+    // Check that the nalu timestamp matches v3c units timestamp, if not this nalu does not belong to this v3c unit
+    if (timestamp_ != 0 && nalu.get_timestamp() != timestamp_)
+    {
+      throw TimestampException("Nalu timestamp does not match V3C unit timestamp");
+    }
     payload_.push_back(std::move(nalu));
   }
 

@@ -11,6 +11,7 @@
 #include <algorithm>
 #include <string>
 #include <map>
+#include <queue>
 
 namespace uvgV3CRTP {
 
@@ -31,7 +32,8 @@ namespace uvgV3CRTP {
 
   private:
 
-
+    // Buffer for holding received data that could not be placed in a v3c unit because of a timestamp mismatch
+    mutable std::map<V3C_UNIT_TYPE, std::queue<uvgrtp::frame::rtp_frame*>> receive_buffer_ = {};
   };
 
   // Explicitly define necessary instantiations so code is linked properly

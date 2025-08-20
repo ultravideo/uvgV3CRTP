@@ -83,6 +83,7 @@ namespace uvgV3CRTP {
   template <typename V3CUnitHeader>
   V3C_Unit V3C_Receiver::receive_v3c_unit(const V3C_UNIT_TYPE type, const uint8_t size_precision, const size_t expected_size, V3CUnitHeader&& header, const int timeout, const bool expected_size_as_num_nalus) const
   {
+    // TODO: check that type is a valid type and has been initialized in streams_
     if (type == V3C_VPS && expected_size > 0)
     {
       // Special handling for VPS because it contains no nalu
@@ -92,8 +93,8 @@ namespace uvgV3CRTP {
         throw TimeoutException("V3C_VPS receiving timeout");
         //return V3C_Unit(std::forward<V3CUnitHeader>(header), size_precision);
       }
-      V3C_Unit new_unit(std::forward<V3CUnitHeader>(header), size_precision);
-      new_unit.push_back(Nalu(0, 0, 0, reinterpret_cast<char*>(new_frame->payload), new_frame->payload_len, type));
+      V3C_Unit new_unit(std::forward<V3CUnitHeader>(header), size_precision, new_frame->header.timestamp);
+      new_unit.push_back(Nalu(0, 0, 0, reinterpret_cast<char*>(new_frame->payload), new_frame->payload_len, type, new_frame->header.timestamp));
 
       (void)uvgrtp::frame::dealloc_frame(new_frame);
       return new_unit;
@@ -104,7 +105,19 @@ namespace uvgV3CRTP {
        
     while (size_received < expected_size)
     {
-      uvgrtp::frame::rtp_frame* new_frame = streams_.at(type)->pull_frame(timeout);
+      uvgrtp::frame::rtp_frame* new_frame;
+      
+      if(!receive_buffer_.at(type).empty())
+      {
+        // If we have frames in the receive buffer, use those first
+        new_frame = receive_buffer_.at(type).front();
+        receive_buffer_.at(type).pop();
+      }
+      else
+      {
+        new_frame = streams_.at(type)->pull_frame(timeout);
+      }
+
       if (!new_frame)
       {
         //Timeout
@@ -113,7 +126,7 @@ namespace uvgV3CRTP {
         break;
       }
       
-      Nalu new_nalu(reinterpret_cast<char*>(new_frame->payload), new_frame->payload_len, type);
+      Nalu new_nalu(reinterpret_cast<char*>(new_frame->payload), new_frame->payload_len, type, new_frame->header.timestamp);
       if (expected_size_as_num_nalus)
       {
         size_received++;
@@ -122,7 +135,18 @@ namespace uvgV3CRTP {
       {
         size_received += new_nalu.size();
       }
-      new_unit.push_back(std::move(new_nalu));
+
+      try {
+        new_unit.push_back(std::move(new_nalu));
+      }
+      catch (const TimestampException& e)
+      {
+        // Nalu timestamp does not match V3C unit timestamp, this nalu does not belong to this v3c unit
+        std::cerr << "Timestamp exception: " << e.what() << " in unit type id " << static_cast<int>(type) << std::endl;
+        // Store the nalu in the timestamp buffer for later processing
+        receive_buffer_.at(type).push(new_frame);
+        break; // No guarantee that the next frame is from the same unit, so break here. Need to use receive_buffer_ to add possible other nalus for this unit later
+      }
 
       (void)uvgrtp::frame::dealloc_frame(new_frame);
     }
