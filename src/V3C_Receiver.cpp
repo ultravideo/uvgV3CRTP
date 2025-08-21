@@ -15,6 +15,8 @@ namespace uvgV3CRTP {
     // Parent class initializes media streams. Just set context here.
     for (const auto&[type, stream] : streams_) {
       stream->configure_ctx(RCC_REMOTE_SSRC, V3C::unit_type_to_ssrc(type)); 
+      // Init a receive buffer for each stream type
+      receive_buffer_.emplace(type, std::queue<uvgrtp::frame::rtp_frame*>());
     }
   }
 
