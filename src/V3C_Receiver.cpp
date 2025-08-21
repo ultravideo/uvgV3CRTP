@@ -85,7 +85,11 @@ namespace uvgV3CRTP {
   template <typename V3CUnitHeader>
   V3C_Unit V3C_Receiver::receive_v3c_unit(const V3C_UNIT_TYPE type, const uint8_t size_precision, const size_t expected_size, V3CUnitHeader&& header, const int timeout, const bool expected_size_as_num_nalus) const
   {
-    // TODO: check that type is a valid type and has been initialized in streams_
+    if (streams_.find(type) == streams_.end())
+    {
+      throw ConnectionException("Receiver not initialized for V3C unit type " + std::to_string(static_cast<int>(type)) + ")");
+    }
+
     if (type == V3C_VPS && expected_size > 0)
     {
       // Special handling for VPS because it contains no nalu

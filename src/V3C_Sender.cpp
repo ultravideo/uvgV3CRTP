@@ -39,6 +39,11 @@ namespace uvgV3CRTP {
 
   void V3C_Sender::send_v3c_unit(const V3C_Unit& unit) const
   {
+    if (streams_.find(unit.type()) == streams_.end())
+    {
+      throw ConnectionException("Sender not initialized for V3C unit type " + std::to_string(static_cast<int>(unit.type())) + ")");
+    }
+
     for (const auto& nalu : unit.nalus()) {
       rtp_error_t ret = RTP_OK;
       if (nalu.get().get_timestamp() == 0) {
