@@ -68,7 +68,7 @@ namespace uvgV3CRTP {
       static int unit_type_to_ssrc(const V3C_UNIT_TYPE type);
 
       static uint32_t get_new_sampling_instant(); // Generating a new sampling instant for RTP streams. Should only be used for the first instance of a media stream.
-      static uint32_t calc_new_timestamp(const uint32_t old_timestamp, const uint32_t sample_tick, const uint32_t clock_rate);
+      static uint32_t calc_new_timestamp(const uint32_t old_timestamp, const uint32_t sample_rate, const uint32_t clock_rate);
 
       std::map<V3C_UNIT_TYPE, uvgrtp::media_stream*> streams_;
       uvgrtp::context ctx_;

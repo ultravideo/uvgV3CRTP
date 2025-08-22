@@ -17,10 +17,10 @@ namespace uvgV3CRTP {
   //  generic_payload_ = std::make_unique<char[]>(generic_payload_size_);
   //}
 
-  V3C_Unit::V3C_Unit(const char * const bitstream, const size_t len, const uint32_t timestamp) :
+  V3C_Unit::V3C_Unit(const char * const bitstream, const size_t len) :
+    Timestamp(),
     header_(bitstream),
-    payload_(parse_precision(&bitstream[header_.size()]), get_sample_stream_header_size()),
-    timestamp_(timestamp)
+    payload_(parse_precision(&bitstream[header_.size()]), get_sample_stream_header_size())
   {
     if (type() == V3C_VPS) {
       // Parameter set contains no NAL units, but repurpose NAL for the VPS payload anyway
@@ -171,18 +171,39 @@ namespace uvgV3CRTP {
 
   void V3C_Unit::push_back(Nalu && nalu)
   {
-    if (payload_.num_samples() == 0 && timestamp_ == 0)
+    if (payload_.num_samples() == 0 && !is_timestamp_set() && nalu.is_timestamp_set())
     {
       // If timestamp is not set and this is the first nalu, set the v3c units timestamp to the nalus timestamp
-      timestamp_ = nalu.get_timestamp();
+      set_timestamp(nalu.get_timestamp());
     }
     // Check that the nalu timestamp matches v3c units timestamp, if not this nalu does not belong to this v3c unit
-    if (timestamp_ != 0 && nalu.get_timestamp() != timestamp_)
+    else if (is_timestamp_set() && nalu.get_timestamp() != get_timestamp())
     {
       throw TimestampException("Nalu timestamp does not match V3C unit timestamp");
     }
     payload_.push_back(std::move(nalu));
   }
+
+  void V3C_Unit::set_timestamp(const uint32_t timestamp) const
+  {
+    Timestamp::set_timestamp(timestamp);
+    // Also set the timestamp for all NALUs in the payload
+    for (const auto& nalu : payload_)
+    {
+      nalu.set_timestamp(timestamp);
+    }
+  }
+
+  void V3C_Unit::unset_timestamp() const
+  {
+    Timestamp::unset_timestamp();
+    // Also unset the timestamp for all NALUs in the payload
+    for (const auto& nalu : payload_)
+    {
+      nalu.unset_timestamp();
+    }
+  }
+
 
   size_t V3C_Unit::write_bitstream(char * const bitstream) const
   {

@@ -99,8 +99,9 @@ namespace uvgV3CRTP {
         throw TimeoutException("V3C_VPS receiving timeout");
         //return V3C_Unit(std::forward<V3CUnitHeader>(header), size_precision);
       }
-      V3C_Unit new_unit(std::forward<V3CUnitHeader>(header), size_precision, new_frame->header.timestamp);
-      new_unit.push_back(Nalu(0, 0, 0, reinterpret_cast<char*>(new_frame->payload), new_frame->payload_len, type, new_frame->header.timestamp));
+      V3C_Unit new_unit(std::forward<V3CUnitHeader>(header), size_precision);
+      new_unit.push_back(Nalu(0, 0, 0, reinterpret_cast<char*>(new_frame->payload), new_frame->payload_len, type));
+      new_unit.set_timestamp(new_frame->header.timestamp);
 
       (void)uvgrtp::frame::dealloc_frame(new_frame);
       return new_unit;
@@ -132,7 +133,9 @@ namespace uvgV3CRTP {
         break;
       }
       
-      Nalu new_nalu(reinterpret_cast<char*>(new_frame->payload), new_frame->payload_len, type, new_frame->header.timestamp);
+      Nalu new_nalu(reinterpret_cast<char*>(new_frame->payload), new_frame->payload_len, type);
+      new_nalu.set_timestamp(new_frame->header.timestamp);
+
       if (expected_size_as_num_nalus)
       {
         size_received++;

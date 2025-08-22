@@ -46,6 +46,7 @@ target_sources(${PROJECT_NAME} PRIVATE
     src/Sample_Stream.cpp src/Sample_Stream.h
     src/V3C_Receiver.cpp  src/V3C_Receiver.h
     src/V3C_Sender.cpp    src/V3C_Sender.h
+    src/Timestamp.cpp     src/Timestamp.h
     src/v3c_api.cpp       
 
     include/uvgv3crtp/v3c_api.h

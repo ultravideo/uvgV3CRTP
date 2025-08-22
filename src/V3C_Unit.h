@@ -3,6 +3,7 @@
 #include "uvgv3crtp/global.h"
 #include "Nalu.h"
 #include "Sample_Stream.h"
+#include "Timestamp.h"
 
 #include <vector>
 #include <functional>
@@ -12,7 +13,7 @@
 
 namespace uvgV3CRTP {
 
-  class V3C_Unit
+  class V3C_Unit : public Timestamp
   {
   public:
 
@@ -90,6 +91,7 @@ namespace uvgV3CRTP {
     };
 
     V3C_Unit(V3C_UNIT_TYPE type = V3C_VPS):
+      Timestamp(),
       header_(V3C_Unit_Header(type)),
       payload_(static_cast<uint8_t>(-1), get_sample_stream_header_size())
     {
@@ -99,13 +101,13 @@ namespace uvgV3CRTP {
     //V3C_Unit(const V3C_Unit_Header& header, uint8_t size_precision);
     // size_precision template needed to disambiguate from other constructor
     template<typename Header, typename T, typename = typename std::enable_if_t<std::is_same_v<T, uint8_t>>>
-    V3C_Unit(Header&& header, const T size_precision, const uint32_t timestamp = 0) :
+    V3C_Unit(Header&& header, const T size_precision) :
+      Timestamp(),
       header_(std::forward<Header>(header)),
-      payload_(size_precision, get_sample_stream_header_size()),
-      timestamp_(timestamp)
+      payload_(size_precision, get_sample_stream_header_size())
     {
     }
-    V3C_Unit(const char * const bitstream, const size_t len, const uint32_t timestamp = 0);
+    V3C_Unit(const char * const bitstream, const size_t len);
 
     V3C_Unit(const V3C_Unit&) = delete;
     V3C_Unit& operator=(const V3C_Unit&) = delete;
@@ -133,6 +135,9 @@ namespace uvgV3CRTP {
 
     void push_back(Nalu&& nalu);
 
+    void set_timestamp(const uint32_t timestamp) const override; // Set the timestamp for the unit and all its NALUs. V3C unit timestamp should match Nalu timestamps
+    void unset_timestamp() const override; // Unset the timestamp for the unit and all its NALUs
+
   protected:
 
     //friend std::unique_ptr<char[]> Sample_Stream<SAMPLE_STREAM_TYPE::V3C>::get_bitstream();
@@ -145,7 +150,7 @@ namespace uvgV3CRTP {
 
     const V3C_Unit_Header header_;
     Sample_Stream<SAMPLE_STREAM_TYPE::NAL> payload_;
-    uint32_t timestamp_ = 0; // Timestamp for the unit
+    
   };
 
   // Define specialization for template function so code is generated when built as a library

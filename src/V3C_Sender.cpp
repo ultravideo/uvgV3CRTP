@@ -12,7 +12,7 @@ namespace uvgV3CRTP {
 
       // Set RTCP for the custom timestamp if RTCP is enabled
       if (stream_flags & RCE_RTCP) {
-        stream->get_rtcp()->set_ts_info(uvgrtp::clock::ntp::now(), RTP_CLOCK_RATE, initial_timestamp_);
+        stream->get_rtcp()->set_ts_info(uvgrtp::clock::ntp::now(), RTP_CLOCK_RATE, initial_timestamp_.get_timestamp());
       }
     }
   }
@@ -25,7 +25,16 @@ namespace uvgV3CRTP {
 
   void V3C_Sender::send_bitstream(const Sample_Stream<SAMPLE_STREAM_TYPE::V3C>& bitstream) const
   {
+    auto timestamp = initial_timestamp_.get_timestamp();
     for (const auto& gof : bitstream) {
+      // If initial timestamp has been set and gof timestamp is not set, use custom timestamp for gofs
+      if (initial_timestamp_.is_timestamp_set() && !gof.is_timestamp_set()) {
+        gof.set_timestamp(timestamp);
+        timestamp = calc_new_timestamp(timestamp, DEFAULT_FRAME_RATE, RTP_CLOCK_RATE);
+      }
+      else if (gof.is_timestamp_set()) { // else advance timestamp based on gof timestamp
+        timestamp = calc_new_timestamp(gof.get_timestamp(), DEFAULT_FRAME_RATE, RTP_CLOCK_RATE);
+      }
       send_gof(gof);
     }
   }
@@ -46,7 +55,7 @@ namespace uvgV3CRTP {
 
     for (const auto& nalu : unit.nalus()) {
       rtp_error_t ret = RTP_OK;
-      if (nalu.get().get_timestamp() == 0) {
+      if (!nalu.get().is_timestamp_set()) {
         ret = this->get_stream(unit.type())->push_frame(nalu.get().bitstream(), nalu.get().size(), this->get_flags(unit.type()));
       }
       else

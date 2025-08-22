@@ -238,9 +238,13 @@ namespace uvgV3CRTP {
     return timestamp != 0 ? timestamp : 1; // 0 assumed "no timestamp set" so avoid it
   }
 
-  uint32_t V3C::calc_new_timestamp(const uint32_t old_timestamp, const uint32_t sample_tick, const uint32_t clock_rate)
+  uint32_t V3C::calc_new_timestamp(const uint32_t old_timestamp, const uint32_t sample_rate, const uint32_t clock_rate)
   {
-    return old_timestamp + sample_tick * clock_rate;
+    if(sample_rate > clock_rate)
+    {
+      throw std::invalid_argument("Sample rate cannot be greater than clock rate; not enough timestamp resolution");
+    }
+    return static_cast<uint32_t>(old_timestamp + clock_rate / sample_rate);
   }
 
   uvgrtp::media_stream* V3C::get_stream(const V3C_UNIT_TYPE type) const

@@ -3,6 +3,7 @@
 #include <map>
 
 #include "uvgv3crtp/global.h"
+#include "Timestamp.h"
 //#include "V3C_Unit.h"
 
 #include <cstddef>
@@ -12,16 +13,16 @@ namespace uvgV3CRTP {
   // Forward declare
   class V3C_Unit;
 
-  class V3C_Gof
+  class V3C_Gof: public Timestamp
   {
   public:
-    V3C_Gof(const uint32_t timestamp = 0):
-      timestamp_(timestamp)
+    V3C_Gof():
+      Timestamp()
     {
     }
     template <typename FirstUnit, typename... OtherUnits>
-    inline V3C_Gof(FirstUnit && unit, OtherUnits && ...others, const uint32_t timestamp = 0) :
-      V3C_Gof(std::forward<OtherUnits>(others)..., timestamp)
+    inline V3C_Gof(FirstUnit && unit, OtherUnits && ...others) :
+      V3C_Gof(std::forward<OtherUnits>(others)...)
     { 
       set(std::forward<FirstUnit>(unit));
     }
@@ -57,11 +58,13 @@ namespace uvgV3CRTP {
     auto find(const V3C_UNIT_TYPE& type) const { return units_.find(type); }
 
     size_t size() const;
+
+    void set_timestamp(const uint32_t timestamp) const override; // Set the timestamp for the gof and all its units. Gof timestamp should match v3c unit timestamps
+    void unset_timestamp() const override; // Unset the timestamp for the gof and all its units
   
   private:
 
     std::map<V3C_UNIT_TYPE, V3C_Unit> units_;
-    uint32_t timestamp_ = 0; // Timestamp of the GoF, used for synchronization
   };
 
 }

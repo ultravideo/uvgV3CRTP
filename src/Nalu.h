@@ -1,17 +1,18 @@
 #pragma once
 
 #include "uvgv3crtp/global.h"
+#include "Timestamp.h"
 
 #include <cstring>
 #include <memory>
 
 namespace uvgV3CRTP {
 
-  class Nalu
+  class Nalu: public Timestamp
   {
   public:
-    Nalu(const char * const bitstream, const size_t len, const V3C_UNIT_TYPE type, const uint32_t timestamp = 0);
-    Nalu(const uint8_t nal_unit_type, const uint8_t nal_layer_id, const uint8_t nal_temporal_id, const char * const payload, const size_t payload_len, const V3C_UNIT_TYPE type, const uint32_t timestamp = 0);
+    Nalu(const char * const bitstream, const size_t len, const V3C_UNIT_TYPE type);
+    Nalu(const uint8_t nal_unit_type, const uint8_t nal_layer_id, const uint8_t nal_temporal_id, const char * const payload, const size_t payload_len, const V3C_UNIT_TYPE type);
     ~Nalu() = default;
 
     Nalu(const Nalu&) = delete;
@@ -26,8 +27,6 @@ namespace uvgV3CRTP {
     uint8_t nal_unit_type() const;
     uint8_t nal_layer_id() const;
     uint8_t nal_temporal_id() const;
-
-    uint32_t get_timestamp() const;
 
   private:
 
@@ -47,7 +46,6 @@ namespace uvgV3CRTP {
 
     size_t size_;
     std::unique_ptr<uint8_t[]> bitstream_;
-    uint32_t timestamp_ = 0; // Timestamp for the NALU
   };
 
 }
