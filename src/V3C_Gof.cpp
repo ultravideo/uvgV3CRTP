@@ -24,6 +24,11 @@ namespace uvgV3CRTP {
       // If timestamp is not set and this is the first v3c unit, set the gof timestamp to the v3c units timestamp
       set_timestamp(unit.get_timestamp());
     }
+    else if (is_timestamp_set() && !unit.is_timestamp_set())
+    {
+      // If gof timestamp is set and v3c unit timestamp is not set, set the v3c unit timestamp to the gof timestamp
+      unit.set_timestamp(get_timestamp());
+    }
     // Check that the v3c unit timestamp matches gof timestamp, if not this v3c unit does not belong to this gof
     else if (is_timestamp_set() && unit.get_timestamp() != get_timestamp())
     {

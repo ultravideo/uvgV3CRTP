@@ -98,6 +98,7 @@ namespace uvgV3CRTP {
 
   private:
     size_t find_free_gof(const V3C_UNIT_TYPE type) const;
+    size_t find_timestamp(const uint32_t timestamp) const;
 
     StreamType<SampleType> stream_;
   };

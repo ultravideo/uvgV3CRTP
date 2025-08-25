@@ -26,6 +26,8 @@ namespace uvgV3CRTP {
     void send_gof(const V3C_Gof& gof) const;
     void send_v3c_unit(const V3C_Unit& unit) const;
 
+    uint32_t get_initial_timestamp() const;
+
   private:
 
     const Timestamp initial_timestamp_; // Initial timestamp for the first frame sent

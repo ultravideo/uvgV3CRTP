@@ -59,6 +59,8 @@ namespace uvgV3CRTP {
     template <typename DataClass>
     static InfoDataType read_out_of_band_info(std::istream& in_stream, INFO_FMT fmt = INFO_FMT::LOGGING, INIT_FLAGS init_flags = INIT_FLAGS::NUL);
 
+    static uint32_t get_new_sampling_instant(); // Generating a new sampling instant for RTP streams. Should only be used for the first instance of a media stream.
+    static uint32_t calc_new_timestamp(const uint32_t old_timestamp, const uint32_t sample_rate, const uint32_t clock_rate);
 
     protected:
       uvgrtp::media_stream* get_stream(const V3C_UNIT_TYPE type) const;
@@ -66,9 +68,6 @@ namespace uvgV3CRTP {
       static RTP_FLAGS get_flags(const V3C_UNIT_TYPE type);
       static RTP_FORMAT get_format(const V3C_UNIT_TYPE type);
       static int unit_type_to_ssrc(const V3C_UNIT_TYPE type);
-
-      static uint32_t get_new_sampling_instant(); // Generating a new sampling instant for RTP streams. Should only be used for the first instance of a media stream.
-      static uint32_t calc_new_timestamp(const uint32_t old_timestamp, const uint32_t sample_rate, const uint32_t clock_rate);
 
       std::map<V3C_UNIT_TYPE, uvgrtp::media_stream*> streams_;
       uvgrtp::context ctx_;

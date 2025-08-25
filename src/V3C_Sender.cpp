@@ -68,4 +68,9 @@ namespace uvgV3CRTP {
     }
   }
 
+  uint32_t V3C_Sender::get_initial_timestamp() const
+  {
+    return initial_timestamp_.get_timestamp();
+  }
+
 }

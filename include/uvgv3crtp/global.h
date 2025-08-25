@@ -66,6 +66,7 @@ namespace uvgV3CRTP {
 
     // Non-critical
     TIMEOUT,    // Receiving has timed out 
+    TIMESTAMP,  // Timestamp related error, e.g. incorrect or unexpected timestamps 
     DATA,       // Data related error, most likely data not initilized
     EOS,        // End of stream reached, cur_gof points to end()
     INVALID_IT, // Current iterator is invalid, need to (re-)initialize it

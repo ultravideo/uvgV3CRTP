@@ -176,6 +176,11 @@ namespace uvgV3CRTP {
       // If timestamp is not set and this is the first nalu, set the v3c units timestamp to the nalus timestamp
       set_timestamp(nalu.get_timestamp());
     }
+    else if (is_timestamp_set() && !nalu.is_timestamp_set())
+    {
+      // If timestamp is set for the v3c unit but not for the nalu, set the nalu timestamp to match the v3c unit
+      nalu.set_timestamp(get_timestamp());
+    }
     // Check that the nalu timestamp matches v3c units timestamp, if not this nalu does not belong to this v3c unit
     else if (is_timestamp_set() && nalu.get_timestamp() != get_timestamp())
     {

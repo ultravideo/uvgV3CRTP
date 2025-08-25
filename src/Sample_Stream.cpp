@@ -70,8 +70,8 @@ namespace uvgV3CRTP {
 
   void Sample_Stream<SAMPLE_STREAM_TYPE::V3C>::push_back(V3C_Unit&& unit)
   {
-    // Assume each gof only has max one of each type of v3c unit. Add unit to the first gof without a unit of that type.
-    size_t push_gof_ind = find_free_gof(unit.type());
+    // Find matching timestamp. If timestamp not set assume each gof only has max one of each type of v3c unit and add unit to the first gof without a unit of that type.
+    size_t push_gof_ind = unit.is_timestamp_set() ? find_timestamp(unit.get_timestamp()) : find_free_gof(unit.type());
     if (push_gof_ind >= stream_.size())
     {
       // Allocate new gof if the existing gofs are "full"
@@ -92,16 +92,67 @@ namespace uvgV3CRTP {
     {
       size_map[type] = unit.size();
     }
-
+    
+    // Check timestamps to decide how to proceed
+    const bool need_init_timestamp = !stream_.empty() && this->back().is_timestamp_set() &&
+                                                                 !gof.is_timestamp_set();
+    const bool is_timestamp_contiguous = stream_.empty() ||
+                                       !(this->back().is_timestamp_set() && gof.is_timestamp_set()) ||
+                                        (V3C::calc_new_timestamp(this->back().get_timestamp(), DEFAULT_FRAME_RATE, RTP_CLOCK_RATE) == gof.get_timestamp());
+    //if (is_timestamp_contiguous)
+    //{
+    //  // If timestamps need to be initialized, do it here
+    //  if (need_init_timestamp)
+    //  {
+    //    const auto timestamp = V3C::calc_new_timestamp(this->back().get_timestamp(), DEFAULT_FRAME_RATE, RTP_CLOCK_RATE);
+    //    gof.set_timestamp(timestamp);
+    //  }
+    //  // Push gof directly to stream
+    //  stream_.emplace_back(std::move(size_map), std::move(gof));
+    //}
+    //else
+    //{
+    //  // gof timestamp will always be set here, so find correct place based on timestamp
+    //  // Insert gof to the correct place in the stream
+    //  auto insert_ind = 0;
+    //  stream_.emplace(std::next(stream_.begin(), insert_ind), std::move(size_map), std::move(gof));
+    //}
+    // If timestamps need to be initialized, do it here
+    if (need_init_timestamp)
+    {
+      const auto timestamp = V3C::calc_new_timestamp(this->back().get_timestamp(), DEFAULT_FRAME_RATE, RTP_CLOCK_RATE);
+      gof.set_timestamp(timestamp);
+    }
     // Push gof directly to stream
     stream_.emplace_back(std::move(size_map), std::move(gof));
+  
+    if (!is_timestamp_contiguous)
+    {
+      throw TimestampException("Gof timestamp is not contigious with previous gof timestamp");
+    }
   }
 
   void Sample_Stream<SAMPLE_STREAM_TYPE::V3C>::push_back(Sample_Stream<SAMPLE_STREAM_TYPE::V3C>&& other)
   {
+    if (this == &other || other.stream_.empty()) return; // No-op if trying to push self or other stream is empty
+
+    // Check if timestamps are contiguous
+    const bool need_init_timestamp = !this->stream_.empty() && this->back().is_timestamp_set() &&
+                                                              !other.front().is_timestamp_set();
+    const bool are_timestamps_contiguous = this->stream_.empty() ||
+                                         !(this->back().is_timestamp_set() && other.front().is_timestamp_set()) ||
+                                          (V3C::calc_new_timestamp(this->back().get_timestamp(), DEFAULT_FRAME_RATE, RTP_CLOCK_RATE) == other.front().get_timestamp());
+    auto timestamp = this->back().get_timestamp();
+
     // Insert existing stream from other to the end of this stream
     for (auto& [size_map, gof] : other.stream_)
     {
+      // If timestamps need to be initialized, do it here
+      if (need_init_timestamp)
+      {
+        timestamp = V3C::calc_new_timestamp(timestamp, DEFAULT_FRAME_RATE, RTP_CLOCK_RATE);
+        gof.set_timestamp(timestamp);
+      }
       // Push v3c units back individually in case of partial gofs
       for (auto& [type, unit] : gof)
       {
@@ -112,6 +163,12 @@ namespace uvgV3CRTP {
 
     // Clear other stream
     other.stream_.clear();
+
+    // Raise exception if timestamps are not contigious
+    if (!are_timestamps_contiguous)
+    {
+      throw TimestampException("Timestamps are not contigious concatenating two Sample_Stream<SAMPLE_STREAM_TYPE::V3C> streams");
+    }
   }
 
   /* Calculate GOF size
@@ -320,15 +377,43 @@ namespace uvgV3CRTP {
     return stream_.back().second;
   }
 
-  size_t Sample_Stream<SAMPLE_STREAM_TYPE::V3C>::find_free_gof(V3C_UNIT_TYPE type) const
+  size_t Sample_Stream<SAMPLE_STREAM_TYPE::V3C>::find_free_gof(const V3C_UNIT_TYPE type) const
   {
-    size_t ind = 0;
+    if (stream_.empty()) return 0; // No gofs yet so return first index
 
+    size_t ind = 0;
+    //TODO: Iterate in reverse to speed up search?
     for (const auto& [size, gof]: stream_)
     {
       if (size.find(type) == size.end()) // Check if type exists in cur gof
       {
         //Not found in this gof so return cur ind
+        break;
+      }
+      ind++;
+    }
+
+    return ind;
+  }
+
+  size_t Sample_Stream<SAMPLE_STREAM_TYPE::V3C>::find_timestamp(const uint32_t timestamp) const
+  {
+    if (stream_.empty()) return 0; // No gofs yet so return first index
+
+    const uint32_t first_timestamp = this->front().get_timestamp();
+    const uint32_t last_timestamp = this->back().get_timestamp();
+
+    if (timestamp < first_timestamp || timestamp > last_timestamp) return stream_.size(); // Timestamp out of range
+    if (timestamp == first_timestamp) return 0;
+    if (timestamp == last_timestamp) return stream_.size() - 1;
+
+    size_t ind = 0;
+    //TODO: Iterate in reverse to speed up search?
+    for (const auto& [size, gof] : stream_)
+    {
+      if (gof.get_timestamp() == timestamp)
+      {
+        // Found matching timestamp so break
         break;
       }
       ind++;

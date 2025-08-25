@@ -26,6 +26,10 @@ namespace uvgV3CRTP {
     _err = ERROR_TYPE::TIMEOUT;                                  \
     _err_msg = std::string("Timeout: ") + e.what();              \
   }                                                              \
+  catch (const TimestampException& e) {                          \
+    _err = ERROR_TYPE::TIMESTAMP;                                \
+    _err_msg = std::string("Timestamp error: ") + e.what();      \
+  }                                                              \
   catch (const ConnectionException& e) {                         \
     _err = ERROR_TYPE::CONNECTION;                               \
     _err_msg = std::string("Connection error: ") + e.what();     \
