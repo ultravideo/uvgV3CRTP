@@ -381,19 +381,20 @@ namespace uvgV3CRTP {
   {
     if (stream_.empty()) return 0; // No gofs yet so return first index
 
-    size_t ind = 0;
-    //TODO: Iterate in reverse to speed up search?
-    for (const auto& [size, gof]: stream_)
+    // Iterate backwards until a gof is found that has the respective v3c unit and return the next index
+    size_t ind = stream_.size();
+    for (auto it = std::prev(this->end()); it != this->begin(); --it)
     {
-      if (size.find(type) == size.end()) // Check if type exists in cur gof
+      if ((*it).find(type) != (*it).cend()) // Check if type exists in cur gof
       {
-        //Not found in this gof so return cur ind
-        break;
+        //Found a full gof, return next index (i.e. current ind)
+        return ind;
       }
-      ind++;
+      ind--;
     }
 
-    return ind;
+    // Need to check if first gof is free. If it is return 0, else the second gof index i.e. ind = 1
+    return (this->front().find(type) != this->front().cend()) ? ind : 0;
   }
 
   size_t Sample_Stream<SAMPLE_STREAM_TYPE::V3C>::find_timestamp(const uint32_t timestamp) const
@@ -402,24 +403,26 @@ namespace uvgV3CRTP {
 
     const uint32_t first_timestamp = this->front().get_timestamp();
     const uint32_t last_timestamp = this->back().get_timestamp();
-
-    if (timestamp < first_timestamp || timestamp > last_timestamp) return stream_.size(); // Timestamp out of range
+    const bool in_range = first_timestamp <= last_timestamp ?
+                         (first_timestamp <= timestamp && timestamp <= last_timestamp) :
+                         (timestamp <= last_timestamp || first_timestamp <= timestamp); // Account for wrap-around
+    if (!in_range) return stream_.size(); // Timestamp out of range
     if (timestamp == first_timestamp) return 0;
     if (timestamp == last_timestamp) return stream_.size() - 1;
 
-    size_t ind = 0;
-    //TODO: Iterate in reverse to speed up search?
-    for (const auto& [size, gof] : stream_)
+    size_t ind = stream_.size();
+    for (auto it = std::prev(this->end()); it != this->begin(); --it )
     {
-      if (gof.get_timestamp() == timestamp)
+      ind--;
+      if ((*it).get_timestamp() == timestamp)
       {
-        // Found matching timestamp so break
-        break;
+        // Found matching timestamp return ind
+        return ind;
       }
-      ind++;
     }
 
-    return ind;
+    // Matching timestamp not found
+    return stream_.size();
   }
 
   void Sample_Stream<SAMPLE_STREAM_TYPE::NAL>::push_back(Nalu&& unit)
