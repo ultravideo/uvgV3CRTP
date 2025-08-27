@@ -22,7 +22,7 @@ namespace uvgV3CRTP {
     V3C_Sender(const INIT_FLAGS flags = INIT_FLAGS::ALL, const char * receiver_address = "127.0.0.1", const uint16_t dst_port = 8890, int stream_flags = 0);
     ~V3C_Sender() = default;
 
-    void send_bitstream(const Sample_Stream<SAMPLE_STREAM_TYPE::V3C>& bitstream) const;
+    void send_bitstream(const Sample_Stream<SAMPLE_STREAM_TYPE::V3C>& bitstream, const uint32_t rate_limit = 0) const;
     void send_gof(const V3C_Gof& gof) const;
     void send_v3c_unit(const V3C_Unit& unit) const;
 

@@ -1,6 +1,7 @@
 #include "V3C_Sender.h"
 
 #include <stdexcept>
+#include <thread>
 
 namespace uvgV3CRTP {
 
@@ -23,7 +24,7 @@ namespace uvgV3CRTP {
   //  V3C_Sender("127.0.0.1", "127.0.0.1", INIT_FLAGS::ALL);
   //}
 
-  void V3C_Sender::send_bitstream(const Sample_Stream<SAMPLE_STREAM_TYPE::V3C>& bitstream) const
+  void V3C_Sender::send_bitstream(const Sample_Stream<SAMPLE_STREAM_TYPE::V3C>& bitstream, const uint32_t rate_limit) const
   {
     auto timestamp = initial_timestamp_.get_timestamp();
     for (const auto& gof : bitstream) {
@@ -36,6 +37,11 @@ namespace uvgV3CRTP {
         timestamp = calc_new_timestamp(gof.get_timestamp(), DEFAULT_FRAME_RATE, RTP_CLOCK_RATE);
       }
       send_gof(gof);
+
+      if (rate_limit > 0) {
+        // Limit rate if requested
+        std::this_thread::sleep_for(std::chrono::milliseconds(1000 / rate_limit));
+      }
     }
   }
 

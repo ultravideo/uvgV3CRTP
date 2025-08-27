@@ -178,6 +178,11 @@ namespace uvgV3CRTP {
     V3C_STATE_TRY(this)
     {
       data_ = new Sample_Stream<SAMPLE_STREAM_TYPE::V3C>(V3C::parse_bitstream(bitstream, len));
+      // If this is a sender state, init timestamps for the new data
+      if constexpr (std::is_same<T, V3C_Sender>::value)
+      {
+        set_timestamps(static_cast<V3C_Sender*>(connection_)->get_initial_timestamp());
+      }
     }
     V3C_STATE_CATCH(false)
 
@@ -192,6 +197,8 @@ namespace uvgV3CRTP {
     is_gof_it_valid_ = false;
     V3C_STATE_TRY(this)
     {
+      // If this is a sender state, init timestamps for new data if sample stream is empty
+      [[maybe_unused]] const bool is_empty = data_->num_samples() == 0;
       if (has_sample_stream_headers)
       {
         data_->push_back(
@@ -203,6 +210,13 @@ namespace uvgV3CRTP {
         data_->push_back(
           V3C_Unit(bitstream, len)
         );
+      }
+      // If this is a sender state, init timestamps for the new data
+      if constexpr (std::is_same<T, V3C_Sender>::value)
+      {
+        if (is_empty) {
+          set_timestamps(static_cast<V3C_Sender*>(connection_)->get_initial_timestamp());
+        }
       }
     }
     V3C_STATE_CATCH(false)
@@ -259,6 +273,19 @@ namespace uvgV3CRTP {
     is_gof_it_valid_ = true;
 
     return ERROR_TYPE::OK;
+  }
+
+  template<typename T>
+  void V3C_State<T>::set_timestamps(const uint32_t init_timestamp)
+  {
+    if (!validate_data()) return;
+
+    uint32_t timestamp = init_timestamp;
+    for (const auto& gof : *data_)
+    {
+      gof.set_timestamp(timestamp);
+      timestamp = V3C::calc_new_timestamp(timestamp, DEFAULT_FRAME_RATE, RTP_CLOCK_RATE);
+    }
   }
 
   template<typename T>
@@ -377,7 +404,7 @@ namespace uvgV3CRTP {
 
     V3C_STATE_TRY(state)
     {
-      state->connection_->send_bitstream(*state->data_);
+      state->connection_->send_bitstream(*state->data_, SEND_FRAME_RATE);
     }
     V3C_STATE_CATCH(true)
   }

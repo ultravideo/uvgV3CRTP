@@ -107,6 +107,7 @@ namespace uvgV3CRTP {
 
     void init_connection(INIT_FLAGS flags, const char* endpoint_address, uint16_t port);
     ERROR_TYPE init_cur_gof(size_t to = 0, bool reverse = false);
+    void set_timestamps(const uint32_t init_timestamp);
 
     T* connection_;
     const INIT_FLAGS flags_;
