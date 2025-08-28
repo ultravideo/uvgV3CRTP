@@ -515,6 +515,19 @@ namespace uvgV3CRTP {
     return enum_map;
   }
 
+  static void check_timestamps(Iterator from, const Iterator to)
+  {
+    if (from == to) return; // Nothing to check
+
+    for (Iterator next = std::next(from); next != to; ++from, ++next)
+    {
+      const auto expected_timestamp = V3C::calc_new_timestamp((*from).get_timestamp(), DEFAULT_FRAME_RATE, RTP_CLOCK_RATE);
+      if ((*next).get_timestamp() != expected_timestamp)
+      {
+        throw TimestampException("Received GoF timestamp " + std::to_string((*next).get_timestamp()) + " does not match expected timestamp " + std::to_string(expected_timestamp));
+      }
+    }
+  }
 
   ERROR_TYPE receive_bitstream(V3C_State<V3C_Receiver>* state, const uint8_t v3c_size_precision, const uint8_t size_precisions[NUM_V3C_UNIT_TYPES], const size_t expected_num_gofs, const size_t num_nalus[NUM_V3C_UNIT_TYPES], const HeaderStruct header_defs[NUM_V3C_UNIT_TYPES], int timeout)
   {
@@ -539,6 +552,9 @@ namespace uvgV3CRTP {
       {
         throw TimestampException("Receive buffer has leftover data after receiving bitstream. This may indicate unexpected timestamps or heavy reordering of nalus.");
       }
+
+      // Also check that the timestamp is as expected
+      check_timestamps(state->data_->begin(), state->data_->end());
     }
     V3C_STATE_CATCH(true)
   }
@@ -589,6 +605,9 @@ namespace uvgV3CRTP {
       {
         throw TimestampException("Receive buffer has leftover data after receiving GoF. This may indicate unexpected timestamps or heavy reordering of nalus.");
       }
+
+      // Also check that the timestamp is as expected
+      check_timestamps(std::prev(state->data_->end(), 2), state->data_->end());
     }
     V3C_STATE_CATCH(true)
   }
@@ -640,6 +659,9 @@ namespace uvgV3CRTP {
       {
         throw TimestampException("Receive buffer has leftover data after receiving unit (type " + std::to_string(static_cast<int>(unit_type)) + ".This may indicate unexpected timestamps or heavy reordering of nalus.");
       }
+
+      // Also check that the timestamp is as expected
+      check_timestamps(std::prev(state->data_->end(), 2), state->data_->end());
     }
     V3C_STATE_CATCH(true)
   }
@@ -778,7 +800,9 @@ namespace uvgV3CRTP {
         break;
       }
 
-      std::cout << "|--Gof #" << gof_ind << " (bitstream pos: " << (int)ptr << ", size (in sample stream): " << gof.size() << " (" << data_->size(std::next(data_->begin(), gof_ind)) << "))";
+      std::cout << "|--Gof #" << gof_ind << " (bitstream pos: " << (int)ptr << ", size (in sample stream): " << gof.size() << " (" << data_->size(std::next(data_->begin(), gof_ind)) << ")";
+      if (gof.is_timestamp_set()) std::cout << ", timestamp: " << gof.get_timestamp();
+      std::cout << ")";
       if (gof_ind == cur_gof_ind_) std::cout << " [cur gof]";
       std::cout << std::endl;
 
