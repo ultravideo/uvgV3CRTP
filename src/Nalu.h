@@ -11,6 +11,7 @@ namespace uvgV3CRTP {
   class Nalu: public Timestamp
   {
   public:
+    Nalu() = default; // Not necessarily a valid nalu
     Nalu(const char * const bitstream, const size_t len, const V3C_UNIT_TYPE type);
     Nalu(const uint8_t nal_unit_type, const uint8_t nal_layer_id, const uint8_t nal_temporal_id, const char * const payload, const size_t payload_len, const V3C_UNIT_TYPE type);
     ~Nalu() = default;
@@ -40,11 +41,11 @@ namespace uvgV3CRTP {
     template <V3C_UNIT_TYPE E>
     void write_header();
 
-    uint8_t nal_unit_type_;
-    uint8_t nal_layer_id_;
-    uint8_t nal_temporal_id_;
+    uint8_t nal_unit_type_ = 0;
+    uint8_t nal_layer_id_ = 0;
+    uint8_t nal_temporal_id_ = 0;
 
-    size_t size_;
+    size_t size_ = 0;
     std::unique_ptr<uint8_t[]> bitstream_;
   };
 

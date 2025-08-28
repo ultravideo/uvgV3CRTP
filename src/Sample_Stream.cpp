@@ -68,6 +68,27 @@ namespace uvgV3CRTP {
   //{
   //}
 
+  bool Sample_Stream<SAMPLE_STREAM_TYPE::V3C>::push_back(Nalu&& nalu, const V3C_UNIT_TYPE type)
+  {
+    if (stream_.empty() || !nalu.is_timestamp_set())
+    {
+      // No gofs in stream or nalu timestamp not set, cannot push
+      return false;
+    }
+
+    // Find matching timestamp
+    const size_t push_gof_ind = find_timestamp(nalu.get_timestamp());
+    if (push_gof_ind >= stream_.size())
+    {
+      // No matching timestamp found
+      return false;
+    }
+
+    stream_.at(push_gof_ind).second.get(type).push_back(std::move(nalu));
+
+    return true;
+  }
+
   void Sample_Stream<SAMPLE_STREAM_TYPE::V3C>::push_back(V3C_Unit&& unit)
   {
     // Find matching timestamp. If timestamp not set assume each gof only has max one of each type of v3c unit and add unit to the first gof without a unit of that type.

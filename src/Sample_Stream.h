@@ -69,6 +69,7 @@ namespace uvgV3CRTP {
     Sample_Stream(Sample_Stream&&) = default;
     Sample_Stream& operator=(Sample_Stream&&) = default;
 
+    bool push_back(Nalu&& nalu, const V3C_UNIT_TYPE type); // Push nalu to a GoF with a matching timestamp, otherwise return false and do not move nalu
     void push_back(V3C_Unit&& unit);
     void push_back(V3C_Gof&& gof);
     void push_back(Sample_Stream<SAMPLE_STREAM_TYPE::V3C>&& other);

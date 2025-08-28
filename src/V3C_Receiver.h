@@ -29,11 +29,19 @@ namespace uvgV3CRTP {
     template <typename V3CUnitHeader>
     V3C_Unit receive_v3c_unit(const V3C_UNIT_TYPE type, const uint8_t size_precision, const size_t expected_size, V3CUnitHeader&& header, const size_t timeout, const bool expected_size_as_num_nalus = false) const;
 
+    void clear_receive_buffer(); // Drop all buffered data
+    size_t receive_buffer_size() const; // Get total number of buffered nalus
+    size_t receive_buffer_size(const V3C_UNIT_TYPE type) const; // Get number of buffered nalus
+
+    // Attempt to push buffered data to stream. Does not create new units only push to existing ones.
+    void push_buffer_to_sample_stream(Sample_Stream<SAMPLE_STREAM_TYPE::V3C>& stream) const; 
+    void push_buffer_to_sample_stream(Sample_Stream<SAMPLE_STREAM_TYPE::V3C>& stream, const V3C_UNIT_TYPE type) const; 
 
   private:
 
     // Buffer for holding received data that could not be placed in a v3c unit because of a timestamp mismatch
-    mutable std::map<V3C_UNIT_TYPE, std::queue<uvgrtp::frame::rtp_frame*>> receive_buffer_ = {};
+    mutable std::map<V3C_UNIT_TYPE, std::queue<Nalu>> receive_buffer_ = {};
+    void push_to_receive_buffer(Nalu&& nalu, const V3C_UNIT_TYPE type) const;
   };
 
   // Explicitly define necessary instantiations so code is linked properly

@@ -533,6 +533,12 @@ namespace uvgV3CRTP {
       );
 
       state->init_cur_gof();
+
+      // Check if receive buffer has leftover data and raise a warning if it does
+      if (state->connection_->receive_buffer_size() > 0)
+      {
+        throw TimestampException("Receive buffer has leftover data after receiving bitstream. This may indicate unexpected timestamps or heavy reordering of nalus.");
+      }
     }
     V3C_STATE_CATCH(true)
   }
@@ -574,6 +580,14 @@ namespace uvgV3CRTP {
       else
       {
         state->gof_at(state->cur_gof_ind_); // Reset gof to previous position
+      }
+
+      // Try processing any leftover data in the receive buffer to avoid buildup
+      state->connection_->push_buffer_to_sample_stream(*state->data_);
+      // throw warning if there is still leftover data in the receive buffer
+      if (state->connection_->receive_buffer_size() > 0)
+      {
+        throw TimestampException("Receive buffer has leftover data after receiving GoF. This may indicate unexpected timestamps or heavy reordering of nalus.");
       }
     }
     V3C_STATE_CATCH(true)
@@ -617,6 +631,14 @@ namespace uvgV3CRTP {
       else
       {
         state->gof_at(state->cur_gof_ind_); // Reset gof to previous position
+      }
+
+      // Try processing any leftover data in the receive buffer to avoid buildup
+      state->connection_->push_buffer_to_sample_stream(*state->data_, unit_type);
+      // throw warning if there is still leftover data in the receive buffer
+      if (state->connection_->receive_buffer_size(unit_type) > 0)
+      {
+        throw TimestampException("Receive buffer has leftover data after receiving unit (type " + std::to_string(static_cast<int>(unit_type)) + ".This may indicate unexpected timestamps or heavy reordering of nalus.");
       }
     }
     V3C_STATE_CATCH(true)

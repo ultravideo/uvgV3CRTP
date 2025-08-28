@@ -16,7 +16,7 @@ namespace uvgV3CRTP {
     for (const auto&[type, stream] : streams_) {
       stream->configure_ctx(RCC_REMOTE_SSRC, V3C::unit_type_to_ssrc(type)); 
       // Init a receive buffer for each stream type
-      receive_buffer_.emplace(type, std::queue<uvgrtp::frame::rtp_frame*>());
+      receive_buffer_.emplace(type, std::queue<Nalu>());
     }
   }
 
@@ -24,7 +24,7 @@ namespace uvgV3CRTP {
   Sample_Stream<SAMPLE_STREAM_TYPE::V3C> V3C_Receiver::receive_bitstream(const uint8_t v3c_size_precision, const std::map<V3C_UNIT_TYPE, uint8_t>& nal_size_precisions, const size_t expected_num_gofs, const std::map<V3C_UNIT_TYPE, size_t>& expected_num_nalus, const std::map<V3C_UNIT_TYPE, const V3C_Unit::V3C_Unit_Header>& headers, const size_t timeout) const
   {
     Sample_Stream<SAMPLE_STREAM_TYPE::V3C> new_stream(v3c_size_precision);
-    auto local_exp_num_nalus = expected_num_nalus;
+    std::map<V3C_UNIT_TYPE, size_t> local_exp_num_nalus = expected_num_nalus;
     std::map<V3C_UNIT_TYPE, V3C_Unit::V3C_Unit_Header> local_headers = {};
     for (const auto& [type, header]: headers)
     {
@@ -49,6 +49,8 @@ namespace uvgV3CRTP {
             }
           }
         }
+        // Try to process receive buffer in case a lot of reordering has happened.
+        push_buffer_to_sample_stream(new_stream);
       }
     }
     catch (const TimeoutException& e)
@@ -58,6 +60,67 @@ namespace uvgV3CRTP {
     }
 
     return new_stream;
+  }
+
+  void V3C_Receiver::clear_receive_buffer()
+  {
+    for (auto&[type, buffer] : receive_buffer_)
+    {
+      std::queue<Nalu> empty;
+      std::swap(buffer, empty);
+    }
+  }
+
+  size_t V3C_Receiver::receive_buffer_size() const
+  {
+    size_t total_size = 0;
+    for (const auto&[type, buffer] : receive_buffer_)
+    {
+      total_size += buffer.size();
+    }
+    return total_size;
+  }
+
+  size_t V3C_Receiver::receive_buffer_size(const V3C_UNIT_TYPE type) const
+  {
+    return receive_buffer_.at(type).size();
+  }
+
+  void V3C_Receiver::push_buffer_to_sample_stream(Sample_Stream<SAMPLE_STREAM_TYPE::V3C>& stream) const
+  {
+    for( auto& [type, buffer]: receive_buffer_)
+    {
+      push_buffer_to_sample_stream(stream, type);
+    }
+  }
+
+  void V3C_Receiver::push_buffer_to_sample_stream(Sample_Stream<SAMPLE_STREAM_TYPE::V3C>& stream, const V3C_UNIT_TYPE type) const
+  {
+    auto& buffer = receive_buffer_.at(type);
+    size_t unbuffered_count = buffer.size();
+    while (unbuffered_count > 0)
+    {
+      Nalu tmp_nalu = std::move(buffer.front());
+      buffer.pop();
+      unbuffered_count--;
+
+      if (!stream.push_back(std::move(tmp_nalu), type))
+      {
+        // Could not push nalu to stream, push it back to buffer. tmp_nalu should not have been moved if push failed
+        push_to_receive_buffer(std::move(tmp_nalu), type);
+      }
+    }
+  }
+
+  void V3C_Receiver::push_to_receive_buffer(Nalu&& nalu, const V3C_UNIT_TYPE type) const
+  {
+    // Push new nalu to receive buffer and check that the buffer is not too full. Pop existing nalu if buffer is full
+    if (receive_buffer_.size() >= RECEIVE_BUFFER_SIZE)
+    {
+      std::cerr << "Warning: Receive buffer full, dropping oldest nalu of type: " << static_cast<int>(type) << std::endl;
+      receive_buffer_.at(type).pop();
+    }
+    receive_buffer_.at(type).emplace(std::move(nalu));
   }
 
   template <typename V3CUnitHeaderMap>
@@ -109,55 +172,66 @@ namespace uvgV3CRTP {
 
     V3C_Unit new_unit(std::forward<V3CUnitHeader>(header), size_precision);
     size_t size_received = 0;
+    size_t new_nalu_size = 1;
+    bool timestamp_mismatch = false;
+    size_t buffer_unprocessed_count = receive_buffer_.at(type).size(); // Track how many nalus we've processed from the receive buffer to avoid infinite loops
        
     while (size_received < expected_size)
     {
       uvgrtp::frame::rtp_frame* new_frame;
+      Nalu new_nalu;
       
-      if(!receive_buffer_.at(type).empty())
+      if (buffer_unprocessed_count > 0)
       {
         // If we have frames in the receive buffer, use those first
-        new_frame = receive_buffer_.at(type).front();
+        new_nalu = std::move(receive_buffer_.at(type).front());
         receive_buffer_.at(type).pop();
+        buffer_unprocessed_count--;
       }
       else
       {
         new_frame = streams_.at(type)->pull_frame(timeout);
-      }
 
-      if (!new_frame)
-      {
-        //Timeout
-        if (size_received == 0) throw TimeoutException("V3C unit receiving timeout");
-        //std::cerr << "timeout " << (int)type << std::endl;
-        break;
-      }
-      
-      Nalu new_nalu(reinterpret_cast<char*>(new_frame->payload), new_frame->payload_len, type);
-      new_nalu.set_timestamp(new_frame->header.timestamp);
+        if (!new_frame)
+        {
+          //Timeout
+          if (size_received == 0) throw TimeoutException("V3C unit receiving timeout");
+          //std::cerr << "timeout " << (int)type << std::endl;
+          break;
+        }
 
-      if (expected_size_as_num_nalus)
-      {
-        size_received++;
+        new_nalu = Nalu(reinterpret_cast<char*>(new_frame->payload), new_frame->payload_len, type);
+        new_nalu.set_timestamp(new_frame->header.timestamp);
+
+        (void)uvgrtp::frame::dealloc_frame(new_frame);
       }
-      else
-      {
-        size_received += new_nalu.size();
-      }
+      new_nalu_size = expected_size_as_num_nalus ? 1 : new_nalu.size();
 
       try {
         new_unit.push_back(std::move(new_nalu));
+        size_received += new_nalu_size;
+        timestamp_mismatch = false; // We got a nalu that matches the v3c unit timestamp, reset mismatch flag
       }
       catch (const TimestampException& e)
       {
         // Nalu timestamp does not match V3C unit timestamp, this nalu does not belong to this v3c unit
         std::cerr << "Timestamp exception: " << e.what() << " in unit type id " << static_cast<int>(type) << std::endl;
-        // Store the nalu in the timestamp buffer for later processing
-        receive_buffer_.at(type).push(new_frame);
-        break; // No guarantee that the next frame is from the same unit, so break here. Need to use receive_buffer_ to add possible other nalus for this unit later
-      }
 
-      (void)uvgrtp::frame::dealloc_frame(new_frame);
+        // Store the nalu in the timestamp buffer for later processing. If a timestamp exception is thrown, new_nalu should not have been moved so it is still valid
+        push_to_receive_buffer(std::move(new_nalu), type);
+
+        // Keep trying to receive nalus for this v3c unit until we get the expected size, but if we keep getting timestamp mismatches increment the expected size so we don't get stuck in an infinite loop
+        // Also don't count nalus from the receive buffer when deciding to increment expected size
+        if (timestamp_mismatch && buffer_unprocessed_count <= 0)
+        {
+          // We had a timestamp mismatch on the previous nalu too, increment expected size so we don't get stuck in an infinite loop
+          size_received += new_nalu_size;
+        }
+        else
+        {
+          timestamp_mismatch = true;
+        }
+      }
     }
 
     return new_unit;
