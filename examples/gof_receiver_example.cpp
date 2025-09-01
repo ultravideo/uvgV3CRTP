@@ -230,6 +230,13 @@ int main(int argc, char* argv[]) {
         }
       }
     }
+
+    // Dont't stop receiving even if timestamp error occurs, just print the error
+    if (state.get_error_flag() == uvgV3CRTP::ERROR_TYPE::TIMESTAMP) {
+      std::cout << " Timestamp error: " << state.get_error_msg() << std::endl;
+      state.reset_error_flag();
+    }
+
     if (state.get_error_flag() == uvgV3CRTP::ERROR_TYPE::OK)
     {
       state.last_gof();

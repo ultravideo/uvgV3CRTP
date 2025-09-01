@@ -5,6 +5,7 @@
 #include <fstream>
 #include <bitset>
 #include <cstdlib>
+#include <thread>
 
 static void compare_bitstreams(uvgV3CRTP::V3C_State<uvgV3CRTP::V3C_Sender>& state, std::unique_ptr<char[]>& buf, size_t length)
 {
@@ -131,6 +132,9 @@ int main(int argc, char* argv[]) {
     }
 
     state.next_gof();
+
+    // Wait a bit between GoFs to not flood the receiver
+    std::this_thread::sleep_for(std::chrono::milliseconds(1000 / uvgV3CRTP::SEND_FRAME_RATE));
   }
 
   std::cout << "Stopping sending: " << state.get_error_msg() << std::endl;

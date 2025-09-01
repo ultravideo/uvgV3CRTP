@@ -174,7 +174,7 @@ namespace uvgV3CRTP {
     size_t size_received = 0;
     size_t new_nalu_size = 1;
     bool timestamp_mismatch = false;
-    size_t buffer_unprocessed_count = receive_buffer_.at(type).size(); // Track how many nalus we've processed from the receive buffer to avoid infinite loops
+    size_t buffer_unprocessed_count = receive_buffer_size(type); // Track how many nalus we've processed from the receive buffer to avoid infinite loops
        
     while (size_received < expected_size)
     {

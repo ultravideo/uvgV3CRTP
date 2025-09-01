@@ -607,7 +607,7 @@ namespace uvgV3CRTP {
       }
 
       // Also check that the timestamp is as expected
-      check_timestamps(std::prev(state->data_->end(), 2), state->data_->end());
+      if (state->data_->num_samples() > 1) check_timestamps(std::prev(state->data_->end(), 2), state->data_->end());
     }
     V3C_STATE_CATCH(true)
   }
@@ -661,7 +661,7 @@ namespace uvgV3CRTP {
       }
 
       // Also check that the timestamp is as expected
-      check_timestamps(std::prev(state->data_->end(), 2), state->data_->end());
+      if (state->data_->num_samples() > 1) check_timestamps(std::prev(state->data_->end(), 2), state->data_->end());
     }
     V3C_STATE_CATCH(true)
   }
