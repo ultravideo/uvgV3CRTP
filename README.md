@@ -7,8 +7,6 @@ uvgV3CRTP takes in a V3C bitstream, parses it, and creates the necessary RTP fra
   
 uvgV3CRTP is still under development. API/ABI is still subject to change.
 
----
-
 
 ## Table of Contents
 
@@ -53,9 +51,9 @@ sudo make install
 #### Additional compilation parameters
 
 The following CMake flags can be used to customise the compilation:
-- ```cmake -DUVGV3CRTP_DISABLE_EXAMPLES=1 ..```: Does not buld examples
-- ```cmake -DUVGV3CRTP_DISABLE_INSTALL=1 ..```: Does not attempt to create a shared library
-- ```cmake -DUVGV3CRTP_DISABLE_WERROR=0 ..```: Does not ignore compiler warnings
+- Does not buld examples: ```cmake -DUVGV3CRTP_DISABLE_EXAMPLES=1 ..```
+- Does not attempt to create a shared library: ```cmake -DUVGV3CRTP_DISABLE_INSTALL=1 ..```
+- Does not ignore compiler warnings: ```cmake -DUVGV3CRTP_DISABLE_WERROR=0 ..```
 
 
 ## Using uvgV3CRTP
@@ -117,7 +115,8 @@ To receive the whole bitstream from the sender:
 ```
 uvgV3CRTP::receive_bitstream(&state, <v3c_size_precision>, <v3c_unit_size_precisions>, <expected_number_of_gof>, <num_nalus>, <header_defs>, <timeout(ms)>);
 ```
+
 For more information about the parameters and further examples see [examples/](examples/).
 Note: in order to correctly receive and reconstruct the bitstream certain out-of-band information, that is not transported over RTP, is needed. uvgV3CRTP does not by default pass along this information so it is up to the user to handle.
----
+
 
