@@ -27,10 +27,12 @@ namespace uvgV3CRTP {
     void send_v3c_unit(const V3C_Unit& unit) const;
 
     uint32_t get_initial_timestamp() const;
+    void set_initial_timestamp(const uint32_t timestamp);
+    bool is_initial_timestamp_set() const;
 
   private:
 
-    const Timestamp initial_timestamp_; // Initial timestamp for the first frame sent
+    Timestamp initial_timestamp_; // Initial timestamp for the first frame sent
   };
 
 }

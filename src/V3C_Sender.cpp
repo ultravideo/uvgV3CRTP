@@ -79,4 +79,14 @@ namespace uvgV3CRTP {
     return initial_timestamp_.get_timestamp();
   }
 
+  void V3C_Sender::set_initial_timestamp(const uint32_t timestamp)
+  {
+    initial_timestamp_.set_timestamp(timestamp);
+  }
+
+  bool V3C_Sender::is_initial_timestamp_set() const
+  {
+    return initial_timestamp_.is_timestamp_set();
+  }
+
 }

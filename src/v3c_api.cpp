@@ -227,6 +227,16 @@ namespace uvgV3CRTP {
   template<typename T>
   void V3C_State<T>::clear_sample_stream()
   {
+    if constexpr (std::is_same<T, V3C_Sender>::value)
+    {
+      if (data_ && static_cast<V3C_Sender*>(connection_)->is_initial_timestamp_set())
+      {
+        // Set initial timestamp to last timestamp + frame duration so that if new data is added, timestamps are continuous
+        static_cast<V3C_Sender*>(connection_)->set_initial_timestamp(
+          V3C::calc_new_timestamp(data_->back().get_timestamp(), DEFAULT_FRAME_RATE, RTP_CLOCK_RATE)
+        );
+      }
+    }
     if (data_)       delete data_;
     if (cur_gof_it_) delete get_it_ptr(cur_gof_it_);
     data_ = nullptr;
