@@ -52,4 +52,4 @@ and receiver with
 
 Additional Receiver example options that can be changed in the example file:
 - ```constexpr bool AUTO_PRECISION_MODE```: Setting this to true automatically infers size precision from v3c unit sizes, but reconstructed bitstream may not match original.
-- ```constexpr bool AUTO_EXPECTED_NUM_MODE```: Setting this to true will keep the receiver receiving NALUs/GoFs until a different timestamp is found or timeout, i.e. no need to set EXPECTED_NUM_*s. Note: End of bitstream will take a long time because of needing to wait for timeout.
+- ```constexpr bool AUTO_EXPECTED_NUM_MODE```: Setting this to true will keep the receiver receiving NALUs/GoFs until a different timestamp is found or timeout, i.e. no need to set ```EXPECTED_NUM_*```s. Note: End of bitstream will take a long time because of needing to wait for timeout.
