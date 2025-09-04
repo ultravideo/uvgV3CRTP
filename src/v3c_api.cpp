@@ -792,9 +792,10 @@ namespace uvgV3CRTP {
     std::string output = oss.str();
 
     // copy output to char*
-    if (out_len) *out_len = output.size() + 1; // Include null-termination byte
-    char * out_char = static_cast<char*>(malloc(*out_len));
-    if (out_char) memcpy(out_char, output.c_str(), *out_len);
+    const size_t out_size = output.size() + 1; // Include null-termination byte
+    if (out_len) *out_len = out_size;
+    char * out_char = static_cast<char*>(malloc(out_size));
+    if (out_char) memcpy(out_char, output.c_str(), out_size);
 
     return out_char;
   }
