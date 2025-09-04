@@ -17,7 +17,7 @@ namespace uvgV3CRTP {
 
 
   // Some macros for handling exceptions
-#define V3C_STATE_TRY(state)         \
+#define V3C_STATE_TRY(state)          \
   auto& _err = state->error_;         \
   auto& _err_msg = state->error_msg_; \
   try
@@ -47,7 +47,7 @@ namespace uvgV3CRTP {
     _err_msg = std::string("Unknown exception");                 \
   }                                                              \
   if constexpr (return_error) {                                  \
-    return _err;                                                 \
+    return ([&]() -> ERROR_TYPE { return _err; }());             \
   }
 
   namespace {
