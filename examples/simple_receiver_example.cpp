@@ -18,7 +18,8 @@ constexpr uint8_t Video_SIZE_PRECISION = 4;
 
 constexpr int TIMEOUT = 6000;
 // Auto size precision may not match orig bitstream
-constexpr bool AUTO_PRECISION_MODE = true;
+constexpr bool AUTO_PRECISION_MODE = false;
+//TODO: Add AUTO_NUM_NALU_MODE?
 
 constexpr uvgV3CRTP::INFO_FMT info_format = uvgV3CRTP::INFO_FMT::PARAM;//uvgV3CRTP::INFO_FMT::RAW; // Format for out-of-band info file
 

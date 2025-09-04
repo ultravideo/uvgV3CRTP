@@ -49,3 +49,6 @@ and receiver with
 ```
 ./simple_receiver_example /path/to/test_sequence.vpcc  /path/to/outofbandinfo
 ```
+
+Additional Receiver example options that can be changed in the example file:
+- ```constexpr bool AUTO_PRECISION_MODE```: Setting this to true automatically infers size precision from v3c unit sizes, but reconstructed bitstream may not match original.
