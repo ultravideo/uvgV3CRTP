@@ -175,6 +175,7 @@ namespace uvgV3CRTP {
     size_t new_nalu_size = 1;
     bool timestamp_mismatch = false;
     size_t buffer_unprocessed_count = receive_buffer_size(type); // Track how many nalus we've processed from the receive buffer to avoid infinite loops
+    const bool auto_size = expected_size == static_cast<size_t>(-1); // If expected size is -1, keep receiving until timestamp changes
        
     while (size_received < expected_size)
     {
@@ -219,6 +220,9 @@ namespace uvgV3CRTP {
 
         // Store the nalu in the timestamp buffer for later processing. If a timestamp exception is thrown, new_nalu should not have been moved so it is still valid
         push_to_receive_buffer(std::move(new_nalu), type);
+
+        // If using auto size, we can just stop receiving nalus when we get a timestamp mismatch
+        if (auto_size && size_received > 0) break;
 
         // Keep trying to receive nalus for this v3c unit until we get the expected size, but if we keep getting timestamp mismatches increment the expected size so we don't get stuck in an infinite loop
         // Also don't count nalus from the receive buffer when deciding to increment expected size

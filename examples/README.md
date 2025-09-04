@@ -19,7 +19,7 @@ Navigate to `uvgV3CRTP/build/examples` and compile the programs with the `make` 
 All examples take the same commandline parameters. Generally, running the examples follows the following steps:
 
 0. If using a test sequence other than the one provided above, the constants at the start of the receiver need to be changed to match the test sequence (sender can be run first to receive correct values). Need to re-build examples.
-1. Start receiver (5s timeout)
+1. Start receiver (6s timeout)
 2. Start sender
 
 Sender should be run with e.g.
@@ -37,7 +37,7 @@ for the receiver the test sequence is optional. It is only used to verify that t
 
 The simple example additionally allows passing out-of-band information at runtime. This is achieved as follows:
 
-1. Start sender (Writes out-of-band information to file, 6s wait before send)
+1. Start sender (Writes out-of-band information to file, 5s wait before send)
 2. Start receiver (Reads out-of-band information)
 
 Sender should be run with e.g.

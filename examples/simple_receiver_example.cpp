@@ -19,7 +19,7 @@ constexpr uint8_t Video_SIZE_PRECISION = 4;
 constexpr int TIMEOUT = 6000;
 // Auto size precision may not match orig bitstream
 constexpr bool AUTO_PRECISION_MODE = false;
-//TODO: Add AUTO_NUM_NALU_MODE?
+constexpr bool AUTO_EXPECTED_NUM_MODE = false;
 
 constexpr uvgV3CRTP::INFO_FMT info_format = uvgV3CRTP::INFO_FMT::PARAM;//uvgV3CRTP::INFO_FMT::RAW; // Format for out-of-band info file
 
@@ -144,7 +144,7 @@ int main(int argc, char* argv[]) {
   std::cout << "Initialize state... ";
   uvgV3CRTP::V3C_State<uvgV3CRTP::V3C_Receiver> state(
     uvgV3CRTP::INIT_FLAGS::VPS |
-    uvgV3CRTP::INIT_FLAGS::AD |
+    uvgV3CRTP::INIT_FLAGS::AD  |
     uvgV3CRTP::INIT_FLAGS::OVD |
     uvgV3CRTP::INIT_FLAGS::GVD |
     uvgV3CRTP::INIT_FLAGS::AVD
@@ -157,12 +157,12 @@ int main(int argc, char* argv[]) {
   uint8_t atlas_size_precision = AUTO_PRECISION_MODE ? static_cast<uint8_t>(-1) : AtlasNAL_SIZE_PRECISION;
   uint8_t video_size_precision = Video_SIZE_PRECISION;//AUTO_PRECISION_MODE ? static_cast<uint8_t>(-1) : Video_SIZE_PRECISION;
   
-  size_t expected_number_of_gof = EXPECTED_NUM_GOFs;
-  size_t num_vps                = EXPECTED_NUM_VPSs;
-  size_t num_ad_nalu            = EXPECTED_NUM_AD_NALU;
-  size_t num_ovd_nalu           = EXPECTED_NUM_OVD_NALU;
-  size_t num_gvd_nalu           = EXPECTED_NUM_GVD_NALU;
-  size_t num_avd_nalu           = EXPECTED_NUM_AVD_NALU;
+  size_t expected_number_of_gof = AUTO_EXPECTED_NUM_MODE ? static_cast<size_t>(-1) : EXPECTED_NUM_GOFs;
+  size_t num_vps                = AUTO_EXPECTED_NUM_MODE ? static_cast<size_t>(-1) : EXPECTED_NUM_VPSs;
+  size_t num_ad_nalu            = AUTO_EXPECTED_NUM_MODE ? static_cast<size_t>(-1) : EXPECTED_NUM_AD_NALU;
+  size_t num_ovd_nalu           = AUTO_EXPECTED_NUM_MODE ? static_cast<size_t>(-1) : EXPECTED_NUM_OVD_NALU;
+  size_t num_gvd_nalu           = AUTO_EXPECTED_NUM_MODE ? static_cast<size_t>(-1) : EXPECTED_NUM_GVD_NALU;
+  size_t num_avd_nalu           = AUTO_EXPECTED_NUM_MODE ? static_cast<size_t>(-1) : EXPECTED_NUM_AVD_NALU;
   size_t num_pvd_nalu           = 0;
   size_t num_cad_nalu           = 0;
 

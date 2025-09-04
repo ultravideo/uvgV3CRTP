@@ -89,7 +89,13 @@ int main(int argc, char* argv[]) {
 // ******** Initialize sample stream with input bitstream ***********
 //
   std::cout << "Initialize state... ";
-  uvgV3CRTP::V3C_State<uvgV3CRTP::V3C_Sender> state(buf.get(), length); // Create a new state in a sender configuration
+  uvgV3CRTP::V3C_State<uvgV3CRTP::V3C_Sender> state(buf.get(), length,
+    uvgV3CRTP::INIT_FLAGS::VPS |
+    uvgV3CRTP::INIT_FLAGS::AD  |
+    uvgV3CRTP::INIT_FLAGS::OVD |
+    uvgV3CRTP::INIT_FLAGS::GVD |
+    uvgV3CRTP::INIT_FLAGS::AVD
+  ); // Create a new state in a sender configuration
   //state.init_sample_stream(buf.get(), length); // sample stream already initialized when creating state
 
   if(state.get_error_flag() != uvgV3CRTP::ERROR_TYPE::OK) {
@@ -126,7 +132,7 @@ int main(int argc, char* argv[]) {
 //
   if (argc >= 3) { // If an out-of-band file is specified write out-of-band info to it
     size_t len = 0;
-    auto out_info = std::unique_ptr<char, decltype(&free)>(state.get_bitstream_info_string(&len, info_format), &free);
+    auto out_info = std::unique_ptr<char, decltype(&free)>(state.get_bitstream_info_string(info_format, &len), &free);
     if (out_info == nullptr) {
       std::cerr << "Error: Could not get out-of-band info string: " << state.get_error_msg() << std::endl;
       return EXIT_FAILURE;
