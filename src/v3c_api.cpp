@@ -303,8 +303,14 @@ namespace uvgV3CRTP {
   {
     if (!validate_data()) return nullptr;
 
-    if (length) *length = data_->size();
-    return data_->get_bitstream().release();
+    V3C_STATE_TRY(this)
+    {
+      if (length) *length = data_->size();
+      return data_->get_bitstream().release();
+    }
+    V3C_STATE_CATCH(false)
+    
+    return nullptr;
   }
 
   template<typename T>
@@ -313,8 +319,14 @@ namespace uvgV3CRTP {
     if (!validate_data()) return nullptr;
     if (!validate_cur_gof()) return nullptr;
 
-    if (length) *length = data_->size(get_it(cur_gof_it_));
-    return data_->get_bitstream(get_it(cur_gof_it_)).release();
+    V3C_STATE_TRY(this)
+    {
+      if (length) *length = data_->size(get_it(cur_gof_it_));
+      return data_->get_bitstream(get_it(cur_gof_it_)).release();
+    }
+    V3C_STATE_CATCH(false)
+
+    return nullptr;
   }
 
   template<typename T>
@@ -323,8 +335,14 @@ namespace uvgV3CRTP {
     if (!validate_data()) return nullptr;
     if (!validate_cur_gof()) return nullptr;
 
-    if (length) *length = data_->size(get_it(cur_gof_it_), type);
-    return data_->get_bitstream(get_it(cur_gof_it_), type).release();
+    V3C_STATE_TRY(this)
+    {
+      if (length) *length = data_->size(get_it(cur_gof_it_), type);
+      return data_->get_bitstream(get_it(cur_gof_it_), type).release();
+    }
+    V3C_STATE_CATCH(false)
+
+    return nullptr;
   }
 
   template<typename T>
@@ -352,6 +370,21 @@ namespace uvgV3CRTP {
 
     is_gof_it_valid_ = false; //Invalidate iterator so it can be initialized
     return init_cur_gof(i);
+  }
+
+  template<typename T>
+  size_t V3C_State<T>::cur_gof_ind() const
+  {
+    if (!validate_data()) return 0;
+    if (!validate_cur_gof(false)) return 0;
+    return cur_gof_ind_;
+  }
+
+  template<typename T>
+  size_t V3C_State<T>::num_gofs() const
+  {
+    if (!validate_data()) return 0;
+    return data_->num_samples();
   }
 
   template<typename T>
@@ -759,7 +792,7 @@ namespace uvgV3CRTP {
     std::string output = oss.str();
 
     // copy output to char*
-    *out_len = output.size() + 1; // Include null-termination byte
+    if (out_len) *out_len = output.size() + 1; // Include null-termination byte
     char * out_char = static_cast<char*>(malloc(*out_len));
     if (out_char) memcpy(out_char, output.c_str(), *out_len);
 
@@ -767,7 +800,7 @@ namespace uvgV3CRTP {
   }
 
   template<typename T>
-  char * V3C_State<T>::get_bitstream_info_string(size_t* out_len, const INFO_FMT fmt) const
+  char * V3C_State<T>::get_bitstream_info_string(const INFO_FMT fmt, size_t* out_len) const
   {
     if (!validate_data()) return nullptr;
 
@@ -775,7 +808,7 @@ namespace uvgV3CRTP {
   }
 
   template<typename T>
-  char * V3C_State<T>::get_cur_gof_info_string(size_t* out_len, const INFO_FMT fmt) const
+  char * V3C_State<T>::get_cur_gof_info_string(const INFO_FMT fmt, size_t* out_len) const
   {
     if (!validate_data()) return nullptr;
     if (!validate_cur_gof()) return nullptr;
@@ -784,7 +817,7 @@ namespace uvgV3CRTP {
   }
 
   template<typename T>
-  char * V3C_State<T>::get_cur_gof_info_string(size_t* out_len, const V3C_UNIT_TYPE type, const INFO_FMT fmt) const
+  char * V3C_State<T>::get_cur_gof_info_string(const V3C_UNIT_TYPE type, const INFO_FMT fmt, size_t* out_len) const
   {
     if (!validate_data()) return nullptr;
     if (!validate_cur_gof()) return nullptr;
@@ -870,27 +903,27 @@ namespace uvgV3CRTP {
   }
 
   template<typename C, typename R, typename... P>
-  static void print_info(const C* obj, R (C::*info_func)(size_t*, P...) const, P... param)
+  static void print_info(const C* obj, R (C::*info_func)(P...) const, P... param)
   {
-    size_t len = 0;
-    auto info = std::unique_ptr<char, decltype(&free)>((obj->*info_func)(&len, param...), &free);
+    //size_t len = 0;
+    auto info = std::unique_ptr<char, decltype(&free)>((obj->*info_func)(param...), &free);
     std::cout << info.get() << std::endl;
   }
 
   template<typename T>
   void V3C_State<T>::print_bitstream_info(const INFO_FMT fmt) const
   {
-    print_info(this, &V3C_State<T>::get_bitstream_info_string, fmt);
+    print_info(this, &V3C_State<T>::get_bitstream_info_string, fmt, static_cast<size_t*>(nullptr));
   }
   template<typename T>
   void V3C_State<T>::print_cur_gof_info(const INFO_FMT fmt) const
   {
-    print_info(this, static_cast<char*(V3C_State<T>::*)(size_t*, INFO_FMT)const>(&V3C_State<T>::get_cur_gof_info_string), fmt);
+    print_info(this, static_cast<char*(V3C_State<T>::*)(INFO_FMT, size_t*)const>(&V3C_State<T>::get_cur_gof_info_string), fmt, static_cast<size_t*>(nullptr));
   }
   template<typename T>
   void V3C_State<T>::print_cur_gof_info(const V3C_UNIT_TYPE type, const INFO_FMT fmt) const
   {
-    print_info(this, static_cast<char*(V3C_State<T>::*)(size_t*, V3C_UNIT_TYPE, INFO_FMT)const>(&V3C_State<T>::get_cur_gof_info_string), type, fmt);
+    print_info(this, static_cast<char*(V3C_State<T>::*)(V3C_UNIT_TYPE, INFO_FMT, size_t*)const>(&V3C_State<T>::get_cur_gof_info_string), type, fmt, static_cast<size_t*>(nullptr));
   }
   template<typename T>
   ERROR_TYPE V3C_State<T>::get_error_flag() const
