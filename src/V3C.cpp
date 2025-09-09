@@ -309,6 +309,85 @@ namespace uvgV3CRTP {
     }
   }
 
+  static constexpr char b64_alpha[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+
+  static std::string enc_base64(const char* const in, const size_t len)
+  {
+    const size_t out_len = ((len + 2) / 3) << 2;
+    const size_t pad = (3 - (len % 3)) % 3;
+    const size_t loop_len = len - (len % 3);
+
+    std::string out;
+    out.reserve(out_len); // Reserve enough space +1 for null terminator
+    
+    for (size_t i = 0; i < loop_len; i += 3) {
+      // Combine 3 bytes into a 24-bit number
+      const uint32_t val = in[i + 0] << 16 
+                         | in[i + 1] << 8 
+                         | in[i + 2] << 0;
+      // Extract 4 6-bit values and map to base64 characters
+      out.push_back(b64_alpha[(val >> 18) & 0x3F]);
+      out.push_back(b64_alpha[(val >> 12) & 0x3F]);
+      out.push_back(b64_alpha[(val >> 6)  & 0x3F]);
+      out.push_back(b64_alpha[(val >> 0)  & 0x3F]);
+    }
+    // Account for last byte(s) and padding
+    if (pad != 0) {
+      const uint32_t val = pad == 2 ? in[len - 1] << 16                       // If pad = 2, only 1 byte of input left
+                                    : in[len - 2] << 16 | (in[len - 1] << 8); // If pad = 1, 2 bytes of input left
+      out.push_back(b64_alpha[(val >> 18) & 0x3F]);
+      out.push_back(b64_alpha[(val >> 12) & 0x3F]);
+      if (pad == 1) {
+        out.push_back(b64_alpha[(val >> 6) & 0x3F]);
+      } else {
+        out.push_back('=');
+      }
+      out.push_back('=');
+    }
+
+    return out;
+  }
+
+  static std::string dec_base64(const char* const in, const size_t len)
+  {
+    if (len % 4 != 0) {
+      throw ParseException("Base64 input length must be a multiple of 4");
+    }
+    // Calculate padding
+    size_t pad = 0;
+    if (in[len - 1] == '=') pad++;
+    if (in[len - 2] == '=') pad++;
+    const size_t loop_len = len - (pad ? 4 : 0);
+    const size_t out_len = (len >> 2) * 3 - pad;
+    std::string out;
+    out.reserve(out_len);
+    
+    for (size_t i = 0; i < loop_len; i += 4)
+    {
+      // Decode 4 base64 characters into a 24-bit number
+      const uint32_t val = (std::strchr(b64_alpha, in[i + 0]) - b64_alpha) << 18
+                         | (std::strchr(b64_alpha, in[i + 1]) - b64_alpha) << 12
+                         | (std::strchr(b64_alpha, in[i + 2]) - b64_alpha) << 6
+                         | (std::strchr(b64_alpha, in[i + 3]) - b64_alpha) << 0;
+      // Extract 3 bytes from the 24-bit number
+      out.push_back((val >> 16) & 0xFF);
+      out.push_back((val >> 8)  & 0xFF);
+      out.push_back((val >> 0)  & 0xFF);
+    }
+    // Handle last 4 characters and padding
+    if (pad != 0) {
+      const uint32_t val = (std::strchr(b64_alpha, in[loop_len + 0]) - b64_alpha) << 18
+                         | (std::strchr(b64_alpha, in[loop_len + 1]) - b64_alpha) << 12
+                         | (pad == 1 ? (std::strchr(b64_alpha, in[loop_len + 2]) - b64_alpha) << 6 : 0);
+      out.push_back((val >> 16) & 0xFF);
+      if (pad == 1) {
+        out.push_back((val >> 8) & 0xFF);
+      }
+    }
+
+    return out;
+  }
+
   template <typename DT, typename FT>
   static inline bool has_field(const DT& data, const FT& field)
   {
