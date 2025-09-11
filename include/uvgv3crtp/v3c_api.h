@@ -17,36 +17,6 @@ namespace uvgV3CRTP {
   template <SAMPLE_STREAM_TYPE E>
   class Sample_Stream;
 
-  struct HeaderStruct {
-    const uint8_t vuh_unit_type;
-    uint8_t vuh_v3c_parameter_set_id;
-    uint8_t vuh_atlas_id; // Not V3C_CAD
-
-    // Only V3C_GVD
-    uint8_t vuh_attribute_index;
-    uint8_t vuh_attribute_partition_index;
-
-    // Only V3C_GVD and V3C_AVD
-    uint8_t vuh_map_index;
-    bool vuh_auxiliary_video_flag;
-  };
-
-  struct BitstreamInfo {
-    size_t num_gofs;
-    size_t num_vps;
-    size_t num_ad_nalu;
-    size_t num_ovd_nalu;
-    size_t num_gvd_nalu;
-    size_t num_avd_nalu;
-    size_t num_pvd_nalu;
-    size_t num_cad_nalu;
-    uint8_t v3c_size_precision;
-    uint8_t video_nal_size_precision;
-    uint8_t atlas_nal_size_precision;
-    bool var_nal_prec;
-    bool var_nal_num;
-  };
-
   template <typename T>
   class V3C_State {
   public:

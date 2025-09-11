@@ -31,29 +31,64 @@ namespace uvgV3CRTP {
     RAW,     // Output data values directly
     BASE64,  // Base64 encoded data
   };
+
   enum class INFO_FIELDS {
-    NUM_GOF,              // s
-    NUM_VPS,              // s    
-    NUM_AD_NALU,          // s    
-    NUM_OVD_NALU,         // s    
-    NUM_GVD_NALU,         // s    
-    NUM_AVD_NALU,         // s    
-    NUM_PVD_NALU,         // s    
-    NUM_CAD_NALU,         // s    
+    NUM         , // s
 
-    V3C_SIZE_PREC,        // ui8      
-    VIDEO_NAL_SIZE_PREC,  // ui8            
-    ATLAS_NAL_SIZE_PREC,  // ui8            
-
-    VAR_NAL_PREC,         // b    
-    VAR_NAL_NUM           // b  
+    SIZE_PREC   , // ui8           
+    
+    VAR_NAL_PREC, // b    
+    VAR_NAL_NUM   // b  
   };
 
-  union INFO_FIELD_TYPES
+  enum class HEADER_FIELDS {
+    VUH_UNIT_TYPE,                  // ui8
+    VUH_V3C_PARAMETER_SET_ID,       // ui8
+    VUH_ATLAS_ID, // Not V3C_CAD    // ui8
+    // Only V3C_GVD
+    VUH_ATTRIBUTE_INDEX,            // ui8
+    VUH_ATTRIBUTE_PARTITION_INDEX,  // ui8
+    // Only V3C_GVD and V3C_AVD
+    VUH_MAP_INDEX,                  // ui8
+    VUH_AUXILIARY_VIDEO_FLAG,       // b
+  };
+
+  union FIELD_TYPES
   {
     size_t s;
     uint8_t ui8;
     bool b;
+  };
+
+  // Api related structs
+  struct HeaderStruct {
+    const uint8_t vuh_unit_type;
+    uint8_t vuh_v3c_parameter_set_id;
+    uint8_t vuh_atlas_id; // Not V3C_CAD
+
+    // Only V3C_GVD
+    uint8_t vuh_attribute_index;
+    uint8_t vuh_attribute_partition_index;
+
+    // Only V3C_GVD and V3C_AVD
+    uint8_t vuh_map_index;
+    bool vuh_auxiliary_video_flag;
+  };
+
+  struct BitstreamInfo {
+    size_t num_gofs;
+    size_t num_vps;
+    size_t num_ad_nalu;
+    size_t num_ovd_nalu;
+    size_t num_gvd_nalu;
+    size_t num_avd_nalu;
+    size_t num_pvd_nalu;
+    size_t num_cad_nalu;
+    uint8_t v3c_size_precision;
+    uint8_t video_nal_size_precision;
+    uint8_t atlas_nal_size_precision;
+    bool var_nal_prec;
+    bool var_nal_num;
   };
 
   // V3C error state flags

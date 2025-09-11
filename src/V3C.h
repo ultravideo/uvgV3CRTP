@@ -53,11 +53,15 @@ namespace uvgV3CRTP {
     static void convert_size_big_endian(const uint64_t in, uint8_t* const out, const size_t output_size);
 
 
-    using InfoDataType = std::map<INFO_FIELDS, INFO_FIELD_TYPES>;
+    using InfoDataType = std::map<V3C_UNIT_TYPE, std::map<INFO_FIELDS, FIELD_TYPES>>;
+    using HeaderDataType = std::map<V3C_UNIT_TYPE, std::map<HEADER_FIELDS, FIELD_TYPES>>;
+    using PayloadDataType = std::map<V3C_UNIT_TYPE, std::string>;
+
     template <typename DataClass>
     static void write_out_of_band_info(std::ostream& out_stream, const DataClass& data, INFO_FMT fmt = INFO_FMT::LOGGING);
     template <typename DataClass>
     static InfoDataType read_out_of_band_info(std::istream& in_stream, INFO_FMT fmt = INFO_FMT::LOGGING, INIT_FLAGS init_flags = INIT_FLAGS::NUL);
+    static void populate_bitstream_info(const InfoDataType& in_info, BitstreamInfo& out_info);
 
     static uint32_t get_new_sampling_instant(); // Generating a new sampling instant for RTP streams. Should only be used for the first instance of a media stream.
     static uint32_t calc_new_timestamp(const uint32_t old_timestamp, const uint32_t sample_rate, const uint32_t clock_rate);
