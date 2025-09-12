@@ -30,6 +30,7 @@ namespace uvgV3CRTP {
     PARAM,   // Print relevant parameters directly to c++ expressions
     RAW,     // Output data values directly
     BASE64,  // Base64 encoded data
+    SDP      // SDP format
   };
 
   enum class INFO_FIELDS {

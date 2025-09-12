@@ -46,6 +46,41 @@ namespace uvgV3CRTP {
     {
       using type = bool;
     };
+    template <>
+    struct _FieldDataType<HEADER_FIELDS, HEADER_FIELDS::VUH_UNIT_TYPE>
+    {
+      using type = uint8_t;
+    };
+    template <>
+    struct _FieldDataType<HEADER_FIELDS, HEADER_FIELDS::VUH_V3C_PARAMETER_SET_ID>
+    {
+      using type = uint8_t;
+    };
+    template <>
+    struct _FieldDataType<HEADER_FIELDS, HEADER_FIELDS::VUH_ATLAS_ID>
+    {
+      using type = uint8_t;
+    };
+    template <>
+    struct _FieldDataType<HEADER_FIELDS, HEADER_FIELDS::VUH_ATTRIBUTE_INDEX>
+    {
+      using type = uint8_t;
+    };
+    template <>
+    struct _FieldDataType<HEADER_FIELDS, HEADER_FIELDS::VUH_ATTRIBUTE_PARTITION_INDEX>
+    {
+      using type = uint8_t;
+    };
+    template <>
+    struct _FieldDataType<HEADER_FIELDS, HEADER_FIELDS::VUH_MAP_INDEX>
+    {
+      using type = uint8_t;
+    };
+    template <>
+    struct _FieldDataType<HEADER_FIELDS, HEADER_FIELDS::VUH_AUXILIARY_VIDEO_FLAG>
+    {
+      using type = bool;
+    };
   }
   template <auto Field>
   using FieldDataType = _FieldDataType<decltype(Field), Field>;
@@ -757,6 +792,76 @@ namespace uvgV3CRTP {
       break;
     }
   }
+  template <INFO_FMT F, typename = typename std::enable_if<F == INFO_FMT::RAW
+                                                        || F == INFO_FMT::BASE64>::type>
+  static void populate_data(const V3C_Unit& v3c_data, V3C::PayloadDataType& data)
+  {
+    const V3C_UNIT_TYPE type = v3c_data.type();
+    if (!has_field(data, type)) data[type] = {};
+
+    std::string raw_payload = {};
+    for (const auto& nal : v3c_data.nalus())
+    {
+      raw_payload.append(reinterpret_cast<char*>(nal.get().bitstream()), nal.get().size());
+    }
+
+    if constexpr (F == INFO_FMT::RAW)
+    {
+      data.at(type) = raw_payload;
+    }
+    else if constexpr (F == INFO_FMT::BASE64)
+    {
+      data.at(type) = enc_base64(raw_payload.c_str(), raw_payload.size());
+    }
+  }
+  template <INFO_FMT F = INFO_FMT::LOGGING, typename = typename std::enable_if<F == INFO_FMT::LOGGING
+                                                                            || F == INFO_FMT::PARAM
+                                                                            || F == INFO_FMT::SDP>::type>
+  static void populate_data(const V3C_Unit::V3C_Unit_Header& header, V3C::HeaderDataType& data)
+  {
+    const V3C_UNIT_TYPE type = header.type;
+    if (!has_field(data, type)) data[type] = {};
+    switch (type)
+    {
+    case V3C_GVD:
+      get_field<HEADER_FIELDS::VUH_ATTRIBUTE_INDEX>(data.at(type)) = header.vuh_attribute_index;
+      get_field<HEADER_FIELDS::VUH_ATTRIBUTE_PARTITION_INDEX>(data.at(type)) = header.vuh_attribute_partition_index;
+      [[fallthrough]];
+    case V3C_AVD:
+      get_field<HEADER_FIELDS::VUH_MAP_INDEX>(data.at(type)) = header.vuh_map_index;
+      get_field<HEADER_FIELDS::VUH_AUXILIARY_VIDEO_FLAG>(data.at(type)) = header.vuh_auxiliary_video_flag;
+      [[fallthrough]];
+    case V3C_OVD:
+    case V3C_AD:
+    case V3C_VPS:
+      get_field<HEADER_FIELDS::VUH_ATLAS_ID>(data.at(type)) = header.vuh_atlas_id;
+      [[fallthrough]];
+    default:
+      get_field<HEADER_FIELDS::VUH_UNIT_TYPE>(data.at(type)) = header.vuh_unit_type;
+      get_field<HEADER_FIELDS::VUH_V3C_PARAMETER_SET_ID>(data.at(type)) = header.vuh_v3c_parameter_set_id;
+      break;
+    }
+  }
+  template <INFO_FMT F, typename = typename std::enable_if<F == INFO_FMT::RAW
+                                                        || F == INFO_FMT::BASE64>::type>
+  static void populate_data(const V3C_Unit::V3C_Unit_Header& header, V3C::PayloadDataType& data)
+  {
+    const V3C_UNIT_TYPE type = header.type;
+    if (!has_field(data, type)) data[type] = {};
+
+    std::string raw_header = {};
+    raw_header.resize(header.size());
+    header.write_header(raw_header.data());
+    
+    if constexpr (F == INFO_FMT::RAW)
+    {
+      data.at(type) = raw_header;
+    }
+    else if constexpr (F == INFO_FMT::BASE64)
+    {
+      data.at(type) = enc_base64(raw_header.c_str(), raw_header.size());
+    }
+  }
 
   template<typename Stream, typename DataClass>
   static V3C::InfoDataType _out_of_band_info(Stream& stream, const DataClass& v3c_data, INFO_FMT fmt)
@@ -775,6 +880,10 @@ namespace uvgV3CRTP {
     case INFO_FMT::BASE64:
       populate_data<INFO_FMT::BASE64>(v3c_data, info_data);
       process_out_of_band_info<INFO_FMT::BASE64, DataClass>(stream, info_data);
+      break;
+    case INFO_FMT::SDP:
+      populate_data<INFO_FMT::SDP>(v3c_data, info_data);
+      process_out_of_band_info<INFO_FMT::SDP, DataClass>(stream, info_data);
       break;
     default:
       populate_data<INFO_FMT::LOGGING>(v3c_data, info_data);
