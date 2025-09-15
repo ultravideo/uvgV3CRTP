@@ -54,6 +54,10 @@ namespace uvgV3CRTP {
     VUH_AUXILIARY_VIDEO_FLAG,       // b
   };
 
+  enum class PAYLOAD_FIELDS {
+    PAYLOAD // std::string
+  };
+
   union FIELD_TYPES
   {
     size_t s;

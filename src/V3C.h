@@ -55,12 +55,12 @@ namespace uvgV3CRTP {
 
     using InfoDataType = std::map<V3C_UNIT_TYPE, std::map<INFO_FIELDS, FIELD_TYPES>>;
     using HeaderDataType = std::map<V3C_UNIT_TYPE, std::map<HEADER_FIELDS, FIELD_TYPES>>;
-    using PayloadDataType = std::map<V3C_UNIT_TYPE, std::string>;
+    using PayloadDataType = std::map<V3C_UNIT_TYPE, std::map<PAYLOAD_FIELDS, std::string>>;
 
-    template <typename DataClass>
+    template <typename DataClass, typename DataType = V3C::InfoDataType>
     static void write_out_of_band_info(std::ostream& out_stream, const DataClass& data, INFO_FMT fmt = INFO_FMT::LOGGING);
-    template <typename DataClass>
-    static InfoDataType read_out_of_band_info(std::istream& in_stream, INFO_FMT fmt = INFO_FMT::LOGGING, INIT_FLAGS init_flags = INIT_FLAGS::NUL);
+    template <typename DataClass, typename DataType = V3C::InfoDataType>
+    static DataType read_out_of_band_info(std::istream& in_stream, INFO_FMT fmt = INFO_FMT::LOGGING, INIT_FLAGS init_flags = INIT_FLAGS::NUL);
     static void populate_bitstream_info(const InfoDataType& in_info, BitstreamInfo& out_info);
 
     static uint32_t get_new_sampling_instant(); // Generating a new sampling instant for RTP streams. Should only be used for the first instance of a media stream.
