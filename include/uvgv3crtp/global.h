@@ -43,15 +43,15 @@ namespace uvgV3CRTP {
   };
 
   enum class HEADER_FIELDS {
-    VUH_UNIT_TYPE,                  // ui8
-    VUH_V3C_PARAMETER_SET_ID,       // ui8
-    VUH_ATLAS_ID, // Not V3C_CAD    // ui8
-    // Only V3C_GVD
-    VUH_ATTRIBUTE_INDEX,            // ui8
-    VUH_ATTRIBUTE_PARTITION_INDEX,  // ui8
+    VUH_UNIT_TYPE,                           // ui8
+    VUH_V3C_PARAMETER_SET_ID, // Not V3C_VPS // ui8
+    VUH_ATLAS_ID, // Not V3C_CAD, V3C_VPS    // ui8
+    // Only V3C_AVD
+    VUH_ATTRIBUTE_INDEX,                     // ui8
+    VUH_ATTRIBUTE_PARTITION_INDEX,           // ui8
     // Only V3C_GVD and V3C_AVD
-    VUH_MAP_INDEX,                  // ui8
-    VUH_AUXILIARY_VIDEO_FLAG,       // b
+    VUH_MAP_INDEX,                           // ui8
+    VUH_AUXILIARY_VIDEO_FLAG,                // b
   };
 
   enum class PAYLOAD_FIELDS {

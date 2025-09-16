@@ -202,6 +202,12 @@ namespace uvgV3CRTP {
      */
     char* get_cur_gof_info_string(const V3C_UNIT_TYPE type, const INFO_FMT fmt = INFO_FMT::LOGGING, size_t* out_len = nullptr) const;
 
+
+    char* get_cur_gof_header_string(const INFO_FMT fmt = INFO_FMT::LOGGING, size_t* out_len = nullptr) const;
+    char* get_cur_gof_header_string(const V3C_UNIT_TYPE type, const INFO_FMT fmt = INFO_FMT::LOGGING, size_t* out_len = nullptr) const;
+    char* get_cur_gof_VPS_string(const INFO_FMT fmt = INFO_FMT::LOGGING, size_t* out_len = nullptr) const;
+
+
     /**
      * @brief Parse out-of-band info from a bitstream info string.
      * @param in_data Pointer to the input data.
@@ -242,6 +248,10 @@ namespace uvgV3CRTP {
      * @param fmt Output format.
      */
     void print_cur_gof_info(const V3C_UNIT_TYPE type, const INFO_FMT fmt = INFO_FMT::LOGGING) const;
+    
+    void print_cur_gof_header(const INFO_FMT fmt = INFO_FMT::LOGGING) const;
+    void print_cur_gof_header(const V3C_UNIT_TYPE type, const INFO_FMT fmt = INFO_FMT::LOGGING) const;
+    void print_cur_gof_VPS(const INFO_FMT fmt = INFO_FMT::LOGGING) const;
 
     /**
      * @brief Get the current error flag.

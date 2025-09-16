@@ -130,6 +130,11 @@ int main(int argc, char* argv[]) {
 
 // *********** Handle writing out-of-band info to file *************
 //
+  // Print header and vps info for first gof
+  //state.first_gof();
+  //state.print_cur_gof_header(info_format);
+  //state.print_cur_gof_VPS(info_format);
+
   if (argc >= 3) { // If an out-of-band file is specified write out-of-band info to it
     size_t len = 0;
     auto out_info = std::unique_ptr<char, decltype(&free)>(state.get_bitstream_info_string(info_format, &len), &free);

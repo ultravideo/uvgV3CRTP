@@ -69,8 +69,8 @@ namespace uvgV3CRTP {
       ~V3C_Unit_Header() = default;
 
       const uint8_t vuh_unit_type;
-      uint8_t vuh_v3c_parameter_set_id;
-      uint8_t vuh_atlas_id; // Not V3C_CAD
+      uint8_t vuh_v3c_parameter_set_id; // Not V3C_VPS
+      uint8_t vuh_atlas_id; // Not V3C_CAD, V3C_VPS
 
       // Only V3C_GVD
       uint8_t vuh_attribute_index;
