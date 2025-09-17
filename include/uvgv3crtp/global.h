@@ -55,6 +55,7 @@ namespace uvgV3CRTP {
   };
 
   enum class PAYLOAD_FIELDS {
+    HEADER, // std::string
     PAYLOAD // std::string
   };
 

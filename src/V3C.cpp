@@ -88,6 +88,11 @@ namespace uvgV3CRTP {
     {
       using type = std::string;
     };
+    template <>
+    struct _FieldDataType<PAYLOAD_FIELDS, PAYLOAD_FIELDS::HEADER>
+    {
+      using type = std::string;
+    };
   }
   template <auto Field>
   using FieldDataType = _FieldDataType<decltype(Field), Field>;
@@ -637,6 +642,38 @@ namespace uvgV3CRTP {
     process<F>(out, tmp.str().c_str(), std::forward<TV>(value));
   }
 
+  template <INFO_FMT F = INFO_FMT::LOGGING, typename Stream, typename TF, typename TV>
+  static inline void process_attr(Stream& out, TF&& field, TV&& value)
+  {
+    std::ostringstream tmp;
+    if constexpr (F == INFO_FMT::LOGGING) tmp << "  ";
+    tmp << field << ": ";
+    process<F>(out, tmp.str().c_str(), std::forward<TV>(value));
+  }
+
+  static constexpr const char* get_unit_type_name(const V3C_UNIT_TYPE type)
+  {
+    switch (type)
+    {
+    case V3C_VPS:
+      return "V3C_VPS";
+    case V3C_AD:
+      return "V3C_AD";
+    case V3C_OVD:
+      return "V3C_OVD";
+    case V3C_GVD:
+      return "V3C_GVD";
+    case V3C_AVD:
+      return "V3C_AVD";
+    case V3C_PVD:
+      return "V3C_PVD";
+    case V3C_CAD:
+      return "V3C_CAD";
+    default:
+      return "UNDEF";
+    }
+  }
+
   template <INFO_FMT F, typename Stream, typename... Param>
   static inline void preample(Stream&, Param...)
   {
@@ -646,6 +683,12 @@ namespace uvgV3CRTP {
   inline void preample<INFO_FMT::LOGGING>(std::ostream& out)
   {
     out << "Summary:" << std::endl;
+    out << "--------" << std::endl;
+  }
+  template <>
+  inline void preample<INFO_FMT::LOGGING>(std::ostream& out, const V3C_UNIT_TYPE type)
+  {
+    out << get_unit_type_name(type) << ":" << std::endl;
     out << "--------" << std::endl;
   }
 
@@ -668,6 +711,54 @@ namespace uvgV3CRTP {
     }
   }
 
+  template <INFO_FMT F, V3C_UNIT_TYPE T, HEADER_FIELDS H, typename A = void>
+  static constexpr auto get_field_name()
+  {
+    if constexpr (F == INFO_FMT::SDP)
+    {
+      switch (H)
+      {
+      case HEADER_FIELDS::VUH_UNIT_TYPE:
+        return "sprop-v3c-unit-type";
+      case HEADER_FIELDS::VUH_V3C_PARAMETER_SET_ID:
+        return "sprop-v3c-vps-id";
+      case HEADER_FIELDS::VUH_ATLAS_ID:
+        return "sprop-v3c-atlas-id";
+      case HEADER_FIELDS::VUH_ATTRIBUTE_INDEX:
+        return "sprop-v3c-attr-idx";
+      case HEADER_FIELDS::VUH_ATTRIBUTE_PARTITION_INDEX:
+        return "sprop-v3c-attr-part-idx";
+      case HEADER_FIELDS::VUH_MAP_INDEX:
+        return "sprop-v3c-map-idx";
+      case HEADER_FIELDS::VUH_AUXILIARY_VIDEO_FLAG:
+        return "sprop-v3c-map-idx";
+      default:
+        return "Unsupported header field in get_field_name for SDP";
+      }
+    }
+    else
+    {
+      switch (H)
+      {
+      case HEADER_FIELDS::VUH_UNIT_TYPE:
+        return "vuh_unit_type";
+      case HEADER_FIELDS::VUH_V3C_PARAMETER_SET_ID:
+        return "vuh_v3c_parameter_set_id";
+      case HEADER_FIELDS::VUH_ATLAS_ID:
+        return "vuh_atlas_id";
+      case HEADER_FIELDS::VUH_ATTRIBUTE_INDEX:
+        return "vuh_attribute_index";
+      case HEADER_FIELDS::VUH_ATTRIBUTE_PARTITION_INDEX:
+        return "vuh_attribute_partition_index";
+      case HEADER_FIELDS::VUH_MAP_INDEX:
+        return "vuh_map_index";
+      case HEADER_FIELDS::VUH_AUXILIARY_VIDEO_FLAG:
+        return "vuh_auxiliary_video_flag";
+      default:
+        return "Unsupported header field in get_field_name for SDP";
+      }
+    }
+  }
 
   template <INFO_FMT F = INFO_FMT::LOGGING, V3C_UNIT_TYPE Type, auto Field, typename Stream, typename FieldName, typename DataType>
   static void inline process_field(Stream& stream, FieldName&& field_name, DataType& data)
@@ -689,96 +780,130 @@ namespace uvgV3CRTP {
       }
       else
       {
-        process<F>(stream, std::forward<FieldName>(field_name), get_field<Field>(unit_data));
+        process_attr<F>(stream, std::forward<FieldName>(field_name), get_field<Field>(unit_data));
       }
     }
     else
     {
-      process<F>(stream, std::forward<FieldName>(field_name), get_field<Field>(unit_data));
+      process_attr<F>(stream, std::forward<FieldName>(field_name), get_field<Field>(unit_data));
     }
   }
 
   template <INFO_FMT F = INFO_FMT::LOGGING, typename DataClass, typename Stream, typename DataType>
-  static void process_out_of_band_info(Stream& stream, DataType & data)
+  static void process_out_of_band_info(Stream& stream, DataType& data)
+  {
+    static_assert(always_false<DataType>::value, "Unsupported types in process_out_of_band_info");
+  }
+  template <INFO_FMT F = INFO_FMT::LOGGING, typename DataClass, typename Stream>
+  static void process_out_of_band_info(Stream& stream, V3C::InfoDataType& data)
   {
     preample<F>(stream);
+    // Uses NUM_V3C_UNIT_TYPES to store global parameters
+    process_field<F, NUM_V3C_UNIT_TYPES, INFO_FIELDS::NUM>(stream, "GOF", data);
 
-    if constexpr (std::is_same<DataType, typename V3C::InfoDataType>::value)
-    {
-      // Uses NUM_V3C_UNIT_TYPES to store global parameters
-      process_field<F, NUM_V3C_UNIT_TYPES, INFO_FIELDS::NUM>(stream, "GOF", data);
+    // Process unit type specific fields
+    process_field<F, V3C_VPS, INFO_FIELDS::NUM>(stream, "VPS", data);
+    process_field<F, V3C_AD, INFO_FIELDS::NUM>(stream, "AD_NALU", data);
+    process_field<F, V3C_OVD, INFO_FIELDS::NUM>(stream, "OVD_NALU", data);
+    process_field<F, V3C_GVD, INFO_FIELDS::NUM>(stream, "GVD_NALU", data);
+    process_field<F, V3C_AVD, INFO_FIELDS::NUM>(stream, "AVD_NALU", data);
+    process_field<F, V3C_PVD, INFO_FIELDS::NUM>(stream, "PVD_NALU", data);
+    process_field<F, V3C_CAD, INFO_FIELDS::NUM>(stream, "CAD_NALU", data);
 
-      // Process unit type specific fields
-      process_field<F, V3C_VPS, INFO_FIELDS::NUM>(stream, "VPS", data);
-      process_field<F, V3C_AD, INFO_FIELDS::NUM>(stream, "AD_NALU", data);
-      process_field<F, V3C_OVD, INFO_FIELDS::NUM>(stream, "OVD_NALU", data);
-      process_field<F, V3C_GVD, INFO_FIELDS::NUM>(stream, "GVD_NALU", data);
-      process_field<F, V3C_AVD, INFO_FIELDS::NUM>(stream, "AVD_NALU", data);
-      process_field<F, V3C_PVD, INFO_FIELDS::NUM>(stream, "PVD_NALU", data);
-      process_field<F, V3C_CAD, INFO_FIELDS::NUM>(stream, "CAD_NALU", data);
+    // Uses NUM_V3C_UNIT_TYPES to store global parameters
+    process_field<F, NUM_V3C_UNIT_TYPES, INFO_FIELDS::SIZE_PREC>(stream, "V3C", data);
 
-      // Uses NUM_V3C_UNIT_TYPES to store global parameters
-      process_field<F, NUM_V3C_UNIT_TYPES, INFO_FIELDS::SIZE_PREC>(stream, "V3C", data);
+    // Process unit type specific size precisions
+    process_field<F, V3C_AD, INFO_FIELDS::SIZE_PREC>(stream, "Atlas_NALU", data);
+    if (has_field(data, V3C_OVD)) process_field<F, V3C_OVD, INFO_FIELDS::SIZE_PREC>(stream, "Video", data);
+    else if (has_field(data, V3C_GVD)) process_field<F, V3C_GVD, INFO_FIELDS::SIZE_PREC>(stream, "Video", data);
+    else if (has_field(data, V3C_AVD)) process_field<F, V3C_AVD, INFO_FIELDS::SIZE_PREC>(stream, "Video", data);
+    else if (has_field(data, V3C_PVD)) process_field<F, V3C_PVD, INFO_FIELDS::SIZE_PREC>(stream, "Video", data);
+    else if (has_field(data, V3C_PVD)) process_field<F, V3C_PVD, INFO_FIELDS::SIZE_PREC>(stream, "Video", data);
 
-      // Process unit type specific size precisions
-      process_field<F, V3C_AD, INFO_FIELDS::SIZE_PREC>(stream, "Atlas_NALU", data);
-      if (has_field(data, V3C_OVD)) process_field<F, V3C_OVD, INFO_FIELDS::SIZE_PREC>(stream, "Video", data);
-      else if (has_field(data, V3C_GVD)) process_field<F, V3C_GVD, INFO_FIELDS::SIZE_PREC>(stream, "Video", data);
-      else if (has_field(data, V3C_AVD)) process_field<F, V3C_AVD, INFO_FIELDS::SIZE_PREC>(stream, "Video", data);
-      else if (has_field(data, V3C_PVD)) process_field<F, V3C_PVD, INFO_FIELDS::SIZE_PREC>(stream, "Video", data);
-      else if (has_field(data, V3C_PVD)) process_field<F, V3C_PVD, INFO_FIELDS::SIZE_PREC>(stream, "Video", data);
-      
-      postample<F>(stream, data.at(NUM_V3C_UNIT_TYPES));
-    }
-    else if constexpr (std::is_same<DataType, typename V3C::HeaderDataType>::value)
-    {
-      process_field<F, V3C_VPS, HEADER_FIELDS::VUH_UNIT_TYPE>(stream, "VPS type: ", data);
-      process_field<F, V3C_VPS, HEADER_FIELDS::VUH_V3C_PARAMETER_SET_ID>(stream, "VPS id: ", data);
-      process_field<F, V3C_VPS, HEADER_FIELDS::VUH_ATLAS_ID>(stream, "VPS atlas id: ", data);
+    postample<F>(stream, data.at(NUM_V3C_UNIT_TYPES));
+  }
+  template <INFO_FMT F = INFO_FMT::LOGGING, typename DataClass, typename Stream>
+  static void process_out_of_band_info(Stream& stream, V3C::HeaderDataType& data)
+  {
+    preample<F>(stream, V3C_VPS);
+    process_field<F, V3C_VPS, HEADER_FIELDS::VUH_UNIT_TYPE>(stream, get_field_name<F, V3C_VPS, HEADER_FIELDS::VUH_UNIT_TYPE>(), data);
+    process_field<F, V3C_VPS, HEADER_FIELDS::VUH_V3C_PARAMETER_SET_ID>(stream, get_field_name<F, V3C_VPS, HEADER_FIELDS::VUH_V3C_PARAMETER_SET_ID>(), data);
+    process_field<F, V3C_VPS, HEADER_FIELDS::VUH_ATLAS_ID>(stream, get_field_name<F, V3C_VPS, HEADER_FIELDS::VUH_ATLAS_ID>(), data);
+    postample<F>(stream);
 
-      process_field<F, V3C_AD, HEADER_FIELDS::VUH_UNIT_TYPE>(stream, "AD type: ", data);
-      process_field<F, V3C_AD, HEADER_FIELDS::VUH_V3C_PARAMETER_SET_ID>(stream, "AD id: ", data);
-      process_field<F, V3C_AD, HEADER_FIELDS::VUH_ATLAS_ID>(stream, "AD atlas id: ", data);
+    preample<F>(stream, V3C_AD);
+    process_field<F, V3C_AD, HEADER_FIELDS::VUH_UNIT_TYPE>(stream, get_field_name<F, V3C_AD, HEADER_FIELDS::VUH_UNIT_TYPE>(), data);
+    process_field<F, V3C_AD, HEADER_FIELDS::VUH_V3C_PARAMETER_SET_ID>(stream, get_field_name<F, V3C_AD, HEADER_FIELDS::VUH_V3C_PARAMETER_SET_ID>(), data);
+    process_field<F, V3C_AD, HEADER_FIELDS::VUH_ATLAS_ID>(stream, get_field_name<F, V3C_AD, HEADER_FIELDS::VUH_ATLAS_ID>(), data);
+    postample<F>(stream);
 
-      process_field<F, V3C_OVD, HEADER_FIELDS::VUH_UNIT_TYPE>(stream, "OVD type: ", data);
-      process_field<F, V3C_OVD, HEADER_FIELDS::VUH_V3C_PARAMETER_SET_ID>(stream, "OVD id: ", data);
-      process_field<F, V3C_OVD, HEADER_FIELDS::VUH_ATLAS_ID>(stream, "OVD atlas id: ", data);
+    preample<F>(stream, V3C_OVD);
+    process_field<F, V3C_OVD, HEADER_FIELDS::VUH_UNIT_TYPE>(stream, get_field_name<F, V3C_OVD, HEADER_FIELDS::VUH_UNIT_TYPE>(), data);
+    process_field<F, V3C_OVD, HEADER_FIELDS::VUH_V3C_PARAMETER_SET_ID>(stream, get_field_name<F, V3C_OVD, HEADER_FIELDS::VUH_V3C_PARAMETER_SET_ID>(), data);
+    process_field<F, V3C_OVD, HEADER_FIELDS::VUH_ATLAS_ID>(stream, get_field_name<F, V3C_OVD, HEADER_FIELDS::VUH_ATLAS_ID>(), data);
+    postample<F>(stream);
 
-      process_field<F, V3C_GVD, HEADER_FIELDS::VUH_UNIT_TYPE>(stream, "GVD type: ", data);
-      process_field<F, V3C_GVD, HEADER_FIELDS::VUH_V3C_PARAMETER_SET_ID>(stream, "GVD id: ", data);
-      process_field<F, V3C_GVD, HEADER_FIELDS::VUH_ATLAS_ID>(stream, "GVD atlas id: ", data);
-      process_field<F, V3C_GVD, HEADER_FIELDS::VUH_MAP_INDEX>(stream, "GVD map index: ", data);
-      process_field<F, V3C_GVD, HEADER_FIELDS::VUH_AUXILIARY_VIDEO_FLAG>(stream, "GVD auxiliary video flag: ", data);
+    preample<F>(stream, V3C_GVD);
+    process_field<F, V3C_GVD, HEADER_FIELDS::VUH_UNIT_TYPE>(stream, get_field_name<F, V3C_GVD, HEADER_FIELDS::VUH_UNIT_TYPE>(), data);
+    process_field<F, V3C_GVD, HEADER_FIELDS::VUH_V3C_PARAMETER_SET_ID>(stream, get_field_name<F, V3C_GVD, HEADER_FIELDS::VUH_V3C_PARAMETER_SET_ID>(), data);
+    process_field<F, V3C_GVD, HEADER_FIELDS::VUH_ATLAS_ID>(stream, get_field_name<F, V3C_GVD, HEADER_FIELDS::VUH_ATLAS_ID>(), data);
+    process_field<F, V3C_GVD, HEADER_FIELDS::VUH_MAP_INDEX>(stream, get_field_name<F, V3C_GVD, HEADER_FIELDS::VUH_MAP_INDEX>(), data);
+    process_field<F, V3C_GVD, HEADER_FIELDS::VUH_AUXILIARY_VIDEO_FLAG>(stream, get_field_name<F, V3C_GVD, HEADER_FIELDS::VUH_AUXILIARY_VIDEO_FLAG>(), data);
+    postample<F>(stream);
 
-      process_field<F, V3C_AVD, HEADER_FIELDS::VUH_UNIT_TYPE>(stream, "AVD type: ", data);
-      process_field<F, V3C_AVD, HEADER_FIELDS::VUH_V3C_PARAMETER_SET_ID>(stream, "AVD id: ", data);
-      process_field<F, V3C_AVD, HEADER_FIELDS::VUH_ATLAS_ID>(stream, "AVD atlas id: ", data);
-      process_field<F, V3C_AVD, HEADER_FIELDS::VUH_ATTRIBUTE_INDEX>(stream, "AVD attribute index: ", data);
-      process_field<F, V3C_AVD, HEADER_FIELDS::VUH_ATTRIBUTE_PARTITION_INDEX>(stream, "AVD attribute partittion index: ", data);
-      process_field<F, V3C_AVD, HEADER_FIELDS::VUH_MAP_INDEX>(stream, "AVD map index: ", data);
-      process_field<F, V3C_AVD, HEADER_FIELDS::VUH_AUXILIARY_VIDEO_FLAG>(stream, "AVD auxiliary video flag: ", data);
+    preample<F>(stream, V3C_AVD);
+    process_field<F, V3C_AVD, HEADER_FIELDS::VUH_UNIT_TYPE>(stream, get_field_name<F, V3C_AVD, HEADER_FIELDS::VUH_UNIT_TYPE>(), data);
+    process_field<F, V3C_AVD, HEADER_FIELDS::VUH_V3C_PARAMETER_SET_ID>(stream, get_field_name<F, V3C_AVD, HEADER_FIELDS::VUH_V3C_PARAMETER_SET_ID>(), data);
+    process_field<F, V3C_AVD, HEADER_FIELDS::VUH_ATLAS_ID>(stream, get_field_name<F, V3C_AVD, HEADER_FIELDS::VUH_ATLAS_ID>(), data);
+    process_field<F, V3C_AVD, HEADER_FIELDS::VUH_ATTRIBUTE_INDEX>(stream, get_field_name<F, V3C_AVD, HEADER_FIELDS::VUH_ATTRIBUTE_INDEX>(), data);
+    process_field<F, V3C_AVD, HEADER_FIELDS::VUH_ATTRIBUTE_PARTITION_INDEX>(stream, get_field_name<F, V3C_AVD, HEADER_FIELDS::VUH_ATTRIBUTE_PARTITION_INDEX>(), data);
+    process_field<F, V3C_AVD, HEADER_FIELDS::VUH_MAP_INDEX>(stream, get_field_name<F, V3C_AVD, HEADER_FIELDS::VUH_MAP_INDEX>(), data);
+    process_field<F, V3C_AVD, HEADER_FIELDS::VUH_AUXILIARY_VIDEO_FLAG>(stream, get_field_name<F, V3C_AVD, HEADER_FIELDS::VUH_AUXILIARY_VIDEO_FLAG>(), data);
+    postample<F>(stream);
 
-      process_field<F, V3C_PVD, HEADER_FIELDS::VUH_UNIT_TYPE>(stream, "PVD type: ", data);
-      process_field<F, V3C_PVD, HEADER_FIELDS::VUH_V3C_PARAMETER_SET_ID>(stream, "PVD id: ", data);
-      process_field<F, V3C_PVD, HEADER_FIELDS::VUH_ATLAS_ID>(stream, "PVD atlas id: ", data);
+    preample<F>(stream, V3C_PVD);
+    process_field<F, V3C_PVD, HEADER_FIELDS::VUH_UNIT_TYPE>(stream, get_field_name<F, V3C_PVD, HEADER_FIELDS::VUH_UNIT_TYPE>(), data);
+    process_field<F, V3C_PVD, HEADER_FIELDS::VUH_V3C_PARAMETER_SET_ID>(stream, get_field_name<F, V3C_PVD, HEADER_FIELDS::VUH_V3C_PARAMETER_SET_ID>(), data);
+    process_field<F, V3C_PVD, HEADER_FIELDS::VUH_ATLAS_ID>(stream, get_field_name<F, V3C_PVD, HEADER_FIELDS::VUH_ATLAS_ID>(), data);
+    postample<F>(stream);
 
-      process_field<F, V3C_CAD, HEADER_FIELDS::VUH_UNIT_TYPE>(stream, "CAD type: ", data);
-      process_field<F, V3C_CAD, HEADER_FIELDS::VUH_V3C_PARAMETER_SET_ID>(stream, "CAD id: ", data);
-    }
-    else if constexpr (std::is_same<DataType, typename V3C::PayloadDataType>::value)
-    {
-      process_field<F, V3C_VPS, PAYLOAD_FIELDS::PAYLOAD>(stream, "VPS: ", data);
-      process_field<F, V3C_AD, PAYLOAD_FIELDS::PAYLOAD>(stream, "AD: ", data);
-      process_field<F, V3C_OVD, PAYLOAD_FIELDS::PAYLOAD>(stream, "OVD: ", data);
-      process_field<F, V3C_GVD, PAYLOAD_FIELDS::PAYLOAD>(stream, "GVD: ", data);
-      process_field<F, V3C_AVD, PAYLOAD_FIELDS::PAYLOAD>(stream, "AVD: ", data);
-      process_field<F, V3C_PVD, PAYLOAD_FIELDS::PAYLOAD>(stream, "PVD: ", data);
-      process_field<F, V3C_CAD, PAYLOAD_FIELDS::PAYLOAD>(stream, "CAD: ", data);
-    }
-    else
-    {
-      static_assert(always_false<DataType>::value, "Unsupported DataType in process_out_of_band_info");
-    }
+    preample<F>(stream, V3C_CAD);
+    process_field<F, V3C_CAD, HEADER_FIELDS::VUH_UNIT_TYPE>(stream, get_field_name<F, V3C_CAD, HEADER_FIELDS::VUH_UNIT_TYPE>(), data);
+    process_field<F, V3C_CAD, HEADER_FIELDS::VUH_V3C_PARAMETER_SET_ID>(stream, get_field_name<F, V3C_CAD, HEADER_FIELDS::VUH_V3C_PARAMETER_SET_ID>(), data);
+    postample<F>(stream);
+  }
+  template <INFO_FMT F, typename DataClass, typename Stream>
+  static void process_out_of_band_info(Stream& stream, V3C::PayloadDataType& data)
+  {
+    preample<F>(stream);
+    process_field<F, V3C_VPS, PAYLOAD_FIELDS::PAYLOAD>(stream, "VPS", data);
+    postample<F>(stream);
+
+    preample<F>(stream);
+    process_field<F, V3C_AD, PAYLOAD_FIELDS::PAYLOAD>(stream, "AD", data);
+    postample<F>(stream);
+
+    preample<F>(stream);
+    process_field<F, V3C_OVD, PAYLOAD_FIELDS::PAYLOAD>(stream, "OVD", data);
+    postample<F>(stream);
+
+    preample<F>(stream);
+    process_field<F, V3C_GVD, PAYLOAD_FIELDS::PAYLOAD>(stream, "GVD", data);
+    postample<F>(stream);
+
+    preample<F>(stream);
+    process_field<F, V3C_AVD, PAYLOAD_FIELDS::PAYLOAD>(stream, "AVD", data);
+    postample<F>(stream);
+
+    preample<F>(stream);
+    process_field<F, V3C_PVD, PAYLOAD_FIELDS::PAYLOAD>(stream, "PVD", data);
+    postample<F>(stream);
+
+    preample<F>(stream);
+    process_field<F, V3C_CAD, PAYLOAD_FIELDS::PAYLOAD>(stream, "CAD", data);
+    postample<F>(stream);
+
   }
 
 
@@ -878,21 +1003,29 @@ namespace uvgV3CRTP {
   static void populate_data(const V3C_Unit& v3c_data, V3C::PayloadDataType& data)
   {
     const V3C_UNIT_TYPE type = v3c_data.type();
+    [[maybe_unused]] bool first_nal = true;
     if (!has_field(data, type)) data[type] = {};
 
-    std::string raw_payload = {};
     for (const auto& nal : v3c_data.nalus())
     {
-      raw_payload.append(reinterpret_cast<char*>(nal.get().bitstream()), nal.get().size());
-    }
-
-    if constexpr (F == INFO_FMT::RAW)
-    {
-      get_field<PAYLOAD_FIELDS::PAYLOAD>(data.at(type)) = raw_payload;
-    }
-    else if constexpr (F == INFO_FMT::BASE64)
-    {
-      get_field<PAYLOAD_FIELDS::PAYLOAD>(data.at(type)) = enc_base64(raw_payload.c_str(), raw_payload.size());
+      if constexpr (F == INFO_FMT::RAW)
+      {
+        get_field<PAYLOAD_FIELDS::PAYLOAD>(data.at(type)).append(
+          reinterpret_cast<char*>(nal.get().bitstream()), nal.get().size()
+        );
+      }
+      else if constexpr (F == INFO_FMT::BASE64)
+      {
+        if (!first_nal) {
+          get_field<PAYLOAD_FIELDS::PAYLOAD>(data.at(type)).push_back(',');
+        }
+        else {
+          first_nal = false;
+        }
+        get_field<PAYLOAD_FIELDS::PAYLOAD>(data.at(type)).append(
+          enc_base64(reinterpret_cast<char*>(nal.get().bitstream()), nal.get().size())
+        );
+      }
     }
   }
   template <INFO_FMT F = INFO_FMT::LOGGING, typename = typename std::enable_if<F == INFO_FMT::LOGGING
