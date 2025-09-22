@@ -241,7 +241,7 @@ int main(int argc, char* argv[]) {
       {
         state.last_gof();
         std::cout << " Received:" << std::endl;
-        state.print_cur_gof_info(unit_type);
+        state.print_cur_gof_bitstream_info(unit_type);
       }
       else
       {

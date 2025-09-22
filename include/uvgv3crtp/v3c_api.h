@@ -190,7 +190,7 @@ namespace uvgV3CRTP {
      * @param fmt Output format.
      * @return Pointer to the info string (caller must free i.e. c-style free).
      */
-    char* get_cur_gof_info_string(const INFO_FMT fmt = INFO_FMT::LOGGING, size_t* out_len = nullptr) const;
+    char* get_cur_gof_bitstream_info_string(const INFO_FMT fmt = INFO_FMT::LOGGING, size_t* out_len = nullptr) const;
 
     /**
      * @brief Get a null-terminated string with information about a specific unit type in the current GoF.
@@ -200,12 +200,11 @@ namespace uvgV3CRTP {
      * @param fmt Output format.
      * @return Pointer to the info string (caller must free i.e. c-style free).
      */
-    char* get_cur_gof_info_string(const V3C_UNIT_TYPE type, const INFO_FMT fmt = INFO_FMT::LOGGING, size_t* out_len = nullptr) const;
+    char* get_cur_gof_bitstream_info_string(const V3C_UNIT_TYPE type, const INFO_FMT fmt = INFO_FMT::LOGGING, size_t* out_len = nullptr) const;
 
 
-    char* get_cur_gof_header_string(const INFO_FMT fmt = INFO_FMT::LOGGING, size_t* out_len = nullptr) const;
-    char* get_cur_gof_header_string(const V3C_UNIT_TYPE type, const INFO_FMT fmt = INFO_FMT::LOGGING, size_t* out_len = nullptr) const;
-    char* get_cur_gof_VPS_string(const INFO_FMT fmt = INFO_FMT::LOGGING, size_t* out_len = nullptr) const;
+    char* get_cur_gof_unit_info_string(const INFO_FMT field_fmt = INFO_FMT::LOGGING, const INFO_FMT value_fmt = INFO_FMT::NONE, size_t* out_len = nullptr) const;
+    char* get_cur_gof_unit_info_string(const V3C_UNIT_TYPE type, const INFO_FMT header_field_fmt = INFO_FMT::LOGGING, const INFO_FMT header_value_fmt = INFO_FMT::NONE, const INFO_FMT payload_field_fmt = INFO_FMT::NONE, const INFO_FMT payload_value_fmt = INFO_FMT::NONE, size_t* out_len = nullptr) const;
 
 
     /**
@@ -239,7 +238,7 @@ namespace uvgV3CRTP {
      * @details Sample stream must be initialized and contain data and cur gof iterator should be valid. If not, error flag is set and no output is printed.
      * @param fmt Output format.
      */
-    void print_cur_gof_info(const INFO_FMT fmt = INFO_FMT::LOGGING) const;
+    void print_cur_gof_bitstream_info(const INFO_FMT fmt = INFO_FMT::LOGGING) const;
 
     /**
      * @brief Print information about a specific unit type in the current GoF to stdout.
@@ -247,11 +246,10 @@ namespace uvgV3CRTP {
      * @param type The V3C unit type.
      * @param fmt Output format.
      */
-    void print_cur_gof_info(const V3C_UNIT_TYPE type, const INFO_FMT fmt = INFO_FMT::LOGGING) const;
+    void print_cur_gof_bitstream_info(const V3C_UNIT_TYPE type, const INFO_FMT fmt = INFO_FMT::LOGGING) const;
     
-    void print_cur_gof_header(const INFO_FMT fmt = INFO_FMT::LOGGING) const;
-    void print_cur_gof_header(const V3C_UNIT_TYPE type, const INFO_FMT fmt = INFO_FMT::LOGGING) const;
-    void print_cur_gof_VPS(const INFO_FMT fmt = INFO_FMT::LOGGING) const;
+    void print_cur_gof_unit_info(const INFO_FMT field_fmt = INFO_FMT::LOGGING, const INFO_FMT value_fmt = INFO_FMT::NONE) const;
+    void print_cur_gof_unit_info(const V3C_UNIT_TYPE type, const INFO_FMT header_field_fmt = INFO_FMT::LOGGING, const INFO_FMT header_value_fmt = INFO_FMT::NONE, const INFO_FMT payload_field_fmt = INFO_FMT::NONE, const INFO_FMT payload_value_fmt = INFO_FMT::NONE) const;
 
     /**
      * @brief Get the current error flag.

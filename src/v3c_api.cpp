@@ -712,7 +712,7 @@ namespace uvgV3CRTP {
   template<typename T>
   ERROR_TYPE V3C_State<T>::parse_bitstream_info_string(const char* const in_data, size_t len, INFO_FMT fmt, BitstreamInfo& out_info)
   {
-    //if (fmt != INFO_FMT::RAW && fmt != INFO_FMT::BASE64)
+    //if (field_fmt != INFO_FMT::RAW && field_fmt != INFO_FMT::BASE64)
     //{
     //  std::cerr << "Error: Only RAW and BASE64 formats are supported for out-of-band info parsing." << std::endl;
     //  return false; // Only RAW and BASE64 formats are supported
@@ -731,11 +731,16 @@ namespace uvgV3CRTP {
   }
 
   template<typename DataType, typename DataClass>
-  static char * write_info(const DataClass& v3c_data, size_t* out_len, const INFO_FMT fmt)
+  static char * write_info(const DataClass& v3c_data, size_t* out_len, INFO_FMT field_fmt, INFO_FMT value_fmt = INFO_FMT::NONE)
   {
+    // Don't write anything if both formats are NONE
+    if (field_fmt == INFO_FMT::NONE && value_fmt == INFO_FMT::NONE) return nullptr;
+    // Use field format for both if value format is NONE
+    if (value_fmt == INFO_FMT::NONE) value_fmt = field_fmt;
+
     // Write info to string stream
-    std::ostringstream oss(fmt == INFO_FMT::RAW ? std::ios::out | std::ios::binary : std::ios::out);
-    V3C::write_out_of_band_info<DataType>(oss, v3c_data, fmt);
+    std::ostringstream oss(field_fmt == INFO_FMT::RAW ? std::ios::out | std::ios::binary : std::ios::out);
+    V3C::write_out_of_band_info<DataType>(oss, v3c_data, field_fmt, value_fmt);
     std::string output = oss.str();
 
     // copy output to char*
@@ -756,7 +761,7 @@ namespace uvgV3CRTP {
   }
 
   template<typename T>
-  char * V3C_State<T>::get_cur_gof_info_string(const INFO_FMT fmt, size_t* out_len) const
+  char * V3C_State<T>::get_cur_gof_bitstream_info_string(const INFO_FMT fmt, size_t* out_len) const
   {
     if (!validate_data()) return nullptr;
     if (!validate_cur_gof()) return nullptr;
@@ -765,7 +770,7 @@ namespace uvgV3CRTP {
   }
 
   template<typename T>
-  char * V3C_State<T>::get_cur_gof_info_string(const V3C_UNIT_TYPE type, const INFO_FMT fmt, size_t* out_len) const
+  char * V3C_State<T>::get_cur_gof_bitstream_info_string(const V3C_UNIT_TYPE type, const INFO_FMT fmt, size_t* out_len) const
   {
     if (!validate_data()) return nullptr;
     if (!validate_cur_gof()) return nullptr;
@@ -774,50 +779,66 @@ namespace uvgV3CRTP {
   }
 
   template<typename T>
-  char* V3C_State<T>::get_cur_gof_header_string(const INFO_FMT fmt, size_t* out_len) const
+  char* V3C_State<T>::get_cur_gof_unit_info_string(const INFO_FMT field_fmt , const INFO_FMT value_fmt, size_t* out_len) const
   {
     if (!validate_data()) return nullptr;
     if (!validate_cur_gof()) return nullptr;
 
-    return write_info<V3C::HeaderDataType>((*get_it(cur_gof_it_)), out_len, fmt);
+    // If value format is RAW or BASE64 need to use payload data type
+    if (value_fmt == INFO_FMT::RAW 
+     || value_fmt == INFO_FMT::BASE64
+     || (value_fmt == INFO_FMT::NONE && (field_fmt == INFO_FMT::RAW || field_fmt == INFO_FMT::BASE64)))
+    {
+      return write_info<V3C::PayloadDataType>((*get_it(cur_gof_it_)), out_len, field_fmt, value_fmt);
+    }
+
+    return write_info<V3C::HeaderDataType>((*get_it(cur_gof_it_)), out_len, field_fmt, value_fmt);
   }
 
   template<typename T>
-  char* V3C_State<T>::get_cur_gof_header_string(const V3C_UNIT_TYPE type, const INFO_FMT fmt, size_t* out_len) const
-  {
-    if (!validate_data()) return nullptr;
-    if (!validate_cur_gof()) return nullptr;
-
-    return write_info<V3C::HeaderDataType>((*get_it(cur_gof_it_)).get(type), out_len, fmt);
-  }
-
-  template<typename T>
-  char* V3C_State<T>::get_cur_gof_VPS_string(const INFO_FMT fmt, size_t* out_len) const
+  char* V3C_State<T>::get_cur_gof_unit_info_string(const V3C_UNIT_TYPE type, const INFO_FMT header_field_fmt, const INFO_FMT header_value_fmt, const INFO_FMT payload_field_fmt, const INFO_FMT payload_value_fmt, size_t* out_len) const
   {
     if (!validate_data()) return nullptr;
     if (!validate_cur_gof()) return nullptr;
 
     size_t header_len = 0; size_t payload_len = 0;
-    auto header = write_info<V3C::HeaderDataType>((*get_it(cur_gof_it_)).get(V3C_VPS), &header_len, fmt);
-    auto payload = write_info<V3C::PayloadDataType>((*get_it(cur_gof_it_)).get(V3C_VPS), &payload_len,
-      fmt == INFO_FMT::RAW ? fmt : INFO_FMT::BASE64);
-    header_len--; // Remove null-termination byte from header length as we will concatenate the two strings
-    if (out_len) *out_len = header_len + payload_len;
-
-    char* out_string = static_cast<char*>(malloc(header_len + payload_len));
-    if (out_string)
+    auto header = write_info<V3C::HeaderDataType>((*get_it(cur_gof_it_)).get(type), &header_len, header_field_fmt, header_value_fmt);
+    auto payload = write_info<V3C::PayloadDataType>((*get_it(cur_gof_it_)).get(type), &payload_len,
+      payload_field_fmt, payload_value_fmt == INFO_FMT::RAW ? payload_value_fmt : INFO_FMT::BASE64);
+    
+    if (header && payload) 
     {
-      memcpy(out_string, header, header_len);
-      memcpy(out_string + header_len, payload, payload_len);
-    }
-    else if (out_len)
-    {
-      *out_len = 0;
-    }
-    if(header) free(header);
-    if(payload) free(payload);
+      header_len--; // Remove null-termination byte from header length as we will concatenate the two strings
+      if (out_len) *out_len = header_len + payload_len;
 
-    return out_string;
+      char* out_string = static_cast<char*>(malloc(header_len + payload_len));
+      if (out_string)
+      {
+        memcpy(out_string, header, header_len);
+        memcpy(out_string + header_len, payload, payload_len);
+      }
+      else if (out_len)
+      {
+        *out_len = 0;
+      }
+      if (header) free(header);
+      if (payload) free(payload);
+
+      return out_string;
+    }
+    else if (header) 
+    {
+      if (out_len) *out_len = header_len;
+      return header;
+    }
+    else if (payload) 
+    {
+      if (out_len) *out_len = payload_len;
+      return payload;
+    }
+
+    if (out_len) *out_len = 0;
+    return nullptr;
   }
 
 
@@ -911,30 +932,26 @@ namespace uvgV3CRTP {
     print_info(this, &V3C_State<T>::get_bitstream_info_string, fmt, static_cast<size_t*>(nullptr));
   }
   template<typename T>
-  void V3C_State<T>::print_cur_gof_info(const INFO_FMT fmt) const
+  void V3C_State<T>::print_cur_gof_bitstream_info(const INFO_FMT fmt) const
   {
-    print_info(this, static_cast<char*(V3C_State<T>::*)(INFO_FMT, size_t*)const>(&V3C_State<T>::get_cur_gof_info_string), fmt, static_cast<size_t*>(nullptr));
+    print_info(this, static_cast<char*(V3C_State<T>::*)(INFO_FMT, size_t*)const>(&V3C_State<T>::get_cur_gof_bitstream_info_string), fmt, static_cast<size_t*>(nullptr));
   }
   template<typename T>
-  void V3C_State<T>::print_cur_gof_info(const V3C_UNIT_TYPE type, const INFO_FMT fmt) const
+  void V3C_State<T>::print_cur_gof_bitstream_info(const V3C_UNIT_TYPE type, const INFO_FMT fmt) const
   {
-    print_info(this, static_cast<char*(V3C_State<T>::*)(V3C_UNIT_TYPE, INFO_FMT, size_t*)const>(&V3C_State<T>::get_cur_gof_info_string), type, fmt, static_cast<size_t*>(nullptr));
+    print_info(this, static_cast<char*(V3C_State<T>::*)(V3C_UNIT_TYPE, INFO_FMT, size_t*)const>(&V3C_State<T>::get_cur_gof_bitstream_info_string), type, fmt, static_cast<size_t*>(nullptr));
   }
   template<typename T>
-  void V3C_State<T>::print_cur_gof_header(const INFO_FMT fmt) const
+  void V3C_State<T>::print_cur_gof_unit_info(const INFO_FMT field_fmt, const INFO_FMT value_fmt) const
   {
-    print_info(this, static_cast<char* (V3C_State<T>::*)(INFO_FMT, size_t*)const>(&V3C_State<T>::get_cur_gof_header_string), fmt, static_cast<size_t*>(nullptr));
+    print_info(this, static_cast<char* (V3C_State<T>::*)(INFO_FMT, INFO_FMT, size_t*)const>(&V3C_State<T>::get_cur_gof_unit_info_string), field_fmt, value_fmt, static_cast<size_t*>(nullptr));
   }
   template<typename T>
-  void V3C_State<T>::print_cur_gof_header(const V3C_UNIT_TYPE type, const INFO_FMT fmt) const
+  void V3C_State<T>::print_cur_gof_unit_info(const V3C_UNIT_TYPE type, const INFO_FMT header_field_fmt, const INFO_FMT header_value_fmt, const INFO_FMT payload_field_fmt, const INFO_FMT payload_value_fmt) const
   {
-    print_info(this, static_cast<char* (V3C_State<T>::*)(V3C_UNIT_TYPE, INFO_FMT, size_t*)const>(&V3C_State<T>::get_cur_gof_header_string), type, fmt, static_cast<size_t*>(nullptr));
+    print_info(this, static_cast<char* (V3C_State<T>::*)(V3C_UNIT_TYPE, INFO_FMT, INFO_FMT, INFO_FMT, INFO_FMT, size_t*)const>(&V3C_State<T>::get_cur_gof_unit_info_string), type, header_field_fmt, header_value_fmt, payload_field_fmt, payload_value_fmt, static_cast<size_t*>(nullptr));
   }
-  template<typename T>
-  void V3C_State<T>::print_cur_gof_VPS(const INFO_FMT fmt) const
-  {
-    print_info(this, static_cast<char* (V3C_State<T>::*)(INFO_FMT, size_t*)const>(&V3C_State<T>::get_cur_gof_VPS_string), fmt, static_cast<size_t*>(nullptr));
-  }
+
   template<typename T>
   ERROR_TYPE V3C_State<T>::get_error_flag() const
   {
