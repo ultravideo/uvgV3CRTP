@@ -133,7 +133,9 @@ int main(int argc, char* argv[]) {
   // Print header and vps info for first gof
   //state.first_gof();
   //state.print_cur_gof_unit_info(uvgV3CRTP::INFO_FMT::LOGGING, uvgV3CRTP::INFO_FMT::BASE64);
+  //state.print_cur_gof_unit_info(uvgV3CRTP::INFO_FMT::SDP, uvgV3CRTP::INFO_FMT::BASE64);
   //state.print_cur_gof_unit_info(uvgV3CRTP::INFO_FMT::LOGGING, uvgV3CRTP::INFO_FMT::PARAM);
+  //state.print_cur_gof_unit_info(uvgV3CRTP::INFO_FMT::SDP, uvgV3CRTP::INFO_FMT::PARAM);
   //state.print_cur_gof_unit_info(uvgV3CRTP::V3C_VPS, uvgV3CRTP::INFO_FMT::NONE, uvgV3CRTP::INFO_FMT::NONE, uvgV3CRTP::INFO_FMT::LOGGING, uvgV3CRTP::INFO_FMT::BASE64);
   //state.print_cur_gof_unit_info(uvgV3CRTP::V3C_VPS, uvgV3CRTP::INFO_FMT::NONE, uvgV3CRTP::INFO_FMT::NONE, uvgV3CRTP::INFO_FMT::SDP, uvgV3CRTP::INFO_FMT::BASE64);
   //state.print_cur_gof_unit_info(uvgV3CRTP::V3C_VPS, uvgV3CRTP::INFO_FMT::NONE, uvgV3CRTP::INFO_FMT::NONE, uvgV3CRTP::INFO_FMT::NONE, uvgV3CRTP::INFO_FMT::BASE64);
