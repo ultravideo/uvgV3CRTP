@@ -538,22 +538,30 @@ namespace uvgV3CRTP {
 
 
   template <INFO_FMT F = INFO_FMT::LOGGING, typename TF, typename TV>
-  static inline void process(std::ostream& out, TF&& field, TV&& value)
+  static inline void process(std::ostream& out, TF&& field, TV&& value, const char delim = '\n')
   {
     if constexpr (F == INFO_FMT::RAW)
     {
-      (void)field; //Suppress warnings
+      (void)field; (void)delim; //Suppress warnings
       out.write(reinterpret_cast<const char*>(&value), sizeof(TV));
     }
     else
     {
+      if constexpr (F != INFO_FMT::NONE)
+      {
+        out << field; // Write field if format not none
+      }
+      else
+      {
+        (void)field; //Suppress warnings
+      }
       if constexpr (std::is_integral<typename std::decay<TV>::type>::value)
       {
-        out << field << static_cast<int>(value) << std::endl;
+        out << static_cast<int>(value) << delim;
       }
       else 
       {
-        out << field << value << std::endl;
+        out << value << delim;
       }
     }
   }
@@ -652,6 +660,14 @@ namespace uvgV3CRTP {
     process<F>(out, tmp.str().c_str(), std::forward<TV>(value));
   }
 
+  template <INFO_FMT F, typename Stream, typename TF, typename TV>
+  static inline void process_sdp(Stream& out, TF&& field, TV&& value)
+  {
+    std::ostringstream tmp;
+    tmp << field << "=";
+    process<F>(out, tmp.str().c_str(), std::forward<TV>(value), ';');
+  }
+
   static constexpr const char* get_unit_type_name(const V3C_UNIT_TYPE type)
   {
     switch (type)
@@ -691,6 +707,12 @@ namespace uvgV3CRTP {
   {
     out << get_unit_type_name(type) << ":" << std::endl;
     out << "--------" << std::endl;
+  }
+  template <>
+  inline void preample<INFO_FMT::SDP>(std::ostream& out, const V3C_UNIT_TYPE type)
+  {
+    (void)type; //Suppress warnings
+    out << "a=v3cfmtp:";
   }
 
   template <INFO_FMT F = INFO_FMT::LOGGING, typename Stream, typename... Param>
@@ -894,6 +916,10 @@ namespace uvgV3CRTP {
       {
         process_attr<F>(stream, field_name, get_field<Field>(unit_data));
       }
+    }
+    else if constexpr (F == INFO_FMT::SDP)
+    {
+      process_sdp<F>(stream, field_name, get_field<Field>(unit_data));
     }
     else
     {
@@ -1237,6 +1263,8 @@ namespace uvgV3CRTP {
             process_out_of_band_info<INFO_FMT::PARAM, DataClass>(stream, info_data);
             break;
         case INFO_FMT::NONE:
+            process_out_of_band_info<INFO_FMT::NONE, DataClass>(stream, info_data);
+            break;
         case INFO_FMT::RAW:
             process_out_of_band_info<INFO_FMT::RAW, DataClass>(stream, info_data);
             break;
@@ -1279,6 +1307,8 @@ namespace uvgV3CRTP {
             process_out_of_band_info<INFO_FMT::LOGGING, DataClass>(stream, header_data);
             break;
         case INFO_FMT::NONE:
+            process_out_of_band_info<INFO_FMT::NONE, DataClass>(stream, header_data);
+            break;
         case INFO_FMT::RAW:
             process_out_of_band_info<INFO_FMT::RAW, DataClass>(stream, header_data);
             break;
@@ -1309,8 +1339,7 @@ namespace uvgV3CRTP {
         switch (field_fmt)
         {
         case INFO_FMT::NONE:
-        case INFO_FMT::RAW:
-            process_out_of_band_info<INFO_FMT::RAW, DataClass>(stream, payload_data);
+            process_out_of_band_info<INFO_FMT::NONE, DataClass>(stream, payload_data);
             break;
         case INFO_FMT::LOGGING:
             process_out_of_band_info<INFO_FMT::LOGGING, DataClass>(stream, payload_data);
