@@ -44,7 +44,7 @@ int main(int argc, char* argv[]) {
 
   // ********************* Handle inpu reading ***********************
   //
-  std::cout << "Reading input bitstream... ";
+  std::cout << "Reading input bitstream... " << std::flush;
   // Open file
   std::ifstream bitstream(argv[1]);
 
@@ -64,7 +64,7 @@ int main(int argc, char* argv[]) {
   }
   std::cout << "Done" << std::endl;
 
-  std::cout << "Reading file to buffer... ";
+  std::cout << "Reading file to buffer... " << std::flush;
   auto buf = std::make_unique<char[]>(length);
   if (buf == nullptr) return EXIT_FAILURE;//TODO: Raise exception
   
@@ -84,7 +84,7 @@ int main(int argc, char* argv[]) {
 
   // ******** Initialize sample stream with input bitstream ***********
   //
-  std::cout << "Initialize state... ";
+  std::cout << "Initialize state... " << std::flush;
   uvgV3CRTP::V3C_State<uvgV3CRTP::V3C_Sender> state(buf.get(), length,
     uvgV3CRTP::INIT_FLAGS::VPS |
     uvgV3CRTP::INIT_FLAGS::AD  |

@@ -48,7 +48,7 @@ int main(int argc, char* argv[]) {
 
 // ********************* Handle inpu reading ***********************
 //
-  std::cout << "Reading input bitstream... ";
+  std::cout << "Reading input bitstream... " << std::flush;
   // Open file
   std::ifstream bitstream(argv[1]);
 
@@ -68,7 +68,7 @@ int main(int argc, char* argv[]) {
   }
   std::cout << "Done" << std::endl;
 
-  std::cout << "Reading file to buffer... ";
+  std::cout << "Reading file to buffer... " << std::flush;
   auto buf = std::make_unique<char[]>(length);
   if (buf == nullptr) return EXIT_FAILURE;//TODO: Raise exception
   
@@ -88,7 +88,7 @@ int main(int argc, char* argv[]) {
 
 // ******** Initialize sample stream with input bitstream ***********
 //
-  std::cout << "Initialize state... ";
+  std::cout << "Initialize state... " << std::flush;
   uvgV3CRTP::V3C_State<uvgV3CRTP::V3C_Sender> state(buf.get(), length,
     uvgV3CRTP::INIT_FLAGS::VPS |
     uvgV3CRTP::INIT_FLAGS::AD  |
@@ -148,7 +148,7 @@ int main(int argc, char* argv[]) {
       return EXIT_FAILURE;
     }
 
-    std::cout << "Writing out-of-band info to file... ";
+    std::cout << "Writing out-of-band info to file... " << std::flush;
     std::ofstream out_of_band_file(argv[2], (info_format == uvgV3CRTP::INFO_FMT::RAW ? std::ios::out | std::ios::binary : std::ios::out));
     if (!out_of_band_file.is_open()) {
       std::cerr << "Error: Could not open out-of-band file for writing." << std::endl;
@@ -167,7 +167,7 @@ int main(int argc, char* argv[]) {
 
 // ******** Send sample stream **********
 //
-  std::cout << "Sending bitstream... ";
+  std::cout << "Sending bitstream... " << std::flush;
   uvgV3CRTP::send_bitstream(&state);
 
   if (state.get_error_flag() != uvgV3CRTP::ERROR_TYPE::OK) {

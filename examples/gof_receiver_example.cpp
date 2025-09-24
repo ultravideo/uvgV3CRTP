@@ -57,7 +57,7 @@ int main(int argc, char* argv[]) {
   size_t length = 0;
   if (argc >= 2) {
     //TODO: read orig bitstream for comparison
-    std::cout << "Reading input bitstream... ";
+    std::cout << "Reading input bitstream... " << std::flush;
     // Open file
     std::ifstream bitstream(argv[1]);
 
@@ -78,7 +78,7 @@ int main(int argc, char* argv[]) {
     }
     std::cout << "Done" << std::endl;
 
-    std::cout << "Reading file to buffer... ";
+    std::cout << "Reading file to buffer... " << std::flush;
     buf = std::make_unique<char[]>(length);
     if (buf == nullptr) return EXIT_FAILURE;//TODO: Raise exception
 
@@ -137,7 +137,7 @@ int main(int argc, char* argv[]) {
 
   // ******** Initialize sample stream with default values or out_of_band info ***********
   //
-  std::cout << "Initialize state... ";
+  std::cout << "Initialize state... " << std::flush;
   uvgV3CRTP::V3C_State<uvgV3CRTP::V3C_Receiver> state(
     uvgV3CRTP::INIT_FLAGS::VPS |
     uvgV3CRTP::INIT_FLAGS::AD  |
@@ -211,7 +211,7 @@ int main(int argc, char* argv[]) {
     {
       //TODO: Get out of band info
     }
-    std::cout << "  Receiving GoF...";
+    std::cout << "  Receiving GoF..." << std::flush;
     uvgV3CRTP::receive_gof(&state, size_precisions, num_nalus, header_defs, TIMEOUT);
 
     if (!out_of_band_available)
