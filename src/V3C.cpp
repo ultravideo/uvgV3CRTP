@@ -959,7 +959,7 @@ namespace uvgV3CRTP {
     else if (has_field(data, V3C_PVD)) process_field<F, V3C_PVD, INFO_FIELDS::SIZE_PREC>(stream, data);
     else if (has_field(data, V3C_PVD)) process_field<F, V3C_PVD, INFO_FIELDS::SIZE_PREC>(stream, data);
 
-    postample<F>(stream, data.at(NUM_V3C_UNIT_TYPES));
+    if (has_field(data, NUM_V3C_UNIT_TYPES)) postample<F>(stream, data.at(NUM_V3C_UNIT_TYPES));
   }
   template <INFO_FMT F = INFO_FMT::LOGGING, typename DataClass, typename Stream>
   static void process_out_of_band_info(Stream& stream, V3C::HeaderDataType& data)
