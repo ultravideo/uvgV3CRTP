@@ -48,7 +48,8 @@ namespace uvgV3CRTP {
   }                                                              \
   if constexpr (return_error) {                                  \
     return ([&]() -> ERROR_TYPE { return _err; }());             \
-  }
+  }                                                              \
+  do{}while(false)
 
   namespace {
     using Iterator = typename Sample_Stream<SAMPLE_STREAM_TYPE::V3C>::Iterator;
@@ -69,14 +70,15 @@ namespace uvgV3CRTP {
 
 
   template<typename T>
-  ERROR_TYPE V3C_State<T>::set_error(ERROR_TYPE error, std::string msg) const {
+  ERROR_TYPE V3C_State<T>::set_error(ERROR_TYPE error, std::string msg) const noexcept
+  {
     error_ = error;
     error_msg_ = std::string(msg);
     return error_;
   }
 
   template<typename T>
-  bool V3C_State<T>::validate_data() const
+  bool V3C_State<T>::validate_data() const noexcept
   {
     if (!data_)
     {
@@ -87,7 +89,7 @@ namespace uvgV3CRTP {
   }
 
   template<typename T>
-  bool V3C_State<T>::validate_nodata() const
+  bool V3C_State<T>::validate_nodata() const noexcept
   {
     if (data_)
     {
@@ -98,7 +100,7 @@ namespace uvgV3CRTP {
   }
 
   template<typename T>
-  bool V3C_State<T>::validate_cur_gof(bool check_eos) const
+  bool V3C_State<T>::validate_cur_gof(bool check_eos) const noexcept
   {
     if (!cur_gof_it_ || !is_gof_it_valid_)
     {
@@ -115,7 +117,7 @@ namespace uvgV3CRTP {
 
 
   template<typename T>
-  V3C_State<T>::V3C_State(INIT_FLAGS flags, const char* endpoint_address, uint16_t port):
+  V3C_State<T>::V3C_State(INIT_FLAGS flags, const char* endpoint_address, uint16_t port) noexcept :
     connection_(nullptr), 
     flags_(flags), 
     data_(nullptr), 
@@ -128,7 +130,7 @@ namespace uvgV3CRTP {
   }
 
   template<typename T>
-  V3C_State<T>::V3C_State(const uint8_t size_precision, INIT_FLAGS flags, const char* endpoint_address, uint16_t port) :
+  V3C_State<T>::V3C_State(const uint8_t size_precision, INIT_FLAGS flags, const char* endpoint_address, uint16_t port) noexcept :
     connection_(nullptr), 
     flags_(flags), 
     data_(nullptr), 
@@ -142,7 +144,7 @@ namespace uvgV3CRTP {
   }
   
   template<typename T>
-  V3C_State<T>::V3C_State(const char* bitstream, size_t len, INIT_FLAGS flags, const char* endpoint_address, uint16_t port) :
+  V3C_State<T>::V3C_State(const char* bitstream, size_t len, INIT_FLAGS flags, const char* endpoint_address, uint16_t port) noexcept :
     connection_(nullptr), 
     flags_(flags), 
     data_(nullptr), 
@@ -157,14 +159,14 @@ namespace uvgV3CRTP {
 
 
   template<typename T>
-  V3C_State<T>::~V3C_State()
+  V3C_State<T>::~V3C_State() noexcept
   {
     if (connection_) delete connection_;
     clear_sample_stream();
   }
 
   template<typename T>
-  ERROR_TYPE V3C_State<T>::init_sample_stream(const uint8_t size_precision)
+  ERROR_TYPE V3C_State<T>::init_sample_stream(const uint8_t size_precision) noexcept
   {
     if (!validate_nodata()) return get_error_flag();
     data_ = new Sample_Stream<SAMPLE_STREAM_TYPE::V3C>(size_precision);
@@ -172,7 +174,7 @@ namespace uvgV3CRTP {
   }
 
   template<typename T>
-  ERROR_TYPE V3C_State<T>::init_sample_stream(const char * bitstream, size_t len)
+  ERROR_TYPE V3C_State<T>::init_sample_stream(const char * bitstream, size_t len) noexcept
   {
     if (!validate_nodata()) return get_error_flag();
     V3C_STATE_TRY(this)
@@ -184,13 +186,13 @@ namespace uvgV3CRTP {
         set_timestamps(static_cast<V3C_Sender*>(connection_)->get_initial_timestamp());
       }
     }
-    V3C_STATE_CATCH(false)
+    V3C_STATE_CATCH(false);
 
     return init_cur_gof();
   }
 
   template<typename T>
-  ERROR_TYPE V3C_State<T>::append_to_sample_stream(const char* bitstream, size_t len, bool has_sample_stream_headers)
+  ERROR_TYPE V3C_State<T>::append_to_sample_stream(const char* bitstream, size_t len, bool has_sample_stream_headers) noexcept
   {
     if (!validate_data()) return get_error_flag();
     // Adding to sample stream will invalidate the current gof iterator
@@ -219,13 +221,13 @@ namespace uvgV3CRTP {
         }
       }
     }
-    V3C_STATE_CATCH(false)
+    V3C_STATE_CATCH(false);
   
     return gof_at(cur_gof_ind_);
   }
 
   template<typename T>
-  void V3C_State<T>::clear_sample_stream()
+  void V3C_State<T>::clear_sample_stream() noexcept
   {
     if constexpr (std::is_same<T, V3C_Sender>::value)
     {
@@ -246,7 +248,7 @@ namespace uvgV3CRTP {
   }
 
   template<typename T>
-  void V3C_State<T>::init_connection(INIT_FLAGS flags, const char* endpoint_address, uint16_t port)
+  void V3C_State<T>::init_connection(INIT_FLAGS flags, const char* endpoint_address, uint16_t port) noexcept
   {
     if (connection_)
     {
@@ -257,7 +259,7 @@ namespace uvgV3CRTP {
   }
 
   template<typename T>
-  ERROR_TYPE V3C_State<T>::init_cur_gof(size_t to, bool reverse)
+  ERROR_TYPE V3C_State<T>::init_cur_gof(size_t to, bool reverse) noexcept
   {
     if ((cur_gof_it_ && is_gof_it_valid_) || !data_)
     {
@@ -286,7 +288,7 @@ namespace uvgV3CRTP {
   }
 
   template<typename T>
-  void V3C_State<T>::set_timestamps(const uint32_t init_timestamp)
+  void V3C_State<T>::set_timestamps(const uint32_t init_timestamp) noexcept
   {
     if (!validate_data()) return;
 
@@ -299,7 +301,7 @@ namespace uvgV3CRTP {
   }
 
   template<typename T>
-  char* V3C_State<T>::get_bitstream(size_t* length) const
+  char* V3C_State<T>::get_bitstream(size_t* length) const noexcept
   {
     if (!validate_data()) return nullptr;
 
@@ -308,13 +310,13 @@ namespace uvgV3CRTP {
       if (length) *length = data_->size();
       return data_->get_bitstream().release();
     }
-    V3C_STATE_CATCH(false)
+    V3C_STATE_CATCH(false);
     
     return nullptr;
   }
 
   template<typename T>
-  char* V3C_State<T>::get_bitstream_cur_gof(size_t* length) const
+  char* V3C_State<T>::get_bitstream_cur_gof(size_t* length) const noexcept
   {
     if (!validate_data()) return nullptr;
     if (!validate_cur_gof()) return nullptr;
@@ -324,13 +326,13 @@ namespace uvgV3CRTP {
       if (length) *length = data_->size(get_it(cur_gof_it_));
       return data_->get_bitstream(get_it(cur_gof_it_)).release();
     }
-    V3C_STATE_CATCH(false)
+    V3C_STATE_CATCH(false);
 
     return nullptr;
   }
 
   template<typename T>
-  char* V3C_State<T>::get_bitstream_cur_gof_unit(const V3C_UNIT_TYPE type, size_t* length) const
+  char* V3C_State<T>::get_bitstream_cur_gof_unit(const V3C_UNIT_TYPE type, size_t* length) const noexcept
   {
     if (!validate_data()) return nullptr;
     if (!validate_cur_gof()) return nullptr;
@@ -340,13 +342,13 @@ namespace uvgV3CRTP {
       if (length) *length = data_->size(get_it(cur_gof_it_), type);
       return data_->get_bitstream(get_it(cur_gof_it_), type).release();
     }
-    V3C_STATE_CATCH(false)
+    V3C_STATE_CATCH(false);
 
     return nullptr;
   }
 
   template<typename T>
-  ERROR_TYPE V3C_State<T>::first_gof()
+  ERROR_TYPE V3C_State<T>::first_gof() noexcept
   {
     if (!validate_data()) return get_error_flag();
 
@@ -355,7 +357,7 @@ namespace uvgV3CRTP {
   }
 
   template<typename T>
-  ERROR_TYPE V3C_State<T>::last_gof()
+  ERROR_TYPE V3C_State<T>::last_gof() noexcept
   {
     if (!validate_data()) return get_error_flag();
 
@@ -364,7 +366,7 @@ namespace uvgV3CRTP {
   }
 
   template<typename T>
-  ERROR_TYPE V3C_State<T>::gof_at(size_t i)
+  ERROR_TYPE V3C_State<T>::gof_at(size_t i) noexcept
   {
     if (!validate_data()) return get_error_flag();
 
@@ -373,7 +375,7 @@ namespace uvgV3CRTP {
   }
 
   template<typename T>
-  size_t V3C_State<T>::cur_gof_ind() const
+  size_t V3C_State<T>::cur_gof_ind() const noexcept
   {
     if (!validate_data()) return 0;
     if (!validate_cur_gof(false)) return 0;
@@ -381,14 +383,14 @@ namespace uvgV3CRTP {
   }
 
   template<typename T>
-  size_t V3C_State<T>::num_gofs() const
+  size_t V3C_State<T>::num_gofs() const noexcept
   {
     if (!validate_data()) return 0;
     return data_->num_samples();
   }
 
   template<typename T>
-  ERROR_TYPE V3C_State<T>::next_gof()
+  ERROR_TYPE V3C_State<T>::next_gof() noexcept
   {
     if (!validate_data()) return get_error_flag();
     if (!validate_cur_gof(false)) return get_error_flag();
@@ -402,7 +404,7 @@ namespace uvgV3CRTP {
   }
 
   template<typename T>
-  ERROR_TYPE V3C_State<T>::prev_gof()
+  ERROR_TYPE V3C_State<T>::prev_gof() noexcept
   {
     if (!validate_data()) return get_error_flag();
     if (!validate_cur_gof(false)) return get_error_flag();
@@ -420,7 +422,7 @@ namespace uvgV3CRTP {
   }
 
   template<typename T>
-  bool V3C_State<T>::cur_gof_has_unit(V3C_UNIT_TYPE unit) const
+  bool V3C_State<T>::cur_gof_has_unit(V3C_UNIT_TYPE unit) const noexcept
   {
     if (!validate_data()) return false;
     if (!validate_cur_gof()) return false;
@@ -429,7 +431,7 @@ namespace uvgV3CRTP {
   }
 
   template<typename T>
-  bool V3C_State<T>::cur_gof_is_full() const
+  bool V3C_State<T>::cur_gof_is_full() const noexcept
   {
     if (!validate_data()) return false;
     if (!validate_cur_gof()) return false;
@@ -441,7 +443,7 @@ namespace uvgV3CRTP {
     return true;
   }
 
-  ERROR_TYPE send_bitstream(V3C_State<V3C_Sender>* state)
+  ERROR_TYPE send_bitstream(V3C_State<V3C_Sender>* state) noexcept
   {
     if (!state->validate_data()) return state->get_error_flag();
 
@@ -449,10 +451,10 @@ namespace uvgV3CRTP {
     {
       state->connection_->send_bitstream(*state->data_, SEND_FRAME_RATE);
     }
-    V3C_STATE_CATCH(true)
+    V3C_STATE_CATCH(true);
   }
 
-  ERROR_TYPE send_gof(V3C_State<V3C_Sender>* state)
+  ERROR_TYPE send_gof(V3C_State<V3C_Sender>* state) noexcept
   {
     if (!state->validate_data()) return state->get_error_flag();
     if (!state->validate_cur_gof()) return state->get_error_flag();
@@ -461,10 +463,10 @@ namespace uvgV3CRTP {
     {
       state->connection_->send_gof(*get_it(state->cur_gof_it_));
     }
-    V3C_STATE_CATCH(true)
+    V3C_STATE_CATCH(true);
   }
 
-  ERROR_TYPE send_unit(V3C_State<V3C_Sender>* state, V3C_UNIT_TYPE type)
+  ERROR_TYPE send_unit(V3C_State<V3C_Sender>* state, V3C_UNIT_TYPE type) noexcept
   {
     if (!state->validate_data()) return state->get_error_flag();
     if (!state->validate_cur_gof()) return state->get_error_flag();
@@ -473,7 +475,7 @@ namespace uvgV3CRTP {
     {
       state->connection_->send_v3c_unit((*get_it(state->cur_gof_it_)).get(type));
     }
-    V3C_STATE_CATCH(true)
+    V3C_STATE_CATCH(true);
   }
 
 
@@ -572,7 +574,7 @@ namespace uvgV3CRTP {
     }
   }
 
-  ERROR_TYPE receive_bitstream(V3C_State<V3C_Receiver>* state, const uint8_t v3c_size_precision, const uint8_t size_precisions[NUM_V3C_UNIT_TYPES], const size_t expected_num_gofs, const size_t num_nalus[NUM_V3C_UNIT_TYPES], const HeaderStruct header_defs[NUM_V3C_UNIT_TYPES], int timeout)
+  ERROR_TYPE receive_bitstream(V3C_State<V3C_Receiver>* state, const uint8_t v3c_size_precision, const uint8_t size_precisions[NUM_V3C_UNIT_TYPES], const size_t expected_num_gofs, const size_t num_nalus[NUM_V3C_UNIT_TYPES], const HeaderStruct header_defs[NUM_V3C_UNIT_TYPES], int timeout) noexcept
   {
     if (!state->validate_nodata()) return state->get_error_flag();
 
@@ -599,10 +601,10 @@ namespace uvgV3CRTP {
       // Also check that the timestamp is as expected
       check_timestamps(state->data_->begin(), state->data_->end());
     }
-    V3C_STATE_CATCH(true)
+    V3C_STATE_CATCH(true);
   }
 
-  ERROR_TYPE receive_gof(V3C_State<V3C_Receiver>* state, const uint8_t size_precisions[NUM_V3C_UNIT_TYPES], const size_t num_nalus[NUM_V3C_UNIT_TYPES], const HeaderStruct header_defs[NUM_V3C_UNIT_TYPES], int timeout)
+  ERROR_TYPE receive_gof(V3C_State<V3C_Receiver>* state, const uint8_t size_precisions[NUM_V3C_UNIT_TYPES], const size_t num_nalus[NUM_V3C_UNIT_TYPES], const HeaderStruct header_defs[NUM_V3C_UNIT_TYPES], int timeout) noexcept
   {
     if (!state->validate_data()) return state->get_error_flag();
     
@@ -652,10 +654,10 @@ namespace uvgV3CRTP {
       // Also check that the timestamp is as expected
       if (state->data_->num_samples() > 1) check_timestamps(std::prev(state->data_->end(), 2), state->data_->end());
     }
-    V3C_STATE_CATCH(true)
+    V3C_STATE_CATCH(true);
   }
 
-  ERROR_TYPE receive_unit(V3C_State<V3C_Receiver>* state, const V3C_UNIT_TYPE unit_type, const uint8_t size_precision, const size_t expected_size, const HeaderStruct header_def, int timeout)
+  ERROR_TYPE receive_unit(V3C_State<V3C_Receiver>* state, const V3C_UNIT_TYPE unit_type, const uint8_t size_precision, const size_t expected_size, const HeaderStruct header_def, int timeout) noexcept
   {
     if (!state->validate_data()) return state->get_error_flag();
     
@@ -706,11 +708,11 @@ namespace uvgV3CRTP {
       // Also check that the timestamp is as expected
       if (state->data_->num_samples() > 1) check_timestamps(std::prev(state->data_->end(), 2), state->data_->end());
     }
-    V3C_STATE_CATCH(true)
+    V3C_STATE_CATCH(true);
   }
 
   template<typename T>
-  ERROR_TYPE V3C_State<T>::parse_bitstream_info_string(const char* const in_data, size_t len, INFO_FMT fmt, BitstreamInfo& out_info)
+  ERROR_TYPE V3C_State<T>::parse_bitstream_info_string(const char* const in_data, size_t len, INFO_FMT fmt, BitstreamInfo& out_info) noexcept
   {
     //if (field_fmt != INFO_FMT::RAW && field_fmt != INFO_FMT::BASE64)
     //{
@@ -727,7 +729,7 @@ namespace uvgV3CRTP {
       auto out_data = V3C::read_out_of_band_info<V3C::InfoDataType, Sample_Stream<SAMPLE_STREAM_TYPE::V3C>>(stream, fmt, flags_);
       V3C::populate_bitstream_info(out_data, out_info);
     }
-    V3C_STATE_CATCH(true)
+    V3C_STATE_CATCH(true);
   }
 
   template<typename DataType, typename DataClass>
@@ -753,89 +755,117 @@ namespace uvgV3CRTP {
   }
 
   template<typename T>
-  char * V3C_State<T>::get_bitstream_info_string(const INFO_FMT fmt, size_t* out_len) const
+  char * V3C_State<T>::get_bitstream_info_string(const INFO_FMT fmt, size_t* out_len) const noexcept
   {
     if (!validate_data()) return nullptr;
-
-    return write_info<V3C::InfoDataType>(*data_, out_len, fmt);
-  }
-
-  template<typename T>
-  char * V3C_State<T>::get_cur_gof_bitstream_info_string(const INFO_FMT fmt, size_t* out_len) const
-  {
-    if (!validate_data()) return nullptr;
-    if (!validate_cur_gof()) return nullptr;
-
-    return write_info<V3C::InfoDataType>(*get_it(cur_gof_it_), out_len, fmt);
-  }
-
-  template<typename T>
-  char * V3C_State<T>::get_cur_gof_bitstream_info_string(const V3C_UNIT_TYPE type, const INFO_FMT fmt, size_t* out_len) const
-  {
-    if (!validate_data()) return nullptr;
-    if (!validate_cur_gof()) return nullptr;
-
-    return write_info<V3C::InfoDataType>((*get_it(cur_gof_it_)).get(type), out_len, fmt);
-  }
-
-  template<typename T>
-  char* V3C_State<T>::get_cur_gof_unit_info_string(const INFO_FMT field_fmt , const INFO_FMT value_fmt, size_t* out_len) const
-  {
-    if (!validate_data()) return nullptr;
-    if (!validate_cur_gof()) return nullptr;
-
-    // If value format is RAW or BASE64 need to use payload data type
-    if (value_fmt == INFO_FMT::RAW 
-     || value_fmt == INFO_FMT::BASE64
-     || (value_fmt == INFO_FMT::NONE && (field_fmt == INFO_FMT::RAW || field_fmt == INFO_FMT::BASE64)))
-    {
-      return write_info<V3C::PayloadDataType>((*get_it(cur_gof_it_)), out_len, field_fmt, value_fmt);
-    }
-
-    return write_info<V3C::HeaderDataType>((*get_it(cur_gof_it_)), out_len, field_fmt, value_fmt);
-  }
-
-  template<typename T>
-  char* V3C_State<T>::get_cur_gof_unit_info_string(const V3C_UNIT_TYPE type, const INFO_FMT header_field_fmt, const INFO_FMT header_value_fmt, const INFO_FMT payload_field_fmt, const INFO_FMT payload_value_fmt, size_t* out_len) const
-  {
-    if (!validate_data()) return nullptr;
-    if (!validate_cur_gof()) return nullptr;
-
-    size_t header_len = 0; size_t payload_len = 0;
-    auto header = write_info<V3C::HeaderDataType>((*get_it(cur_gof_it_)).get(type), &header_len, header_field_fmt, header_value_fmt);
-    auto payload = write_info<V3C::PayloadDataType>((*get_it(cur_gof_it_)).get(type), &payload_len,
-      payload_field_fmt, payload_value_fmt == INFO_FMT::RAW ? payload_value_fmt : INFO_FMT::BASE64);
     
-    if (header && payload) 
+    V3C_STATE_TRY(this)
     {
-      header_len--; // Remove null-termination byte from header length as we will concatenate the two strings
-      if (out_len) *out_len = header_len + payload_len;
+      return write_info<V3C::InfoDataType>(*data_, out_len, fmt);
+    }
+    V3C_STATE_CATCH(false);
 
-      char* out_string = static_cast<char*>(malloc(header_len + payload_len));
-      if (out_string)
-      {
-        memcpy(out_string, header, header_len);
-        memcpy(out_string + header_len, payload, payload_len);
-      }
-      else if (out_len)
-      {
-        *out_len = 0;
-      }
-      if (header) free(header);
-      if (payload) free(payload);
+    return nullptr;
+  }
 
-      return out_string;
-    }
-    else if (header) 
+  template<typename T>
+  char * V3C_State<T>::get_cur_gof_bitstream_info_string(const INFO_FMT fmt, size_t* out_len) const noexcept
+  {
+    if (!validate_data()) return nullptr;
+    if (!validate_cur_gof()) return nullptr;
+    
+    V3C_STATE_TRY(this)
     {
-      if (out_len) *out_len = header_len;
-      return header;
+      return write_info<V3C::InfoDataType>(*get_it(cur_gof_it_), out_len, fmt);
     }
-    else if (payload) 
+    V3C_STATE_CATCH(false);
+
+    return nullptr;
+  }
+
+  template<typename T>
+  char * V3C_State<T>::get_cur_gof_bitstream_info_string(const V3C_UNIT_TYPE type, const INFO_FMT fmt, size_t* out_len) const noexcept
+  {
+    if (!validate_data()) return nullptr;
+    if (!validate_cur_gof()) return nullptr;
+    
+    V3C_STATE_TRY(this)
     {
-      if (out_len) *out_len = payload_len;
-      return payload;
+      return write_info<V3C::InfoDataType>((*get_it(cur_gof_it_)).get(type), out_len, fmt);
     }
+    V3C_STATE_CATCH(false);
+
+    return nullptr;
+  }
+
+  template<typename T>
+  char* V3C_State<T>::get_cur_gof_unit_info_string(const INFO_FMT field_fmt , const INFO_FMT value_fmt, size_t* out_len) const noexcept
+  {
+    if (!validate_data()) return nullptr;
+    if (!validate_cur_gof()) return nullptr;
+    
+    V3C_STATE_TRY(this)
+    {
+      // If value format is RAW or BASE64 need to use payload data type
+      if (value_fmt == INFO_FMT::RAW
+        || value_fmt == INFO_FMT::BASE64
+        || (value_fmt == INFO_FMT::NONE && (field_fmt == INFO_FMT::RAW || field_fmt == INFO_FMT::BASE64)))
+      {
+        return write_info<V3C::PayloadDataType>((*get_it(cur_gof_it_)), out_len, field_fmt, value_fmt);
+      }
+
+      return write_info<V3C::HeaderDataType>((*get_it(cur_gof_it_)), out_len, field_fmt, value_fmt);
+    }
+    V3C_STATE_CATCH(false);
+    
+    return nullptr;
+  }
+
+  template<typename T>
+  char* V3C_State<T>::get_cur_gof_unit_info_string(const V3C_UNIT_TYPE type, const INFO_FMT header_field_fmt, const INFO_FMT header_value_fmt, const INFO_FMT payload_field_fmt, const INFO_FMT payload_value_fmt, size_t* out_len) const noexcept
+  {
+    if (!validate_data()) return nullptr;
+    if (!validate_cur_gof()) return nullptr;
+    
+    V3C_STATE_TRY(this)
+    {
+      size_t header_len = 0; size_t payload_len = 0;
+      auto header = write_info<V3C::HeaderDataType>((*get_it(cur_gof_it_)).get(type), &header_len, header_field_fmt, header_value_fmt);
+      auto payload = write_info<V3C::PayloadDataType>((*get_it(cur_gof_it_)).get(type), &payload_len,
+        payload_field_fmt, payload_value_fmt == INFO_FMT::RAW ? payload_value_fmt : INFO_FMT::BASE64);
+
+      if (header && payload)
+      {
+        header_len--; // Remove null-termination byte from header length as we will concatenate the two strings
+        if (out_len) *out_len = header_len + payload_len;
+
+        char* out_string = static_cast<char*>(malloc(header_len + payload_len));
+        if (out_string)
+        {
+          memcpy(out_string, header, header_len);
+          memcpy(out_string + header_len, payload, payload_len);
+        }
+        else if (out_len)
+        {
+          *out_len = 0;
+        }
+        if (header) free(header);
+        if (payload) free(payload);
+
+        return out_string;
+      }
+      else if (header)
+      {
+        if (out_len) *out_len = header_len;
+        return header;
+      }
+      else if (payload)
+      {
+        if (out_len) *out_len = payload_len;
+        return payload;
+      }
+    }
+    V3C_STATE_CATCH(false);
 
     if (out_len) *out_len = 0;
     return nullptr;
@@ -843,79 +873,82 @@ namespace uvgV3CRTP {
 
 
   template<typename T>
-  ERROR_TYPE V3C_State<T>::print_state(const bool print_nalus, size_t num_gofs) const
+  ERROR_TYPE V3C_State<T>::print_state(const bool print_nalus, size_t num_gofs) const noexcept
   {
     if (!validate_data()) return get_error_flag();
     if (!validate_cur_gof(false)) return get_error_flag();
 
-    std::cout << "Sample stream of size " << data_->size() << " (v3c size precision: " << (int)data_->size_precision() << ") with state:" << std::endl;
-    size_t gof_ind = 0;
-    size_t ptr = SAMPLE_STREAM_HDR_LEN; // Track bitstream pointer, start at size precision
-    for (const auto& gof: *data_)
+    V3C_STATE_TRY(this)
     {
-      if (gof_ind >= num_gofs) 
+      std::cout << "Sample stream of size " << data_->size() << " (v3c size precision: " << (int)data_->size_precision() << ") with state:" << std::endl;
+      size_t gof_ind = 0;
+      size_t ptr = SAMPLE_STREAM_HDR_LEN; // Track bitstream pointer, start at size precision
+      for (const auto& gof : *data_)
       {
-        std::cout << "." << std::endl << "." << std::endl << "." << std::endl << "(showing only the first " << (int)num_gofs << " Gofs)" << std::endl;
-        break;
-      }
-
-      std::cout << "|--Gof #" << gof_ind << " (bitstream pos: " << (int)ptr << ", size (in sample stream): " << gof.size() << " (" << data_->size(std::next(data_->begin(), gof_ind)) << ")";
-      if (gof.is_timestamp_set()) std::cout << ", timestamp: " << gof.get_timestamp();
-      std::cout << ")";
-      if (gof_ind == cur_gof_ind_) std::cout << " [cur gof]";
-      std::cout << std::endl;
-
-      for (const auto& [type, unit] : gof) 
-      {
-        switch (type) 
+        if (gof_ind >= num_gofs)
         {
-        case V3C_VPS:
-          std::cout << "|  |--V3C unit of type VPS ";
-          break;
-        case V3C_AD:
-          std::cout << "|  |--V3C unit of type AD  ";
-          break;
-        case V3C_OVD:
-          std::cout << "|  |--V3C unit of type OVD ";
-          break;
-        case V3C_GVD:
-          std::cout << "|  |--V3C unit of type GVD ";
-          break;
-        case V3C_AVD:
-          std::cout << "|  |--V3C unit of type AVD ";
-          break;
-        case V3C_PVD:
-          std::cout << "|  |--V3C unit of type PVD ";
-          break;
-        case V3C_CAD:
-          std::cout << "|  |--V3C unit of type CAD ";
-          break;
-
-        default:
-          // TODO: give error
-          std::cout << "    not a valid unit type";
+          std::cout << "." << std::endl << "." << std::endl << "." << std::endl << "(showing only the first " << (int)num_gofs << " Gofs)" << std::endl;
           break;
         }
-        std::cout << "(bitstream pos: " << (int)ptr << ", nal size precision: " << (int)unit.nal_size_precision() << ", size: " << unit.size();
-        if (type != V3C_VPS)
-        {
-          std::cout << ", num nalu: " << unit.num_nalus();
-        }
-        std::cout << ")" << std::endl;
 
-        if (print_nalus)
+        std::cout << "|--Gof #" << gof_ind << " (bitstream pos: " << (int)ptr << ", size (in sample stream): " << gof.size() << " (" << data_->size(std::next(data_->begin(), gof_ind)) << ")";
+        if (gof.is_timestamp_set()) std::cout << ", timestamp: " << gof.get_timestamp();
+        std::cout << ")";
+        if (gof_ind == cur_gof_ind_) std::cout << " [cur gof]";
+        std::cout << std::endl;
+
+        for (const auto& [type, unit] : gof)
         {
-          for (const auto& nal : unit.nalus())
+          switch (type)
           {
-            std::cout << "|  |  |--NAL unit of type " << (int)nal.get().nal_unit_type() << " (size: " << nal.get().size() << ")" << std::endl;
-          }
-        }
-        ptr += data_->size(std::next(data_->begin(), gof_ind), type);
-      }
+          case V3C_VPS:
+            std::cout << "|  |--V3C unit of type VPS ";
+            break;
+          case V3C_AD:
+            std::cout << "|  |--V3C unit of type AD  ";
+            break;
+          case V3C_OVD:
+            std::cout << "|  |--V3C unit of type OVD ";
+            break;
+          case V3C_GVD:
+            std::cout << "|  |--V3C unit of type GVD ";
+            break;
+          case V3C_AVD:
+            std::cout << "|  |--V3C unit of type AVD ";
+            break;
+          case V3C_PVD:
+            std::cout << "|  |--V3C unit of type PVD ";
+            break;
+          case V3C_CAD:
+            std::cout << "|  |--V3C unit of type CAD ";
+            break;
 
-      gof_ind++;
+          default:
+            // TODO: give error
+            std::cout << "    not a valid unit type";
+            break;
+          }
+          std::cout << "(bitstream pos: " << (int)ptr << ", nal size precision: " << (int)unit.nal_size_precision() << ", size: " << unit.size();
+          if (type != V3C_VPS)
+          {
+            std::cout << ", num nalu: " << unit.num_nalus();
+          }
+          std::cout << ")" << std::endl;
+
+          if (print_nalus)
+          {
+            for (const auto& nal : unit.nalus())
+            {
+              std::cout << "|  |  |--NAL unit of type " << (int)nal.get().nal_unit_type() << " (size: " << nal.get().size() << ")" << std::endl;
+            }
+          }
+          ptr += data_->size(std::next(data_->begin(), gof_ind), type);
+        }
+
+        gof_ind++;
+      }
     }
-    return ERROR_TYPE::OK;
+    V3C_STATE_CATCH(true);
   }
 
   template<typename C, typename R, typename... P>
@@ -927,43 +960,43 @@ namespace uvgV3CRTP {
   }
 
   template<typename T>
-  void V3C_State<T>::print_bitstream_info(const INFO_FMT fmt) const
+  void V3C_State<T>::print_bitstream_info(const INFO_FMT fmt) const noexcept
   {
     print_info(this, &V3C_State<T>::get_bitstream_info_string, fmt, static_cast<size_t*>(nullptr));
   }
   template<typename T>
-  void V3C_State<T>::print_cur_gof_bitstream_info(const INFO_FMT fmt) const
+  void V3C_State<T>::print_cur_gof_bitstream_info(const INFO_FMT fmt) const noexcept
   {
     print_info(this, static_cast<char*(V3C_State<T>::*)(INFO_FMT, size_t*)const>(&V3C_State<T>::get_cur_gof_bitstream_info_string), fmt, static_cast<size_t*>(nullptr));
   }
   template<typename T>
-  void V3C_State<T>::print_cur_gof_bitstream_info(const V3C_UNIT_TYPE type, const INFO_FMT fmt) const
+  void V3C_State<T>::print_cur_gof_bitstream_info(const V3C_UNIT_TYPE type, const INFO_FMT fmt) const noexcept
   {
     print_info(this, static_cast<char*(V3C_State<T>::*)(V3C_UNIT_TYPE, INFO_FMT, size_t*)const>(&V3C_State<T>::get_cur_gof_bitstream_info_string), type, fmt, static_cast<size_t*>(nullptr));
   }
   template<typename T>
-  void V3C_State<T>::print_cur_gof_unit_info(const INFO_FMT field_fmt, const INFO_FMT value_fmt) const
+  void V3C_State<T>::print_cur_gof_unit_info(const INFO_FMT field_fmt, const INFO_FMT value_fmt) const noexcept
   {
     print_info(this, static_cast<char* (V3C_State<T>::*)(INFO_FMT, INFO_FMT, size_t*)const>(&V3C_State<T>::get_cur_gof_unit_info_string), field_fmt, value_fmt, static_cast<size_t*>(nullptr));
   }
   template<typename T>
-  void V3C_State<T>::print_cur_gof_unit_info(const V3C_UNIT_TYPE type, const INFO_FMT header_field_fmt, const INFO_FMT header_value_fmt, const INFO_FMT payload_field_fmt, const INFO_FMT payload_value_fmt) const
+  void V3C_State<T>::print_cur_gof_unit_info(const V3C_UNIT_TYPE type, const INFO_FMT header_field_fmt, const INFO_FMT header_value_fmt, const INFO_FMT payload_field_fmt, const INFO_FMT payload_value_fmt) const noexcept
   {
     print_info(this, static_cast<char* (V3C_State<T>::*)(V3C_UNIT_TYPE, INFO_FMT, INFO_FMT, INFO_FMT, INFO_FMT, size_t*)const>(&V3C_State<T>::get_cur_gof_unit_info_string), type, header_field_fmt, header_value_fmt, payload_field_fmt, payload_value_fmt, static_cast<size_t*>(nullptr));
   }
 
   template<typename T>
-  ERROR_TYPE V3C_State<T>::get_error_flag() const
+  ERROR_TYPE V3C_State<T>::get_error_flag() const noexcept
   {
     return error_;
   }
   template<typename T>
-  const char * V3C_State<T>::get_error_msg() const
+  const char * V3C_State<T>::get_error_msg() const noexcept
   {
     return error_msg_.c_str();
   }
   template<typename T>
-  void V3C_State<T>::reset_error_flag() const
+  void V3C_State<T>::reset_error_flag() const noexcept
   {
     error_ = ERROR_TYPE::OK;
     error_msg_ = std::string("");

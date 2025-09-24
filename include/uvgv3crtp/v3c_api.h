@@ -27,7 +27,7 @@ namespace uvgV3CRTP {
      * @param endpoint_address Address to connect/bind to.
      * @param port Port number.
      */
-    V3C_State(INIT_FLAGS flags = INIT_FLAGS::ALL, const char* endpoint_address = "127.0.0.1", uint16_t port = 8890);
+    V3C_State(INIT_FLAGS flags = INIT_FLAGS::ALL, const char* endpoint_address = "127.0.0.1", uint16_t port = 8890) noexcept;
 
     /**
      * @brief Construct a V3C_State object and initialize the sample stream with a given size precision.
@@ -36,7 +36,7 @@ namespace uvgV3CRTP {
      * @param endpoint_address Address to connect/bind to.
      * @param port Port number.
      */
-    V3C_State(const uint8_t size_precision, INIT_FLAGS flags = INIT_FLAGS::ALL, const char* endpoint_address = "127.0.0.1", uint16_t port = 8890);
+    V3C_State(const uint8_t size_precision, INIT_FLAGS flags = INIT_FLAGS::ALL, const char* endpoint_address = "127.0.0.1", uint16_t port = 8890) noexcept;
 
     /**
      * @brief Construct a V3C_State object and initialize the sample stream from a bitstream.
@@ -47,12 +47,12 @@ namespace uvgV3CRTP {
      * @param endpoint_address Address to connect/bind to.
      * @param port Port number.
      */
-    V3C_State(const char* bitstream, size_t len, INIT_FLAGS flags = INIT_FLAGS::ALL, const char* endpoint_address = "127.0.0.1", uint16_t port = 8890);
+    V3C_State(const char* bitstream, size_t len, INIT_FLAGS flags = INIT_FLAGS::ALL, const char* endpoint_address = "127.0.0.1", uint16_t port = 8890) noexcept;
 
     /**
      * @brief Destructor. Cleans up connections and sample stream data.
      */
-    ~V3C_State();
+    ~V3C_State() noexcept;
 
     /**
      * @brief Initialize the sample stream with a given size precision.
@@ -60,7 +60,7 @@ namespace uvgV3CRTP {
      * @param size_precision Size precision for the sample stream. Auto infer if (uint8_t)-1.
      * @return ERROR_TYPE::OK on success, error code otherwise.
      */
-    ERROR_TYPE init_sample_stream(const uint8_t size_precision);
+    ERROR_TYPE init_sample_stream(const uint8_t size_precision) noexcept;
 
     /**
      * @brief Initialize the sample stream from a bitstream.
@@ -69,7 +69,7 @@ namespace uvgV3CRTP {
      * @param len Length of the bitstream.
      * @return ERROR_TYPE::OK on success, error code otherwise.
      */
-    ERROR_TYPE init_sample_stream(const char* bitstream, size_t len);
+    ERROR_TYPE init_sample_stream(const char* bitstream, size_t len) noexcept;
 
     /**
      * @brief Append data to the sample stream.
@@ -79,13 +79,13 @@ namespace uvgV3CRTP {
      * @param has_sample_stream_headers If true, bitstream contains sample stream headers; otherwise, a single V3C unit.
      * @return ERROR_TYPE::OK on success, error code otherwise.
      */
-    ERROR_TYPE append_to_sample_stream(const char* bitstream, size_t len, bool has_sample_stream_headers = false);
+    ERROR_TYPE append_to_sample_stream(const char* bitstream, size_t len, bool has_sample_stream_headers = false) noexcept;
 
     /**
      * @brief Clear the sample stream data and reset state.
      * @details Last timestamp is saved and used to derive the initial timestamp if more data is appended. This should allow continuous timestamps when sending data in parts.
      */
-    void clear_sample_stream();
+    void clear_sample_stream() noexcept;
 
     /**
      * @brief Get the full bitstream.
@@ -93,7 +93,7 @@ namespace uvgV3CRTP {
      * @param length pointer to store the length of the returned bitstream.
      * @return Pointer to the bitstream (caller must free i.e. c-style free).
      */
-    char* get_bitstream(size_t* length) const;
+    char* get_bitstream(size_t* length) const noexcept;
 
     /**
      * @brief Get the bitstream for the current GoF.
@@ -101,7 +101,7 @@ namespace uvgV3CRTP {
      * @param length pointer to store the length of the returned bitstream.
      * @return Pointer to the bitstream (caller must free i.e. c-style free).
      */
-    char* get_bitstream_cur_gof(size_t* length) const;
+    char* get_bitstream_cur_gof(size_t* length) const noexcept;
 
     /**
      * @brief Get the bitstream for a specific unit type in the current GoF.
@@ -110,19 +110,19 @@ namespace uvgV3CRTP {
      * @param length pointer to store the length of the returned bitstream.
      * @return Pointer to the bitstream (caller must free i.e. c-style free).
      */
-    char* get_bitstream_cur_gof_unit(const V3C_UNIT_TYPE type, size_t* length) const;
+    char* get_bitstream_cur_gof_unit(const V3C_UNIT_TYPE type, size_t* length) const noexcept;
 
     /**
      * @brief Reset the current GoF iterator to the first GoF.
      * @return ERROR_TYPE::OK on success, error code otherwise.
      */
-    ERROR_TYPE first_gof();
+    ERROR_TYPE first_gof() noexcept;
 
     /**
      * @brief Reset the current GoF iterator to the last GoF.
      * @return ERROR_TYPE::OK on success, error code otherwise.
      */
-    ERROR_TYPE last_gof();
+    ERROR_TYPE last_gof() noexcept;
 
     /**
      * @brief Set the current GoF iterator to the i-th GoF.
@@ -130,34 +130,34 @@ namespace uvgV3CRTP {
      * @param i Index of the GoF.
      * @return ERROR_TYPE::OK on success, error code otherwise.
      */
-    ERROR_TYPE gof_at(size_t i);
+    ERROR_TYPE gof_at(size_t i) noexcept;
 
     /**
     * @brief Get the index of the current GoF.
     * @details If the iterator is not valid, 0 is returned and error flag is set to INVALID_IT or DATA if no data exists.
     * @return Index of the current GoF, or 0 if the iterator is not valid.
     */
-   size_t cur_gof_ind() const;
+   size_t cur_gof_ind() const noexcept;
     
     /**
      * @brief Get the total number of GoFs in the sample stream.
      * @details If the sample stream is not initialized, 0 is returned and error flag is set to DATA.
      * @return Total number of GoFs, or 0 if the sample stream is not initialized.
      */
-    size_t num_gofs() const;
+    size_t num_gofs() const noexcept;
 
     /**
      * @brief Advance the current GoF iterator to the next GoF.
      * @details Sets error flag to EOS if the end of the stream is reached.
      * @return ERROR_TYPE::OK on success, error code otherwise.
      */
-    ERROR_TYPE next_gof();
+    ERROR_TYPE next_gof() noexcept;
 
     /**
      * @brief Move the current GoF iterator to the previous GoF.
      * @return ERROR_TYPE::OK on success, error code otherwise.
      */
-    ERROR_TYPE prev_gof();
+    ERROR_TYPE prev_gof() noexcept;
 
     /**
      * @brief Check if the current GoF contains a unit of the specified type.
@@ -165,14 +165,14 @@ namespace uvgV3CRTP {
      * @param unit The V3C unit type.
      * @return True if the unit exists, false otherwise.
      */
-    bool cur_gof_has_unit(V3C_UNIT_TYPE unit) const;
+    bool cur_gof_has_unit(V3C_UNIT_TYPE unit) const noexcept;
 
     /**
      * @brief Check if the current GoF contains all units specified during state creation.
      * @details cur gof iterator should be valid. If not, error flag is set to INVALID_IT or DATA if no data exists.
      * @return True if the GoF is full, false otherwise.
      */
-    bool cur_gof_is_full() const;
+    bool cur_gof_is_full() const noexcept;
 
     /**
      * @brief Get a null-terminated string with information about the bitstream.
@@ -181,7 +181,7 @@ namespace uvgV3CRTP {
      * @param fmt Output format.
      * @return Pointer to the info string (caller must free i.e. c-style free).
      */
-    char* get_bitstream_info_string(const INFO_FMT fmt = INFO_FMT::LOGGING, size_t* out_len = nullptr) const;
+    char* get_bitstream_info_string(const INFO_FMT fmt = INFO_FMT::LOGGING, size_t* out_len = nullptr) const noexcept;
 
     /**
      * @brief Get a null-terminated string with information about the current GoF.
@@ -190,7 +190,7 @@ namespace uvgV3CRTP {
      * @param fmt Output format.
      * @return Pointer to the info string (caller must free i.e. c-style free).
      */
-    char* get_cur_gof_bitstream_info_string(const INFO_FMT fmt = INFO_FMT::LOGGING, size_t* out_len = nullptr) const;
+    char* get_cur_gof_bitstream_info_string(const INFO_FMT fmt = INFO_FMT::LOGGING, size_t* out_len = nullptr) const noexcept;
 
     /**
      * @brief Get a null-terminated string with information about a specific unit type in the current GoF.
@@ -200,11 +200,11 @@ namespace uvgV3CRTP {
      * @param fmt Output format.
      * @return Pointer to the info string (caller must free i.e. c-style free).
      */
-    char* get_cur_gof_bitstream_info_string(const V3C_UNIT_TYPE type, const INFO_FMT fmt = INFO_FMT::LOGGING, size_t* out_len = nullptr) const;
+    char* get_cur_gof_bitstream_info_string(const V3C_UNIT_TYPE type, const INFO_FMT fmt = INFO_FMT::LOGGING, size_t* out_len = nullptr) const noexcept;
 
 
-    char* get_cur_gof_unit_info_string(const INFO_FMT field_fmt = INFO_FMT::LOGGING, const INFO_FMT value_fmt = INFO_FMT::NONE, size_t* out_len = nullptr) const;
-    char* get_cur_gof_unit_info_string(const V3C_UNIT_TYPE type, const INFO_FMT header_field_fmt = INFO_FMT::LOGGING, const INFO_FMT header_value_fmt = INFO_FMT::NONE, const INFO_FMT payload_field_fmt = INFO_FMT::NONE, const INFO_FMT payload_value_fmt = INFO_FMT::NONE, size_t* out_len = nullptr) const;
+    char* get_cur_gof_unit_info_string(const INFO_FMT field_fmt = INFO_FMT::LOGGING, const INFO_FMT value_fmt = INFO_FMT::NONE, size_t* out_len = nullptr) const noexcept;
+    char* get_cur_gof_unit_info_string(const V3C_UNIT_TYPE type, const INFO_FMT header_field_fmt = INFO_FMT::LOGGING, const INFO_FMT header_value_fmt = INFO_FMT::NONE, const INFO_FMT payload_field_fmt = INFO_FMT::NONE, const INFO_FMT payload_value_fmt = INFO_FMT::NONE, size_t* out_len = nullptr) const noexcept;
 
 
     /**
@@ -215,7 +215,7 @@ namespace uvgV3CRTP {
      * @param out_info Output structure to fill with parsed info.
      * @return ERROR_TYPE::OK on success, error code otherwise.
      */
-    ERROR_TYPE parse_bitstream_info_string(const char* const in_data, size_t len, INFO_FMT fmt, BitstreamInfo& out_info);
+    ERROR_TYPE parse_bitstream_info_string(const char* const in_data, size_t len, INFO_FMT fmt, BitstreamInfo& out_info) noexcept;
 
     /**
      * @brief Print the current state (sample stream, etc.) to stdout.
@@ -224,21 +224,21 @@ namespace uvgV3CRTP {
      * @param num_gofs Maximum number of GoFs to print.
      * @return ERROR_TYPE::OK on success, error code otherwise.
      */
-    ERROR_TYPE print_state(const bool print_nalus = false, size_t num_gofs = std::numeric_limits<size_t>::max()) const;
+    ERROR_TYPE print_state(const bool print_nalus = false, size_t num_gofs = std::numeric_limits<size_t>::max()) const noexcept;
 
     /**
      * @brief Print information about the bitstream to stdout.
      * @details Sample stream must be initialized and contain data. If not, error flag is set and no output is printed.
      * @param fmt Output format.
      */
-    void print_bitstream_info(const INFO_FMT fmt = INFO_FMT::LOGGING) const;
+    void print_bitstream_info(const INFO_FMT fmt = INFO_FMT::LOGGING) const noexcept;
 
     /**
      * @brief Print information about the current GoF to stdout.
      * @details Sample stream must be initialized and contain data and cur gof iterator should be valid. If not, error flag is set and no output is printed.
      * @param fmt Output format.
      */
-    void print_cur_gof_bitstream_info(const INFO_FMT fmt = INFO_FMT::LOGGING) const;
+    void print_cur_gof_bitstream_info(const INFO_FMT fmt = INFO_FMT::LOGGING) const noexcept;
 
     /**
      * @brief Print information about a specific unit type in the current GoF to stdout.
@@ -246,40 +246,40 @@ namespace uvgV3CRTP {
      * @param type The V3C unit type.
      * @param fmt Output format.
      */
-    void print_cur_gof_bitstream_info(const V3C_UNIT_TYPE type, const INFO_FMT fmt = INFO_FMT::LOGGING) const;
+    void print_cur_gof_bitstream_info(const V3C_UNIT_TYPE type, const INFO_FMT fmt = INFO_FMT::LOGGING) const noexcept;
     
-    void print_cur_gof_unit_info(const INFO_FMT field_fmt = INFO_FMT::LOGGING, const INFO_FMT value_fmt = INFO_FMT::NONE) const;
-    void print_cur_gof_unit_info(const V3C_UNIT_TYPE type, const INFO_FMT header_field_fmt = INFO_FMT::LOGGING, const INFO_FMT header_value_fmt = INFO_FMT::NONE, const INFO_FMT payload_field_fmt = INFO_FMT::NONE, const INFO_FMT payload_value_fmt = INFO_FMT::NONE) const;
+    void print_cur_gof_unit_info(const INFO_FMT field_fmt = INFO_FMT::LOGGING, const INFO_FMT value_fmt = INFO_FMT::NONE) const noexcept;
+    void print_cur_gof_unit_info(const V3C_UNIT_TYPE type, const INFO_FMT header_field_fmt = INFO_FMT::LOGGING, const INFO_FMT header_value_fmt = INFO_FMT::NONE, const INFO_FMT payload_field_fmt = INFO_FMT::NONE, const INFO_FMT payload_value_fmt = INFO_FMT::NONE) const noexcept;
 
     /**
      * @brief Get the current error flag.
      * @return The current error code.
      */
-    ERROR_TYPE get_error_flag() const;
+    ERROR_TYPE get_error_flag() const noexcept;
 
     /**
      * @brief Get the current error message.
      * @return The current error message string (should not be freed by caller).
      */
-    const char* get_error_msg() const;
+    const char* get_error_msg() const noexcept;
 
     /**
      * @brief Reset the error flag and message.
      */
-    void reset_error_flag() const;
+    void reset_error_flag() const noexcept;
 
   private:
     /// \cond DO_NOT_DOCUMENT
-    friend ERROR_TYPE send_bitstream(V3C_State<V3C_Sender>* state);
-    friend ERROR_TYPE send_gof(V3C_State<V3C_Sender>* state);
-    friend ERROR_TYPE send_unit(V3C_State<V3C_Sender>* state, V3C_UNIT_TYPE type);
-    friend ERROR_TYPE receive_bitstream(V3C_State<V3C_Receiver>* state, const uint8_t v3c_size_precision, const uint8_t size_precisions[NUM_V3C_UNIT_TYPES], const size_t expected_num_gofs, const size_t num_nalus[NUM_V3C_UNIT_TYPES], const HeaderStruct header_defs[NUM_V3C_UNIT_TYPES], int timeout);
-    friend ERROR_TYPE receive_gof(V3C_State<V3C_Receiver>* state, const uint8_t size_precisions[NUM_V3C_UNIT_TYPES], const size_t num_nalus[NUM_V3C_UNIT_TYPES], const HeaderStruct header_defs[NUM_V3C_UNIT_TYPES], int timeout);
-    friend ERROR_TYPE receive_unit(V3C_State<V3C_Receiver>* state, const V3C_UNIT_TYPE unit_type, const uint8_t size_precision, const size_t expected_size, const HeaderStruct header_def, int timeout);
+    friend ERROR_TYPE send_bitstream(V3C_State<V3C_Sender>* state) noexcept;
+    friend ERROR_TYPE send_gof(V3C_State<V3C_Sender>* state) noexcept;
+    friend ERROR_TYPE send_unit(V3C_State<V3C_Sender>* state, V3C_UNIT_TYPE type) noexcept;
+    friend ERROR_TYPE receive_bitstream(V3C_State<V3C_Receiver>* state, const uint8_t v3c_size_precision, const uint8_t size_precisions[NUM_V3C_UNIT_TYPES], const size_t expected_num_gofs, const size_t num_nalus[NUM_V3C_UNIT_TYPES], const HeaderStruct header_defs[NUM_V3C_UNIT_TYPES], int timeout) noexcept;
+    friend ERROR_TYPE receive_gof(V3C_State<V3C_Receiver>* state, const uint8_t size_precisions[NUM_V3C_UNIT_TYPES], const size_t num_nalus[NUM_V3C_UNIT_TYPES], const HeaderStruct header_defs[NUM_V3C_UNIT_TYPES], int timeout) noexcept;
+    friend ERROR_TYPE receive_unit(V3C_State<V3C_Receiver>* state, const V3C_UNIT_TYPE unit_type, const uint8_t size_precision, const size_t expected_size, const HeaderStruct header_def, int timeout) noexcept;
 
-    void init_connection(INIT_FLAGS flags, const char* endpoint_address, uint16_t port);
-    ERROR_TYPE init_cur_gof(size_t to = 0, bool reverse = false);
-    void set_timestamps(const uint32_t init_timestamp);
+    void init_connection(INIT_FLAGS flags, const char* endpoint_address, uint16_t port) noexcept;
+    ERROR_TYPE init_cur_gof(size_t to = 0, bool reverse = false) noexcept;
+    void set_timestamps(const uint32_t init_timestamp) noexcept;
 
     T* connection_;
     const INIT_FLAGS flags_;
@@ -289,14 +289,14 @@ namespace uvgV3CRTP {
     bool is_gof_it_valid_;
     size_t cur_gof_ind_;
 
-    ERROR_TYPE set_error(ERROR_TYPE error, std::string msg) const;
+    ERROR_TYPE set_error(ERROR_TYPE error, std::string msg) const noexcept;
     mutable ERROR_TYPE error_;
     mutable std::string error_msg_;
 
     // Helpers for validation
-    bool validate_data() const;
-    bool validate_nodata() const;
-    bool validate_cur_gof(bool check_eos = true) const;
+    bool validate_data() const noexcept;
+    bool validate_nodata() const noexcept;
+    bool validate_cur_gof(bool check_eos = true) const noexcept;
     /// \endcond
   };
 
@@ -309,7 +309,7 @@ namespace uvgV3CRTP {
    * @param state Pointer to the V3C_State<V3C_Sender> object.
    * @return ERROR_TYPE::OK on success, error code otherwise.
    */
-  ERROR_TYPE send_bitstream(V3C_State<V3C_Sender>* state);
+  ERROR_TYPE send_bitstream(V3C_State<V3C_Sender>* state) noexcept;
 
   /**
    * @brief Send the current GoF using the sender state.
@@ -319,7 +319,7 @@ namespace uvgV3CRTP {
    * @param state Pointer to the V3C_State<V3C_Sender> object.
    * @return ERROR_TYPE::OK on success, error code otherwise.
    */
-  ERROR_TYPE send_gof(V3C_State<V3C_Sender>* state);
+  ERROR_TYPE send_gof(V3C_State<V3C_Sender>* state) noexcept;
 
   /**
    * @brief Send a specific V3C unit from the current GoF using the sender state.
@@ -330,7 +330,7 @@ namespace uvgV3CRTP {
    * @param type The V3C unit type to send.
    * @return ERROR_TYPE::OK on success, error code otherwise.
    */
-  ERROR_TYPE send_unit(V3C_State<V3C_Sender>* state, V3C_UNIT_TYPE type);
+  ERROR_TYPE send_unit(V3C_State<V3C_Sender>* state, V3C_UNIT_TYPE type) noexcept;
 
   /**
    * @brief Receive a full bitstream using the receiver state.
@@ -354,7 +354,7 @@ namespace uvgV3CRTP {
       const size_t num_nalus[NUM_V3C_UNIT_TYPES],
       const HeaderStruct header_defs[NUM_V3C_UNIT_TYPES],
       int timeout
-  );
+  ) noexcept;
 
   /**
    * @brief Receive a single GoF using the receiver state.
@@ -374,7 +374,7 @@ namespace uvgV3CRTP {
       const size_t num_nalus[NUM_V3C_UNIT_TYPES],
       const HeaderStruct header_defs[NUM_V3C_UNIT_TYPES],
       int timeout
-  );
+  ) noexcept;
 
   /**
    * @brief Receive a single V3C unit using the receiver state.
@@ -396,7 +396,7 @@ namespace uvgV3CRTP {
       const size_t expected_size,
       const HeaderStruct header_def,
       int timeout
-  );
+  ) noexcept;
 
   // Explicitly define necessary instantiations so code is linked properly
   extern template class V3C_State<V3C_Sender>;
