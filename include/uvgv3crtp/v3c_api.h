@@ -177,6 +177,7 @@ namespace uvgV3CRTP {
     /**
      * @brief Get a null-terminated string with information about the bitstream.
      * @details Sample stream must be initialized and contain data. If not, nullptr is returned and error flag is set.
+     *          Supported fmt: LOGGING, PARAM, RAW, NONE (no output). Other formats cause PARSE error.
      * @param out_len Optional pointer to store the length of the returned string.
      * @param fmt Output format.
      * @return Pointer to the info string (caller must free i.e. c-style free).
@@ -186,6 +187,7 @@ namespace uvgV3CRTP {
     /**
      * @brief Get a null-terminated string with information about the current GoF.
      * @details Sample stream must be initialized and contain data and cur gof iterator should be valid. If not, nullptr is returned and error flag is set.
+     *          Supported fmt: LOGGING, PARAM, RAW, NONE (no output). Other formats cause PARSE error.
      * @param out_len Optional pointer to store the length of the returned string.
      * @param fmt Output format.
      * @return Pointer to the info string (caller must free i.e. c-style free).
@@ -195,6 +197,7 @@ namespace uvgV3CRTP {
     /**
      * @brief Get a null-terminated string with information about a specific unit type in the current GoF.
      * @details Sample stream must be initialized and contain data and cur gof iterator should be valid. type also has to be a type present in the gof. If not, nullptr is returned and error flag is set.
+     *          Supported fmt: LOGGING, PARAM, RAW, NONE (no output). Other formats cause PARSE error.
      * @param out_len Optional pointer to store the length of the returned string.
      * @param type The V3C unit type.
      * @param fmt Output format.
@@ -202,13 +205,43 @@ namespace uvgV3CRTP {
      */
     char* get_cur_gof_bitstream_info_string(const V3C_UNIT_TYPE type, const INFO_FMT fmt = INFO_FMT::LOGGING, size_t* out_len = nullptr) const noexcept;
 
-
+    /**
+     * @brief Get a null-terminated string of the v3c unit headers of the units in the current GoF.
+     * @details Sample stream must be initialized and contain data and cur gof iterator should be valid. If not, nullptr is returned and error flag is set.
+     *          Supported field_fmt: LOGGING, PARAM, RAW, SDP, NONE (no fields). Other formats cause PARSE error.
+     *          Supported value_fmt: LOGGING, PARAM, RAW, SDP, NONE (no output). Other formats cause PARSE error.
+     *          Special formats: value_fmt BASE64 can be combined with field_fmt LOGGING, PARAM, SDP, NONE (no fields) for base64 coded binary-style output.
+     * @param out_len Optional pointer to store the length of the returned string.
+     * @param field_fmt Field format. If NONE, no fields are printed.
+     * @param value_fmt Value format. If NONE, field_fmt is used.
+     * @return Pointer to the info string (caller must free i.e. c-style free).
+     */
     char* get_cur_gof_unit_info_string(const INFO_FMT field_fmt = INFO_FMT::LOGGING, const INFO_FMT value_fmt = INFO_FMT::NONE, size_t* out_len = nullptr) const noexcept;
+    
+    /**
+     * @brief Get a null-terminated string with the v3c header and payload of a specific unit in the current GoF.
+     * @details Sample stream must be initialized and contain data and cur gof iterator should be valid. type also has to be a type present in the gof. If not, nullptr is returned and error flag is set.
+     *          Allows setting different formats for header and payload. Set both field and value fmt to NONE to disable header/payload output.
+     *          Supported header_field_fmt: LOGGING, PARAM, RAW, SDP, NONE (no fields). Other formats cause PARSE error.
+     *          Supported Header_value_fmt: LOGGING, PARAM, RAW, SDP, NONE (no output). Other formats cause PARSE error.
+     *          Special formats: value_fmt BASE64 can be combined with field_fmt LOGGING, PARAM, SDP, NONE (no fields) for base64 coded binary-style output.
+     *          Supported payload_field_fmt: LOGGING, PARAM, SDP, NONE (no fields). Other formats cause PARSE error.
+     *          Supported payload_value_fmt: BASE64, RAW, NONE (no output). Other formats cause PARSE error.
+     * @param out_len Optional pointer to store the length of the returned string.
+     * @param type The V3C unit type.
+     * @param header_field_fmt Header field format. If NONE, no fields are printed.
+     * @param header_value_fmt Header value format. If NONE, header_field_fmt is used.
+     * @param payload_field_fmt Payload field format. If NONE, no fields are printed.
+     * @param payload_value_fmt Payload value format. If NONE, payload_field_fmt is used.
+     * @return Pointer to the info string (caller must free i.e. c-style free).
+     */
     char* get_cur_gof_unit_info_string(const V3C_UNIT_TYPE type, const INFO_FMT header_field_fmt = INFO_FMT::LOGGING, const INFO_FMT header_value_fmt = INFO_FMT::NONE, const INFO_FMT payload_field_fmt = INFO_FMT::NONE, const INFO_FMT payload_value_fmt = INFO_FMT::NONE, size_t* out_len = nullptr) const noexcept;
 
 
     /**
      * @brief Parse out-of-band info from a bitstream info string.
+     * @details Input format should match the format used to create the string.
+     *          Supported fmt: LOGGING, PARAM, RAW. Other formats cause PARSE error.
      * @param in_data Pointer to the input data.
      * @param len Length of the input data.
      * @param fmt Input format.
@@ -229,6 +262,7 @@ namespace uvgV3CRTP {
     /**
      * @brief Print information about the bitstream to stdout.
      * @details Sample stream must be initialized and contain data. If not, error flag is set and no output is printed.
+     *          Supported fmt: LOGGING, PARAM, RAW, NONE (no output). Other formats cause PARSE error.
      * @param fmt Output format.
      */
     void print_bitstream_info(const INFO_FMT fmt = INFO_FMT::LOGGING) const noexcept;
@@ -236,6 +270,7 @@ namespace uvgV3CRTP {
     /**
      * @brief Print information about the current GoF to stdout.
      * @details Sample stream must be initialized and contain data and cur gof iterator should be valid. If not, error flag is set and no output is printed.
+     *          Supported fmt: LOGGING, PARAM, RAW, NONE (no output). Other formats cause PARSE error.
      * @param fmt Output format.
      */
     void print_cur_gof_bitstream_info(const INFO_FMT fmt = INFO_FMT::LOGGING) const noexcept;
@@ -243,12 +278,42 @@ namespace uvgV3CRTP {
     /**
      * @brief Print information about a specific unit type in the current GoF to stdout.
      * @details Sample stream must be initialized and contain data and cur gof iterator should be valid. type also has to be a type present in the gof. If not, error flag is set and no output is printed.
+     *          Supported fmt: LOGGING, PARAM, RAW, NONE (no output). Other formats cause PARSE error.
      * @param type The V3C unit type.
      * @param fmt Output format.
      */
     void print_cur_gof_bitstream_info(const V3C_UNIT_TYPE type, const INFO_FMT fmt = INFO_FMT::LOGGING) const noexcept;
     
+    /**
+     * @brief Print information about the v3c unit headers of the units in the current GoF to stdout.
+     * @details Sample stream must be initialized and contain data and cur gof iterator should be valid. If not, nullptr is returned and error flag is set and no output is printed.
+     *          Supported field_fmt: LOGGING, PARAM, RAW, SDP, NONE (no fields). Other formats cause PARSE error.
+     *          Supported value_fmt: LOGGING, PARAM, RAW, SDP, NONE (no output). Other formats cause PARSE error.
+     *          Special formats: value_fmt BASE64 can be combined with field_fmt LOGGING, PARAM, SDP, NONE (no fields) for base64 coded binary-style output.
+     * @param out_len Optional pointer to store the length of the returned string.
+     * @param field_fmt Field format. If NONE, no fields are printed.
+     * @param value_fmt Value format. If NONE, field_fmt is used.
+     * @return Pointer to the info string (caller must free i.e. c-style free).
+     */
     void print_cur_gof_unit_info(const INFO_FMT field_fmt = INFO_FMT::LOGGING, const INFO_FMT value_fmt = INFO_FMT::NONE) const noexcept;
+
+    /**
+     * @brief Print information about the v3c header and payload of a specific unit in the current GoF.
+     * @details Sample stream must be initialized and contain data and cur gof iterator should be valid. type also has to be a type present in the gof. If not, nullptr is returned and error flag is set and no output is printed.
+     *          Allows setting different formats for header and payload. Set both field and value fmt to NONE to disable header/payload output.
+     *          Supported header_field_fmt: LOGGING, PARAM, RAW, SDP, NONE (no fields). Other formats cause PARSE error.
+     *          Supported Header_value_fmt: LOGGING, PARAM, RAW, SDP, NONE (no output). Other formats cause PARSE error.
+     *          Special formats: value_fmt BASE64 can be combined with field_fmt LOGGING, PARAM, SDP, NONE (no fields) for base64 coded binary-style output.
+     *          Supported payload_field_fmt: LOGGING, PARAM, SDP, NONE (no fields). Other formats cause PARSE error.
+     *          Supported payload_value_fmt: BASE64, RAW, NONE (no output). Other formats cause PARSE error.
+     * @param out_len Optional pointer to store the length of the returned string.
+     * @param type The V3C unit type.
+     * @param header_field_fmt Header field format. If NONE, no fields are printed.
+     * @param header_value_fmt Header value format. If NONE, header_field_fmt is used.
+     * @param payload_field_fmt Payload field format. If NONE, no fields are printed.
+     * @param payload_value_fmt Payload value format. If NONE, payload_field_fmt is used.
+     * @return Pointer to the info string (caller must free i.e. c-style free).
+     */
     void print_cur_gof_unit_info(const V3C_UNIT_TYPE type, const INFO_FMT header_field_fmt = INFO_FMT::LOGGING, const INFO_FMT header_value_fmt = INFO_FMT::NONE, const INFO_FMT payload_field_fmt = INFO_FMT::NONE, const INFO_FMT payload_value_fmt = INFO_FMT::NONE) const noexcept;
 
     /**

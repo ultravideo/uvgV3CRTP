@@ -27,10 +27,10 @@ namespace uvgV3CRTP {
 
   enum class INFO_FMT {
     LOGGING, // Logging printout in a human readable format
-    PARAM,   // Print relevant parameters directly to c++ expressions
-    RAW,     // Output data values directly
-    BASE64,  // Base64 encoded data
-    SDP,     // SDP format
+    PARAM,   // Print relevant parameters directly without extra formatting
+    RAW,     // Output data values directly in a binary format
+    BASE64,  // Base64 coded binary data
+    SDP,     // SDP compliant format
     NONE     // Disable output
   };
 

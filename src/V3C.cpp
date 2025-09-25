@@ -17,7 +17,7 @@ namespace uvgV3CRTP {
   template void V3C::write_out_of_band_info<V3C::HeaderDataType, V3C_Gof>(std::ostream&, V3C_Gof const&, const INFO_FMT, const INFO_FMT);
   template void V3C::write_out_of_band_info<V3C::PayloadDataType, V3C_Gof>(std::ostream&, V3C_Gof const&, const INFO_FMT, const  INFO_FMT);
   template void V3C::write_out_of_band_info<V3C::InfoDataType, V3C_Unit>(std::ostream&, V3C_Unit const&, const INFO_FMT, const INFO_FMT);
-  template void V3C::write_out_of_band_info<V3C::HeaderDataType, V3C_Unit>(std::ostream&, V3C_Unit const&, const INFO_FMT, const INFO_FMT);
+  //template void V3C::write_out_of_band_info<V3C::HeaderDataType, V3C_Unit>(std::ostream&, V3C_Unit const&, const INFO_FMT, const INFO_FMT);
   template void V3C::write_out_of_band_info<V3C::PayloadDataType, V3C_Unit>(std::ostream&, V3C_Unit const&, const INFO_FMT, const INFO_FMT);
   template V3C::InfoDataType V3C::read_out_of_band_info<V3C::InfoDataType, Sample_Stream<SAMPLE_STREAM_TYPE::V3C>>(std::istream&, INFO_FMT, INIT_FLAGS);
   template size_t V3C::sample_stream_header_size<SAMPLE_STREAM_TYPE::V3C>(V3C_UNIT_TYPE type);
@@ -733,6 +733,11 @@ namespace uvgV3CRTP {
       }
     }
   }
+  template <>
+  inline void postample<INFO_FMT::SDP>(std::ostream& out)
+  {
+    out << std::endl; // End of a=v3cfmtp line
+  }
 
   template <INFO_FMT F, V3C_UNIT_TYPE T, auto Field, typename A = void>
   static constexpr auto get_field_name()
@@ -1365,6 +1370,19 @@ namespace uvgV3CRTP {
   void V3C::write_out_of_band_info(std::ostream & stream, const DataClass & v3c_data, const INFO_FMT field_fmt, const INFO_FMT value_fmt)
   {
     _out_of_band_info<DataType>(stream, v3c_data, field_fmt, value_fmt);
+  }
+  // Special case for BASE64 value_fmt for HeaderDataType with V3C_Unit. Change into PayloadDataType (easiest to do here because unit header is a nested class and can't be forward declared easily) since BASE64 only makes sense for payloads
+  template<>
+  void V3C::write_out_of_band_info<V3C::HeaderDataType, V3C_Unit>(std::ostream & stream, const V3C_Unit & v3c_data, const INFO_FMT field_fmt, const INFO_FMT value_fmt)
+  {
+    if (value_fmt == INFO_FMT::BASE64)
+    {
+      _out_of_band_info<V3C::PayloadDataType>(stream, v3c_data.header(), field_fmt, value_fmt);
+    }
+    else
+    {
+      _out_of_band_info<V3C::HeaderDataType>(stream, v3c_data, field_fmt, value_fmt);
+    }
   }
 
   template<typename DataClass>

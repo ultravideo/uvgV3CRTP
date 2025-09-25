@@ -806,10 +806,8 @@ namespace uvgV3CRTP {
     
     V3C_STATE_TRY(this)
     {
-      // If value format is RAW or BASE64 need to use payload data type
-      if (value_fmt == INFO_FMT::RAW
-        || value_fmt == INFO_FMT::BASE64
-        || (value_fmt == INFO_FMT::NONE && (field_fmt == INFO_FMT::RAW || field_fmt == INFO_FMT::BASE64)))
+      // If value format is BASE64 need to use payload data type
+      if (value_fmt == INFO_FMT::BASE64 || (value_fmt == INFO_FMT::NONE && field_fmt == INFO_FMT::BASE64))
       {
         return write_info<V3C::PayloadDataType>((*get_it(cur_gof_it_)), out_len, field_fmt, value_fmt);
       }
@@ -830,9 +828,9 @@ namespace uvgV3CRTP {
     V3C_STATE_TRY(this)
     {
       size_t header_len = 0; size_t payload_len = 0;
-      auto header = write_info<V3C::HeaderDataType>((*get_it(cur_gof_it_)).get(type), &header_len, header_field_fmt, header_value_fmt);
-      auto payload = write_info<V3C::PayloadDataType>((*get_it(cur_gof_it_)).get(type), &payload_len,
-        payload_field_fmt, payload_value_fmt == INFO_FMT::RAW ? payload_value_fmt : INFO_FMT::BASE64);
+      char* header = write_info<V3C::HeaderDataType>((*get_it(cur_gof_it_)).get(type), &header_len, header_field_fmt, header_value_fmt);
+      char* payload = write_info<V3C::PayloadDataType>((*get_it(cur_gof_it_)).get(type), &payload_len,
+        payload_field_fmt, payload_value_fmt);
 
       if (header && payload)
       {
@@ -956,7 +954,7 @@ namespace uvgV3CRTP {
   {
     //size_t len = 0;
     auto info = std::unique_ptr<char, decltype(&free)>((obj->*info_func)(param...), &free);
-    std::cout << info.get() << std::endl;
+    if(info) std::cout << info.get() << std::endl;
   }
 
   template<typename T>
