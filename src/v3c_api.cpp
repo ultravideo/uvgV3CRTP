@@ -162,6 +162,7 @@ namespace uvgV3CRTP {
   V3C_State<T>::~V3C_State() noexcept
   {
     if (connection_) delete connection_;
+    connection_ = nullptr;
     clear_sample_stream();
   }
 
@@ -183,7 +184,7 @@ namespace uvgV3CRTP {
       // If this is a sender state, init timestamps for the new data
       if constexpr (std::is_same<T, V3C_Sender>::value)
       {
-        set_timestamps(static_cast<V3C_Sender*>(connection_)->get_initial_timestamp());
+        this->set_timestamps(static_cast<V3C_Sender*>(connection_)->get_initial_timestamp());
       }
     }
     V3C_STATE_CATCH(false);
@@ -217,7 +218,7 @@ namespace uvgV3CRTP {
       if constexpr (std::is_same<T, V3C_Sender>::value)
       {
         if (is_empty) {
-          set_timestamps(static_cast<V3C_Sender*>(connection_)->get_initial_timestamp());
+          this->set_timestamps(static_cast<V3C_Sender*>(connection_)->get_initial_timestamp());
         }
       }
     }
@@ -231,7 +232,7 @@ namespace uvgV3CRTP {
   {
     if constexpr (std::is_same<T, V3C_Sender>::value)
     {
-      if (data_ && static_cast<V3C_Sender*>(connection_)->is_initial_timestamp_set())
+      if (data_ && data_->num_samples() > 0 && connection_ && static_cast<V3C_Sender*>(connection_)->is_initial_timestamp_set())
       {
         // Set initial timestamp to last timestamp + frame duration so that if new data is added, timestamps are continuous
         static_cast<V3C_Sender*>(connection_)->set_initial_timestamp(
