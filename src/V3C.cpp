@@ -102,7 +102,7 @@ namespace uvgV3CRTP {
   struct always_false : std::false_type {};
   // End of helper
 
-  V3C::V3C(const INIT_FLAGS init_flags, const char * endpoint_address, const uint16_t port, int stream_flags)
+  V3C::V3C(const INIT_FLAGS init_flags, const char * endpoint_address, const uint16_t ports[NUM_V3C_UNIT_TYPES], int stream_flags)
   {
     /* Create the necessary uvgRTP media streams */
     session_ = ctx_.create_session(std::string(endpoint_address));
@@ -115,14 +115,14 @@ namespace uvgV3CRTP {
     stream_flags |= RCE_NO_H26X_PREPEND_SC;
 
     for (auto unit_type : unit_types_from_init_flag(init_flags)) {
-      streams_[unit_type] = session_->create_stream(port, get_format(unit_type), stream_flags);
+      streams_[unit_type] = session_->create_stream(ports[unit_type], get_format(unit_type), stream_flags);
       if (!streams_[unit_type]) {
         throw ConnectionException("RTP stream creation failed. Check ports and stream flags.");
       }
     }
   }
 
-  V3C::V3C(const INIT_FLAGS init_flags, const char * local_address, const char * remote_address,  const uint16_t src_port, const uint16_t dst_port, int stream_flags)
+  V3C::V3C(const INIT_FLAGS init_flags, const char * local_address, const char * remote_address,  const uint16_t src_ports[NUM_V3C_UNIT_TYPES], const uint16_t dst_ports[NUM_V3C_UNIT_TYPES], int stream_flags)
   {
     /* Create the necessary uvgRTP media streams */
     std::pair<std::string, std::string> addresses(local_address, remote_address);
@@ -136,7 +136,7 @@ namespace uvgV3CRTP {
     stream_flags |= RCE_NO_H26X_PREPEND_SC;
 
     for (auto unit_type : unit_types_from_init_flag(init_flags)) {
-      streams_[unit_type] = session_->create_stream(src_port, dst_port, get_format(unit_type), stream_flags);
+      streams_[unit_type] = session_->create_stream(src_ports[unit_type], dst_ports[unit_type], get_format(unit_type), stream_flags);
       if (!streams_[unit_type]) {
         throw ConnectionException("RTP stream creation failed. Check ports and stream flags.");
       }
@@ -378,6 +378,26 @@ namespace uvgV3CRTP {
   int V3C::unit_type_to_ssrc(const V3C_UNIT_TYPE type)
   {
     return 1 + static_cast<int>(type);
+  }
+
+  std::array<bool, NUM_V3C_UNIT_TYPES> V3C::check_port_overlap(const uint16_t ports[NUM_V3C_UNIT_TYPES], const INIT_FLAGS flags)
+  {
+    std::array<bool, NUM_V3C_UNIT_TYPES> overlaps = {};
+
+    // Iterate over all unit types, adding ports to a map to check for overlaps
+    std::map<uint16_t, V3C_UNIT_TYPE> port_map;
+    for (auto unit_type : unit_types_from_init_flag(flags)) {
+      uint16_t port = ports[unit_type];
+      if (port_map.find(port) != port_map.end()) {
+        // Port already in use
+        overlaps[unit_type] = true;
+        overlaps[port_map[port]] = true; // Mark the other unit type using the same port as overlapping too
+      } else {
+        port_map[port] = unit_type;
+      }
+    }
+
+    return overlaps;
   }
 
   RTP_FLAGS V3C::get_flags(const V3C_UNIT_TYPE type)

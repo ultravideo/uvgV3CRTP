@@ -9,6 +9,7 @@
 #include <string>
 #include <map>
 #include <exception>
+#include <array>
 
 #include "uvgv3crtp/global.h"
 #include "Sample_Stream.h"
@@ -25,9 +26,9 @@ namespace uvgV3CRTP {
     
     V3C() = delete;
     // Uni-directional stream. For sending address should be remote address. For receiving address should be the local address (to bind to). Caller should set either RCE_SEND_ONLY or RCE_RECEIVE_ONLY to stream_flags
-    V3C(const INIT_FLAGS init_flags, const char * endpoint_address, const uint16_t port, int stream_flags);
+    V3C(const INIT_FLAGS init_flags, const char * endpoint_address, const uint16_t ports[NUM_V3C_UNIT_TYPES], int stream_flags);
     // Bi-directional stream
-    V3C(const INIT_FLAGS init_flags, const char * local_address, const char * remote_address, const uint16_t src_port, const uint16_t dst_port, int stream_flags = 0); 
+    V3C(const INIT_FLAGS init_flags, const char * local_address, const char * remote_address, const uint16_t src_ports[NUM_V3C_UNIT_TYPES], const uint16_t dst_ports[NUM_V3C_UNIT_TYPES], int stream_flags = 0); 
     ~V3C();
 
     V3C(const V3C&) = delete;
@@ -66,18 +67,19 @@ namespace uvgV3CRTP {
     static uint32_t get_new_sampling_instant(); // Generating a new sampling instant for RTP streams. Should only be used for the first instance of a media stream.
     static uint32_t calc_new_timestamp(const uint32_t old_timestamp, const uint32_t sample_rate, const uint32_t clock_rate);
 
-    protected:
-      uvgrtp::media_stream* get_stream(const V3C_UNIT_TYPE type) const;
+  protected:
+    uvgrtp::media_stream* get_stream(const V3C_UNIT_TYPE type) const;
       
-      static RTP_FLAGS get_flags(const V3C_UNIT_TYPE type);
-      static RTP_FORMAT get_format(const V3C_UNIT_TYPE type);
-      static int unit_type_to_ssrc(const V3C_UNIT_TYPE type);
+    static RTP_FLAGS get_flags(const V3C_UNIT_TYPE type);
+    static RTP_FORMAT get_format(const V3C_UNIT_TYPE type);
+    static int unit_type_to_ssrc(const V3C_UNIT_TYPE type);
+    static std::array<bool, NUM_V3C_UNIT_TYPES> check_port_overlap(const uint16_t ports[NUM_V3C_UNIT_TYPES], const INIT_FLAGS flags);
 
-      std::map<V3C_UNIT_TYPE, uvgrtp::media_stream*> streams_;
-      uvgrtp::context ctx_;
-      uvgrtp::session* session_;
+    std::map<V3C_UNIT_TYPE, uvgrtp::media_stream*> streams_;
+    uvgrtp::context ctx_;
+    uvgrtp::session* session_;
 
-    private:
+  private:
   };
 
   class TimeoutException : public std::exception

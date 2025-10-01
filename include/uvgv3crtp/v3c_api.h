@@ -25,18 +25,20 @@ namespace uvgV3CRTP {
      * @brief Construct a V3C_State object without initializing sample stream.
      * @param flags Initialization flags. Which unit types to expect.
      * @param endpoint_address Address to connect/bind to.
-     * @param port Port number.
+     * @param port(s) Port number used for all media streams or a list containing ports for each stream.
      */
     V3C_State(INIT_FLAGS flags = INIT_FLAGS::ALL, const char* endpoint_address = "127.0.0.1", uint16_t port = 8890) noexcept;
+    V3C_State(INIT_FLAGS flags, const char* endpoint_address, uint16_t ports[NUM_V3C_UNIT_TYPES]) noexcept;
 
     /**
      * @brief Construct a V3C_State object and initialize the sample stream with a given size precision.
      * @param size_precision Size precision for the sample stream. Auto infer if (uint8_t)-1.
      * @param flags Initialization flags. Which unit types to expect.
      * @param endpoint_address Address to connect/bind to.
-     * @param port Port number.
+     * @param port(s) Port number used for all media streams or a list containing ports for each stream.
      */
     V3C_State(const uint8_t size_precision, INIT_FLAGS flags = INIT_FLAGS::ALL, const char* endpoint_address = "127.0.0.1", uint16_t port = 8890) noexcept;
+    V3C_State(const uint8_t size_precision, INIT_FLAGS flags, const char* endpoint_address, uint16_t ports[NUM_V3C_UNIT_TYPES]) noexcept;
 
     /**
      * @brief Construct a V3C_State object and initialize the sample stream from a bitstream.
@@ -45,9 +47,10 @@ namespace uvgV3CRTP {
      * @param len Length of the bitstream.
      * @param flags Initialization flags. Which unit types to expect.
      * @param endpoint_address Address to connect/bind to.
-     * @param port Port number.
+     * @param port(s) Port number used for all media streams or a list containing ports for each stream.
      */
     V3C_State(const char* bitstream, size_t len, INIT_FLAGS flags = INIT_FLAGS::ALL, const char* endpoint_address = "127.0.0.1", uint16_t port = 8890) noexcept;
+    V3C_State(const char* bitstream, size_t len, INIT_FLAGS flags, const char* endpoint_address, uint16_t ports[NUM_V3C_UNIT_TYPES]) noexcept;
 
     /**
      * @brief Destructor. Cleans up connections and sample stream data.
@@ -342,7 +345,7 @@ namespace uvgV3CRTP {
     friend ERROR_TYPE receive_gof(V3C_State<V3C_Receiver>* state, const uint8_t size_precisions[NUM_V3C_UNIT_TYPES], const size_t num_nalus[NUM_V3C_UNIT_TYPES], const HeaderStruct header_defs[NUM_V3C_UNIT_TYPES], int timeout) noexcept;
     friend ERROR_TYPE receive_unit(V3C_State<V3C_Receiver>* state, const V3C_UNIT_TYPE unit_type, const uint8_t size_precision, const size_t expected_size, const HeaderStruct header_def, int timeout) noexcept;
 
-    void init_connection(INIT_FLAGS flags, const char* endpoint_address, uint16_t port) noexcept;
+    void init_connection(INIT_FLAGS flags, const char* endpoint_address, const uint16_t ports[NUM_V3C_UNIT_TYPES]) noexcept;
     ERROR_TYPE init_cur_gof(size_t to = 0, bool reverse = false) noexcept;
     void set_timestamps(const uint32_t init_timestamp) noexcept;
 

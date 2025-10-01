@@ -5,11 +5,15 @@
 
 namespace uvgV3CRTP {
 
-  V3C_Sender::V3C_Sender(const INIT_FLAGS flags, const char * receiver_address, const uint16_t dst_port, int stream_flags): V3C(flags, receiver_address, dst_port, (stream_flags | RCE_SEND_ONLY)), initial_timestamp_(get_new_sampling_instant())
+  V3C_Sender::V3C_Sender(const INIT_FLAGS flags, const char * receiver_address, const uint16_t dst_ports[NUM_V3C_UNIT_TYPES], int stream_flags) : V3C(flags, receiver_address, dst_ports, (stream_flags | RCE_SEND_ONLY)), initial_timestamp_(get_new_sampling_instant())
   {
+    // Get overlapping ports
+    auto overlaps = V3C::check_port_overlap(dst_ports, flags);
+
     // Parent class initializes media streams. Just set context here.
     for (const auto& [type, stream] : streams_) {
-      stream->configure_ctx(RCC_SSRC, V3C::unit_type_to_ssrc(type));
+      // Only set SSRC if port overlaps with another stream
+      if(overlaps[type]) stream->configure_ctx(RCC_SSRC, V3C::unit_type_to_ssrc(type));
 
       // Set RTCP for the custom timestamp if RTCP is enabled
       if (stream_flags & RCE_RTCP) {

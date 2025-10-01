@@ -10,11 +10,16 @@ namespace uvgV3CRTP {
   //  V3C_Receiver("127.0.0.1", "127.0.0.1", INIT_FLAGS::ALL);
   //}
 
-  V3C_Receiver::V3C_Receiver(const INIT_FLAGS flags, const char * local_address, const uint16_t local_port, int stream_flags): V3C(flags, local_address, local_port, (stream_flags | RCE_RECEIVE_ONLY))
+  V3C_Receiver::V3C_Receiver(const INIT_FLAGS flags, const char * local_address, const uint16_t local_ports[NUM_V3C_UNIT_TYPES], int stream_flags) : V3C(flags, local_address, local_ports, (stream_flags | RCE_RECEIVE_ONLY))
   {
+    // Get overlapping ports
+    auto overlaps = V3C::check_port_overlap(local_ports, flags);
+
     // Parent class initializes media streams. Just set context here.
     for (const auto&[type, stream] : streams_) {
-      stream->configure_ctx(RCC_REMOTE_SSRC, V3C::unit_type_to_ssrc(type)); 
+      // Only set SSRC if port overlaps with another stream
+      if (overlaps[type]) stream->configure_ctx(RCC_REMOTE_SSRC, V3C::unit_type_to_ssrc(type));
+
       // Init a receive buffer for each stream type
       receive_buffer_.emplace(type, std::queue<Nalu>());
     }

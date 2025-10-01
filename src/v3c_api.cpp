@@ -115,9 +115,32 @@ namespace uvgV3CRTP {
     return true;
   }
 
+  template<typename T, size_t... Is>
+  static constexpr std::array<T, sizeof...(Is)> to_array(T val, std::index_sequence<Is...>)
+  {
+    return { ((void)Is, val)... };
+  }
+  template<size_t N, typename T>
+  static constexpr std::array<T, N> to_array(T val)
+  {
+    return to_array(val, std::make_index_sequence<N>());
+  }
 
   template<typename T>
   V3C_State<T>::V3C_State(INIT_FLAGS flags, const char* endpoint_address, uint16_t port) noexcept :
+    connection_(nullptr),
+    flags_(flags),
+    data_(nullptr),
+    cur_gof_it_(nullptr),
+    is_gof_it_valid_(false),
+    cur_gof_ind_(0),
+    error_(ERROR_TYPE::OK), error_msg_("")
+  {
+    const std::array<uint16_t, NUM_V3C_UNIT_TYPES> ports = to_array<NUM_V3C_UNIT_TYPES>(port) ;
+    init_connection(flags, endpoint_address, ports.data());
+  }
+  template<typename T>
+  V3C_State<T>::V3C_State(INIT_FLAGS flags, const char* endpoint_address, uint16_t ports[NUM_V3C_UNIT_TYPES]) noexcept :
     connection_(nullptr), 
     flags_(flags), 
     data_(nullptr), 
@@ -126,11 +149,26 @@ namespace uvgV3CRTP {
     cur_gof_ind_(0),
     error_(ERROR_TYPE::OK), error_msg_("")
   {
-    init_connection(flags, endpoint_address, port);
+    init_connection(flags, endpoint_address, ports);
   }
 
   template<typename T>
   V3C_State<T>::V3C_State(const uint8_t size_precision, INIT_FLAGS flags, const char* endpoint_address, uint16_t port) noexcept :
+    connection_(nullptr),
+    flags_(flags),
+    data_(nullptr),
+    cur_gof_it_(nullptr),
+    is_gof_it_valid_(false),
+    cur_gof_ind_(0),
+    error_(ERROR_TYPE::OK), error_msg_("")
+  {
+    const std::array<uint16_t, NUM_V3C_UNIT_TYPES> ports = to_array<NUM_V3C_UNIT_TYPES>(port);
+    init_connection(flags, endpoint_address, ports.data());
+    init_sample_stream(size_precision);
+  }
+
+  template<typename T>
+  V3C_State<T>::V3C_State(const uint8_t size_precision, INIT_FLAGS flags, const char* endpoint_address, uint16_t ports[NUM_V3C_UNIT_TYPES]) noexcept :
     connection_(nullptr), 
     flags_(flags), 
     data_(nullptr), 
@@ -139,12 +177,26 @@ namespace uvgV3CRTP {
     cur_gof_ind_(0),
     error_(ERROR_TYPE::OK), error_msg_("")
   {
-    init_connection(flags, endpoint_address, port);
+    init_connection(flags, endpoint_address, ports);
     init_sample_stream(size_precision);
   }
   
   template<typename T>
   V3C_State<T>::V3C_State(const char* bitstream, size_t len, INIT_FLAGS flags, const char* endpoint_address, uint16_t port) noexcept :
+    connection_(nullptr),
+    flags_(flags),
+    data_(nullptr),
+    cur_gof_it_(nullptr),
+    is_gof_it_valid_(false),
+    cur_gof_ind_(0),
+    error_(ERROR_TYPE::OK), error_msg_("")
+  {    
+    const std::array<uint16_t, NUM_V3C_UNIT_TYPES> ports = to_array<NUM_V3C_UNIT_TYPES>(port);
+    init_connection(flags, endpoint_address, ports.data());
+    init_sample_stream(bitstream, len);
+  }
+  template<typename T>
+  V3C_State<T>::V3C_State(const char* bitstream, size_t len, INIT_FLAGS flags, const char* endpoint_address, uint16_t ports[NUM_V3C_UNIT_TYPES]) noexcept :
     connection_(nullptr), 
     flags_(flags), 
     data_(nullptr), 
@@ -153,10 +205,9 @@ namespace uvgV3CRTP {
     cur_gof_ind_(0),
     error_(ERROR_TYPE::OK), error_msg_("")
   {
-    init_connection(flags, endpoint_address, port);
+    init_connection(flags, endpoint_address, ports);
     init_sample_stream(bitstream, len);
   }
-
 
   template<typename T>
   V3C_State<T>::~V3C_State() noexcept
@@ -249,14 +300,14 @@ namespace uvgV3CRTP {
   }
 
   template<typename T>
-  void V3C_State<T>::init_connection(INIT_FLAGS flags, const char* endpoint_address, uint16_t port) noexcept
+  void V3C_State<T>::init_connection(INIT_FLAGS flags, const char* endpoint_address, const uint16_t ports[NUM_V3C_UNIT_TYPES]) noexcept
   {
     if (connection_)
     {
       set_error(ERROR_TYPE::CONNECTION, "A connection object already exists");
       return;
     }
-    connection_ = new T(flags, endpoint_address, port);
+    connection_ = new T(flags, endpoint_address, ports);
   }
 
   template<typename T>
