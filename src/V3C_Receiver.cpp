@@ -220,14 +220,14 @@ namespace uvgV3CRTP {
       }
       catch (const TimestampException& e)
       {
-        // Nalu timestamp does not match V3C unit timestamp, this nalu does not belong to this v3c unit
-        std::cerr << "Timestamp exception: " << e.what() << " in unit type id " << static_cast<int>(type) << std::endl;
-
         // Store the nalu in the timestamp buffer for later processing. If a timestamp exception is thrown, new_nalu should not have been moved so it is still valid
         push_to_receive_buffer(std::move(new_nalu), type);
 
         // If using auto size, we can just stop receiving nalus when we get a timestamp mismatch
         if (auto_size && size_received > 0) break;
+
+        // Nalu timestamp does not match V3C unit timestamp, this nalu does not belong to this v3c unit
+        std::cerr << "Timestamp exception: " << e.what() << " in unit type id " << static_cast<int>(type) << std::endl;
 
         // Keep trying to receive nalus for this v3c unit until we get the expected size, but if we keep getting timestamp mismatches increment the expected size so we don't get stuck in an infinite loop
         // Also don't count nalus from the receive buffer when deciding to increment expected size
