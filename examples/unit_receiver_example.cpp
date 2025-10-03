@@ -59,7 +59,7 @@ int main(int argc, char* argv[]) {
     //TODO: read orig bitstream for comparison
     std::cout << "Reading input bitstream... " << std::flush;
     // Open file
-    std::ifstream bitstream(argv[1]);
+    std::ifstream bitstream(argv[1], std::ios::in | std::ios::binary);
 
     if (!bitstream.is_open()) {
       //TODO: Raise exception
