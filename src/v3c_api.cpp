@@ -768,8 +768,9 @@ namespace uvgV3CRTP {
   }
 
   template<typename T>
-  ERROR_TYPE V3C_State<T>::parse_bitstream_info_string(const char* const in_data, size_t len, INFO_FMT fmt, BitstreamInfo& out_info) noexcept
+  ERROR_TYPE V3C_State<T>::parse_bitstream_info_string(const char* const in_data, size_t in_len, INFO_FMT fmt, BitstreamInfo* out_info) noexcept
   {
+    if (out_info == nullptr || in_data == nullptr) return ERROR_TYPE::OK;
     //if (field_fmt != INFO_FMT::RAW && field_fmt != INFO_FMT::BASE64)
     //{
     //  std::cerr << "Error: Only RAW and BASE64 formats are supported for out-of-band info parsing." << std::endl;
@@ -779,13 +780,126 @@ namespace uvgV3CRTP {
     {
       // Write in data to string stream
       std::stringstream stream(fmt == INFO_FMT::RAW ? std::ios::in | std::ios::out | std::ios::binary : std::ios::in | std::ios::out);
-      stream.write(in_data, len);
+      stream.write(in_data, in_len);
 
       // Parse the out-of-band info
-      auto out_data = V3C::read_out_of_band_info<V3C::InfoDataType, Sample_Stream<SAMPLE_STREAM_TYPE::V3C>>(stream, fmt, flags_);
-      V3C::populate_bitstream_info(out_data, out_info);
+      auto out_data = V3C::read_out_of_band_info<V3C::InfoDataType, Sample_Stream<SAMPLE_STREAM_TYPE::V3C>>(stream, fmt, fmt, flags_);
+      V3C::populate_bitstream_info(out_data, *out_info);
     }
     V3C_STATE_CATCH(true);
+  }
+
+  template<typename T>
+  ERROR_TYPE V3C_State<T>::parse_unit_info_string(const char* const in_data, size_t in_len, HeaderStruct* header_out[NUM_V3C_UNIT_TYPES], INFO_FMT field_fmt, INFO_FMT value_fmt) const noexcept
+  {
+    if (header_out == nullptr || in_data == nullptr) return ERROR_TYPE::OK;
+    // Don't write anything if both formats are NONE
+    if (field_fmt == INFO_FMT::NONE && value_fmt == INFO_FMT::NONE) return ERROR_TYPE::OK;
+    // Use field format for both if value format is NONE
+    if (value_fmt == INFO_FMT::NONE) value_fmt = field_fmt;
+
+    V3C_STATE_TRY(this)
+    {
+      // Write in data to string stream
+      std::stringstream in_stream(value_fmt == INFO_FMT::RAW ? std::ios::in | std::ios::out | std::ios::binary : std::ios::in | std::ios::out);
+      in_stream.write(in_data, in_len);
+
+      // If value format is BASE64 need to use payload data type
+      if (value_fmt == INFO_FMT::BASE64 || (value_fmt == INFO_FMT::NONE && field_fmt == INFO_FMT::BASE64))
+      {
+        auto out_data = V3C::read_out_of_band_info<V3C::PayloadDataType, V3C_Gof>(in_stream, field_fmt, value_fmt, flags_);
+
+        // Populate header structs based on out_data
+        V3C::populate_header(out_data, header_out);
+      }
+      else
+      {
+        auto out_data = V3C::read_out_of_band_info<V3C::HeaderDataType, V3C_Gof>(in_stream, field_fmt, value_fmt, flags_);
+
+        // Populate header structs based on out_data
+        V3C::populate_header(out_data, header_out);
+      }
+
+      return ERROR_TYPE::OK;
+    }
+    V3C_STATE_CATCH(true);
+  }
+
+  template<typename T>
+  char* V3C_State<T>::parse_unit_info_string(const char* const in_data, size_t in_len, V3C_UNIT_TYPE type, HeaderStruct* header_out[NUM_V3C_UNIT_TYPES], size_t* out_len, INFO_FMT header_field_fmt, INFO_FMT header_value_fmt, INFO_FMT payload_field_fmt, INFO_FMT payload_value_fmt) const noexcept
+  {
+    if (in_data == nullptr) return nullptr;
+    // Don't write anything if both formats are NONE
+    if (header_field_fmt == INFO_FMT::NONE && header_value_fmt == INFO_FMT::NONE) return nullptr;
+    if (payload_field_fmt == INFO_FMT::NONE && payload_value_fmt == INFO_FMT::NONE) return nullptr;
+    // Use field format for both if value format is NONE
+    if (header_value_fmt == INFO_FMT::NONE) header_value_fmt = header_field_fmt;
+    if (payload_value_fmt == INFO_FMT::NONE) payload_value_fmt = payload_field_fmt;
+    if (out_len) *out_len = 0;
+
+    V3C_STATE_TRY(this)
+    {
+      // Write in data to string stream
+      std::stringstream in_stream(
+        (header_value_fmt == INFO_FMT::RAW
+         || payload_value_fmt == INFO_FMT::RAW
+        ) ? (std::ios::in | std::ios::out | std::ios::binary) : (std::ios::in | std::ios::out));
+      in_stream.write(in_data, in_len);
+
+      // Out stringstream for payload data if needed
+      std::stringstream out_stream(
+        (payload_value_fmt == INFO_FMT::RAW 
+         || header_value_fmt == INFO_FMT::RAW
+         || header_value_fmt == INFO_FMT::BASE64
+         || payload_value_fmt == INFO_FMT::BASE64
+        ) ? std::ios::in | std::ios::out | std::ios::binary : std::ios::in | std::ios::out);
+
+      const auto type_flag = V3C::init_flags_from_unit_types({ type });
+
+      // First parse header info if needed
+      // If value format is BASE64 need to use payload data type
+      if (header_value_fmt == INFO_FMT::BASE64 || (header_value_fmt == INFO_FMT::NONE && header_field_fmt == INFO_FMT::BASE64))
+      {
+        auto out_data = V3C::read_out_of_band_info<V3C::PayloadDataType, V3C_Unit>(in_stream, header_field_fmt, header_value_fmt, type_flag);
+
+        // Append binary data to out_stream
+        out_stream << out_data.at(type).at(PAYLOAD_FIELDS::HEADER);
+        V3C::populate_header(out_data, header_out); // Also write to header_out
+      }
+      else if (header_value_fmt != INFO_FMT::NONE || header_field_fmt != INFO_FMT::NONE)
+      {
+        auto out_data = V3C::read_out_of_band_info<V3C::HeaderDataType, V3C_Unit>(in_stream, header_field_fmt, header_value_fmt, type_flag);
+
+        // Populate header structs based on out_data
+        V3C::populate_header(out_data, header_out);
+      }
+
+      // Then parse payload info if needed
+      if (payload_field_fmt != INFO_FMT::NONE || payload_value_fmt != INFO_FMT::NONE)
+      {
+        auto out_data = V3C::read_out_of_band_info<V3C::PayloadDataType, V3C_Unit>(in_stream, payload_field_fmt, payload_value_fmt, type_flag);
+        // Append binary data to out_stream
+        out_stream << out_data.at(type).at(PAYLOAD_FIELDS::PAYLOAD);
+      }
+
+      // Copy out_stream to char* if needed
+      char* out_char = nullptr;
+      size_t out_size = out_stream.str().size() + 1; // Include null-termination byte
+      if (out_size > 1)
+      {
+        out_char = static_cast<char*>(malloc(out_size));
+        if (out_char)
+        {
+          memcpy(out_char, out_stream.str().c_str(), out_size);
+          if (out_len) *out_len = out_size;
+        }
+      }
+
+      return out_char;
+    }
+    V3C_STATE_CATCH(false);
+
+    return nullptr;
   }
 
   template<typename DataType, typename DataClass>
@@ -924,7 +1038,6 @@ namespace uvgV3CRTP {
     if (out_len) *out_len = 0;
     return nullptr;
   }
-
 
   template<typename T>
   ERROR_TYPE V3C_State<T>::print_state(const bool print_nalus, size_t num_gofs) const noexcept

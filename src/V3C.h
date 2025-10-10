@@ -61,8 +61,10 @@ namespace uvgV3CRTP {
     template <typename DataType, typename DataClass>
     static void write_out_of_band_info(std::ostream& out_stream, const DataClass& data, const INFO_FMT field_fmt = INFO_FMT::LOGGING, const INFO_FMT value_fmt = INFO_FMT::LOGGING);
     template <typename DataType, typename DataClass>
-    static DataType read_out_of_band_info(std::istream& in_stream, INFO_FMT fmt = INFO_FMT::LOGGING, INIT_FLAGS init_flags = INIT_FLAGS::NUL);
+    static DataType read_out_of_band_info(std::istream& in_stream, const INFO_FMT field_fmt = INFO_FMT::LOGGING, const INFO_FMT value_fmt = INFO_FMT::LOGGING, const INIT_FLAGS init_flags = INIT_FLAGS::NUL);
     static void populate_bitstream_info(const InfoDataType& in_info, BitstreamInfo& out_info);
+    static void populate_header(const HeaderDataType& in_header, HeaderStruct* out_header[NUM_V3C_UNIT_TYPES]);
+    static void populate_header(const PayloadDataType& in_header, HeaderStruct* out_header[NUM_V3C_UNIT_TYPES]);
 
     static uint32_t get_new_sampling_instant(); // Generating a new sampling instant for RTP streams. Should only be used for the first instance of a media stream.
     static uint32_t calc_new_timestamp(const uint32_t old_timestamp, const uint32_t sample_rate, const uint32_t clock_rate);
@@ -134,7 +136,9 @@ namespace uvgV3CRTP {
   extern template void V3C::write_out_of_band_info<V3C::InfoDataType, V3C_Unit>(std::ostream&, V3C_Unit const&, const INFO_FMT, const INFO_FMT);
   //extern template void V3C::write_out_of_band_info<V3C::HeaderDataType, V3C_Unit>(std::ostream&, V3C_Unit const&, const INFO_FMT, const INFO_FMT);
   extern template void V3C::write_out_of_band_info<V3C::PayloadDataType, V3C_Unit>(std::ostream&, V3C_Unit const&, const INFO_FMT, const INFO_FMT);
-  extern template V3C::InfoDataType V3C::read_out_of_band_info<V3C::InfoDataType, Sample_Stream<SAMPLE_STREAM_TYPE::V3C>>(std::istream&, INFO_FMT, INIT_FLAGS);
+  extern template V3C::InfoDataType V3C::read_out_of_band_info<V3C::InfoDataType, Sample_Stream<SAMPLE_STREAM_TYPE::V3C>>(std::istream&, const INFO_FMT, const INFO_FMT, const INIT_FLAGS);
+  extern template V3C::HeaderDataType V3C::read_out_of_band_info<V3C::HeaderDataType, Sample_Stream<SAMPLE_STREAM_TYPE::V3C>>(std::istream&, const INFO_FMT, const INFO_FMT, const INIT_FLAGS);
+  extern template V3C::PayloadDataType V3C::read_out_of_band_info<V3C::PayloadDataType, Sample_Stream<SAMPLE_STREAM_TYPE::V3C>>(std::istream&, const INFO_FMT, const INFO_FMT, const INIT_FLAGS);
   extern template size_t V3C::sample_stream_header_size<SAMPLE_STREAM_TYPE::V3C>(V3C_UNIT_TYPE type);
   extern template size_t V3C::sample_stream_header_size<SAMPLE_STREAM_TYPE::NAL>(V3C_UNIT_TYPE type);
 }

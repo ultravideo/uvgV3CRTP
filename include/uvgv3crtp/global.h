@@ -69,7 +69,7 @@ namespace uvgV3CRTP {
 
   // Api related structs
   struct HeaderStruct {
-    const uint8_t vuh_unit_type;
+    uint8_t vuh_unit_type;
     uint8_t vuh_v3c_parameter_set_id;
     uint8_t vuh_atlas_id; // Not V3C_CAD
 

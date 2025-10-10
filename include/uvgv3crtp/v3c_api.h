@@ -251,7 +251,46 @@ namespace uvgV3CRTP {
      * @param out_info Output structure to fill with parsed info.
      * @return ERROR_TYPE::OK on success, error code otherwise.
      */
-    ERROR_TYPE parse_bitstream_info_string(const char* const in_data, size_t len, INFO_FMT fmt, BitstreamInfo& out_info) noexcept;
+    ERROR_TYPE parse_bitstream_info_string(const char* const in_data, size_t len, INFO_FMT fmt, BitstreamInfo* out_info) noexcept;
+
+    /**
+     * @brief Parse v3c unit header info from input string.
+     * @details Input format should match the format used to create the string.
+     *          Supported field_fmt: LOGGING, PARAM, RAW, SDP, NONE (no fields). Other formats cause PARSE error.
+     *          Supported value_fmt: LOGGING, PARAM, RAW, SDP, NONE (no output). Other formats cause PARSE error.
+     *          Special formats: value_fmt BASE64 can be combined with field_fmt LOGGING, PARAM, SDP, NONE (no fields) for base64 coded binary-style output.
+     * @param in_data Pointer to the input data.
+     * @param len Length of the input data.
+     * @param header_out Array of header struct pointers to store the parsed headers.
+     * @param field_fmt Field format. If NONE, no fields are printed.
+     * @param value_fmt Value format. If NONE, field_fmt is used.
+     * @return Error code.
+     */
+    ERROR_TYPE parse_unit_info_string(const char* const in_data, size_t in_len, HeaderStruct* header_out[NUM_V3C_UNIT_TYPES], INFO_FMT field_fmt = INFO_FMT::LOGGING, INFO_FMT value_fmt = INFO_FMT::NONE) const noexcept;
+
+    /**
+     * @brief Parse v3c header and payload of the specified v3c unit from input string.
+     * @details Input format should match the format used to create the string.
+     *          Allows setting different formats for header and payload. Set both field and value fmt to NONE to disable header/payload output.
+     *          Supported header_field_fmt: LOGGING, PARAM, RAW, SDP, NONE (no fields). Other formats cause PARSE error.
+     *          Supported Header_value_fmt: LOGGING, PARAM, RAW, SDP, NONE (no output). Other formats cause PARSE error.
+     *          Special formats: value_fmt BASE64 can be combined with field_fmt LOGGING, PARAM, SDP, NONE (no fields) for base64 coded binary-style output. Decoded data is inserted to the returned data string. 
+     *          Supported payload_field_fmt: LOGGING, PARAM, SDP, NONE (no fields). Other formats cause PARSE error.
+     *          Supported payload_value_fmt: BASE64, RAW, NONE (no output). Other formats cause PARSE error.
+     
+     * @param in_data Pointer to the input data.
+     * @param len Length of the input data.
+     * @param type The V3C unit type.
+     * @param header_out Array of header struct pointers to store the parsed headers.
+     * @param out_len Optional pointer to store the length of the returned string.
+     * @param header_field_fmt Header field format. If NONE, no fields are printed.
+     * @param header_value_fmt Header value format. If NONE, header_field_fmt is used.
+     * @param payload_field_fmt Payload field format. If NONE, no fields are printed.
+     * @param payload_value_fmt Payload value format. If NONE, payload_field_fmt is used.
+     * @return Pointer to the parsed header (BASE64) + payload data (caller must free i.e. c-style free), nullptr on error.
+     */
+    char* parse_unit_info_string(const char* const in_data, size_t in_len, V3C_UNIT_TYPE type, HeaderStruct* header_out[NUM_V3C_UNIT_TYPES], size_t* out_len = nullptr, INFO_FMT header_field_fmt = INFO_FMT::LOGGING, INFO_FMT header_value_fmt = INFO_FMT::NONE, INFO_FMT payload_field_fmt = INFO_FMT::NONE, INFO_FMT payload_value_fmt = INFO_FMT::NONE) const noexcept;
+
 
     /**
      * @brief Print the current state (sample stream, etc.) to stdout.
