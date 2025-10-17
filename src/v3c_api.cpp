@@ -307,7 +307,11 @@ namespace uvgV3CRTP {
       set_error(ERROR_TYPE::CONNECTION, "A connection object already exists");
       return;
     }
-    connection_ = new T(flags, endpoint_address, ports);
+    V3C_STATE_TRY(this)
+    {
+      connection_ = new T(flags, endpoint_address, ports);
+    }
+    V3C_STATE_CATCH(false);
   }
 
   template<typename T>

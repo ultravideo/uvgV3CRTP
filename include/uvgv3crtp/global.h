@@ -153,7 +153,7 @@ namespace uvgV3CRTP {
   // RTP clock for video increments 90000 in RTP payload format RFC
   constexpr uint32_t RTP_CLOCK_RATE = 90000;
   constexpr uint32_t DEFAULT_FRAME_RATE = 25;
-  constexpr uint32_t SEND_FRAME_RATE = 30; // Limit rate for sending when using send_bitstream
+  constexpr uint32_t SEND_FRAME_RATE = 4; // Limit rate for sending when using send_bitstream. (per gof and a gof may contain multiple frames)
 
   // Max number of rtp frames the v3c receiver stores before dropping frames. Mostly frames with incorrect timestamps are buffered e.g. frames getting re-ordered or dropped. Large value may slow down processing.
   constexpr size_t RECEIVE_BUFFER_SIZE = 1000;//50000;

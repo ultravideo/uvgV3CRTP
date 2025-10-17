@@ -134,6 +134,7 @@ namespace uvgV3CRTP {
 
     // Init v3c streams
     stream_flags |= RCE_NO_H26X_PREPEND_SC;
+    stream_flags |= RCE_HOLEPUNCH_KEEPALIVE; // Enable keepalive by default for bi-directional streams
 
     for (auto unit_type : unit_types_from_init_flag(init_flags)) {
       streams_[unit_type] = session_->create_stream(src_ports[unit_type], dst_ports[unit_type], get_format(unit_type), stream_flags);
