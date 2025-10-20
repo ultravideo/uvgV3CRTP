@@ -171,7 +171,7 @@ int main(int argc, char* argv[]) {
     std::cout << "Parsing out-of-band info... " << std::flush;
 
     uvgV3CRTP::BitstreamInfo outofband_info = {};
-    if (state.parse_bitstream_info_string(outofband_buf.get(), outofband_len, info_format, outofband_info) != uvgV3CRTP::ERROR_TYPE::OK)
+    if (state.parse_bitstream_info_string(outofband_buf.get(), outofband_len, info_format, &outofband_info) != uvgV3CRTP::ERROR_TYPE::OK)
     {
         std::cerr << std::endl << "Failed to parse out-of-band info:" << state.get_error_msg() << std::endl;
         return EXIT_FAILURE;

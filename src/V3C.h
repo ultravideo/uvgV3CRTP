@@ -139,6 +139,10 @@ namespace uvgV3CRTP {
   extern template V3C::InfoDataType V3C::read_out_of_band_info<V3C::InfoDataType, Sample_Stream<SAMPLE_STREAM_TYPE::V3C>>(std::istream&, const INFO_FMT, const INFO_FMT, const INIT_FLAGS);
   extern template V3C::HeaderDataType V3C::read_out_of_band_info<V3C::HeaderDataType, Sample_Stream<SAMPLE_STREAM_TYPE::V3C>>(std::istream&, const INFO_FMT, const INFO_FMT, const INIT_FLAGS);
   extern template V3C::PayloadDataType V3C::read_out_of_band_info<V3C::PayloadDataType, Sample_Stream<SAMPLE_STREAM_TYPE::V3C>>(std::istream&, const INFO_FMT, const INFO_FMT, const INIT_FLAGS);
+  extern template V3C::HeaderDataType V3C::read_out_of_band_info<V3C::HeaderDataType, V3C_Gof>(std::istream&, const INFO_FMT, const INFO_FMT, const INIT_FLAGS);
+  extern template V3C::PayloadDataType V3C::read_out_of_band_info<V3C::PayloadDataType, V3C_Gof>(std::istream&, const INFO_FMT, const INFO_FMT, const INIT_FLAGS);
+  extern template V3C::HeaderDataType V3C::read_out_of_band_info<V3C::HeaderDataType, V3C_Unit>(std::istream&, const INFO_FMT, const INFO_FMT, const INIT_FLAGS);
+  extern template V3C::PayloadDataType V3C::read_out_of_band_info<V3C::PayloadDataType, V3C_Unit>(std::istream&, const INFO_FMT, const INFO_FMT, const INIT_FLAGS);
   extern template size_t V3C::sample_stream_header_size<SAMPLE_STREAM_TYPE::V3C>(V3C_UNIT_TYPE type);
   extern template size_t V3C::sample_stream_header_size<SAMPLE_STREAM_TYPE::NAL>(V3C_UNIT_TYPE type);
 }
