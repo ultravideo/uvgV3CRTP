@@ -8,7 +8,7 @@
 #include <thread>
 
 
-constexpr uvgV3CRTP::INFO_FMT info_format = uvgV3CRTP::INFO_FMT::PARAM;//uvgV3CRTP::INFO_FMT::RAW; // Format for out-of-band info file
+constexpr uvgV3CRTP::INFO_FMT info_format = uvgV3CRTP::INFO_FMT::PARAM; // Format for out-of-band info file
 
 
 static void compare_bitstreams(uvgV3CRTP::V3C_State<uvgV3CRTP::V3C_Sender>& state, std::unique_ptr<char[]>& buf, size_t length)
@@ -132,20 +132,30 @@ int main(int argc, char* argv[]) {
 //
 
   if (argc >= 3) { // If an out-of-band file is specified write out-of-band info to it
-    size_t len = 0;
-    auto out_info = std::unique_ptr<char, decltype(&free)>(state.get_bitstream_info_string(info_format, &len), &free);
-    if (out_info == nullptr) {
-      std::cerr << "Error: Could not get out-of-band info string: " << state.get_error_msg() << std::endl;
-      return EXIT_FAILURE;
-    }
-
     std::cout << "Writing out-of-band info to file... " << std::flush;
     std::ofstream out_of_band_file(argv[2], (info_format == uvgV3CRTP::INFO_FMT::RAW ? std::ios::out | std::ios::binary : std::ios::out));
     if (!out_of_band_file.is_open()) {
       std::cerr << "Error: Could not open out-of-band file for writing." << std::endl;
       return EXIT_FAILURE;
     }
-    out_of_band_file.write(out_info.get(), len);
+    // Write bitstream info
+    size_t len = 0;
+    auto out_info = std::unique_ptr<char, decltype(&free)>(state.get_bitstream_info_string(info_format, &len), &free);
+    if (out_info == nullptr) {
+      std::cerr << "Error: Could not get out-of-band info string: " << state.get_error_msg() << std::endl;
+      return EXIT_FAILURE;
+    }
+    out_of_band_file.write(out_info.get(), len-1);
+
+    // Write headers
+    state.first_gof();
+    out_info = std::unique_ptr<char, decltype(&free)>(state.get_cur_gof_unit_info_string(info_format, info_format, &len), &free);
+    if (out_info == nullptr) {
+      std::cerr << "Error: Could not get header info string: " << state.get_error_msg() << std::endl;
+      return EXIT_FAILURE;
+    }
+    out_of_band_file.write(out_info.get(), len-1);
+
     out_of_band_file.close();
     std::cout << "Done" << std::endl;
 

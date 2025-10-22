@@ -21,7 +21,7 @@ constexpr int TIMEOUT = 6000;
 constexpr bool AUTO_PRECISION_MODE = false;
 constexpr bool AUTO_EXPECTED_NUM_MODE = false;
 
-constexpr uvgV3CRTP::INFO_FMT info_format = uvgV3CRTP::INFO_FMT::PARAM;//uvgV3CRTP::INFO_FMT::RAW; // Format for out-of-band info file
+constexpr uvgV3CRTP::INFO_FMT info_format = uvgV3CRTP::INFO_FMT::PARAM; // Format for out-of-band info file
 
 static void compare_bitstreams(uvgV3CRTP::V3C_State<uvgV3CRTP::V3C_Receiver>& state, std::unique_ptr<char[]>& buf, size_t length)
 {
@@ -176,18 +176,23 @@ int main(int argc, char* argv[]) {
         std::cerr << std::endl << "Failed to parse out-of-band info:" << state.get_error_msg() << std::endl;
         return EXIT_FAILURE;
     }
-    expected_number_of_gof = outofband_info.num_gofs;
-    num_vps = outofband_info.num_vps;
-    num_ad_nalu = outofband_info.num_ad_nalu;
-    num_ovd_nalu = outofband_info.num_ovd_nalu;
-    num_gvd_nalu = outofband_info.num_gvd_nalu;
-    num_avd_nalu = outofband_info.num_avd_nalu;
-    num_pvd_nalu = outofband_info.num_pvd_nalu;
-    num_cad_nalu = outofband_info.num_cad_nalu;
-    v3c_size_precision = outofband_info.v3c_size_precision;
-    atlas_size_precision = outofband_info.atlas_nal_size_precision;
-    video_size_precision = outofband_info.video_nal_size_precision;
-
+    if (!AUTO_EXPECTED_NUM_MODE)
+    {
+      expected_number_of_gof = outofband_info.num_gofs;
+      num_vps = outofband_info.num_vps;
+      num_ad_nalu = outofband_info.num_ad_nalu;
+      num_ovd_nalu = outofband_info.num_ovd_nalu;
+      num_gvd_nalu = outofband_info.num_gvd_nalu;
+      num_avd_nalu = outofband_info.num_avd_nalu;
+      num_pvd_nalu = outofband_info.num_pvd_nalu;
+      num_cad_nalu = outofband_info.num_cad_nalu;
+    }
+    if (!AUTO_PRECISION_MODE)
+    {
+      v3c_size_precision = outofband_info.v3c_size_precision;
+      atlas_size_precision = outofband_info.atlas_nal_size_precision;
+      video_size_precision = outofband_info.video_nal_size_precision;
+    }
     std::cout << "Done" << std::endl;
   }
 
@@ -219,6 +224,27 @@ int main(int argc, char* argv[]) {
     {uvgV3CRTP::V3C_PVD, 0, 0},
     {uvgV3CRTP::V3C_CAD, 0},
   };
+
+  // Parse header info from out-of-band data if available
+  if (out_of_band_available)
+  {
+    std::cout << "Parsing unit header info... " << std::flush;
+    uvgV3CRTP::HeaderStruct* header_ptrs[uvgV3CRTP::NUM_V3C_UNIT_TYPES] = { 
+      &header_defs[uvgV3CRTP::V3C_VPS],
+      &header_defs[uvgV3CRTP::V3C_AD],
+      &header_defs[uvgV3CRTP::V3C_OVD],
+      &header_defs[uvgV3CRTP::V3C_GVD],
+      &header_defs[uvgV3CRTP::V3C_AVD],
+      &header_defs[uvgV3CRTP::V3C_PVD],
+      &header_defs[uvgV3CRTP::V3C_CAD],
+    };
+    if (state.parse_unit_info_string(outofband_buf.get(), outofband_len, header_ptrs, info_format) != uvgV3CRTP::ERROR_TYPE::OK)
+    {
+      std::cerr << std::endl << "Failed to parse out-of-band info:" << state.get_error_msg() << std::endl;
+      return EXIT_FAILURE;
+    }
+    std::cout << "Done" << std::endl;
+  }
 //
 // ************************************************************************************
 
