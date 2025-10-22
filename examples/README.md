@@ -5,6 +5,7 @@ This directory contains a collection of commented and functioning examples that 
 1. Sending/Receiving whole bitstream (simple_*_example.cpp)
 2. Sending/Receiving one gof at a time (gof_*_example.cpp)
 3. Sending/Receiving one v3c unit at a time (unit_*_example.cpp)
+4. Sending/Receiving in a sdp scenario; VPS and headers are provided out-of-band (sdp_*_example.cpp)
 
 For ease of testing a test sequence can be downloaded from [here](https://ultravideo.fi/uvgRTP_example_sequence_longdress.vpcc).
 
