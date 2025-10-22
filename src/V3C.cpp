@@ -998,8 +998,6 @@ namespace uvgV3CRTP {
   {
     if (has_field(data, V3C_VPS)) preample<F>(stream, V3C_VPS);
     process_field<F, V3C_VPS, HEADER_FIELDS::VUH_UNIT_TYPE>(stream, data);
-    process_field<F, V3C_VPS, HEADER_FIELDS::VUH_V3C_PARAMETER_SET_ID>(stream, data);
-    process_field<F, V3C_VPS, HEADER_FIELDS::VUH_ATLAS_ID>(stream, data);
     if (has_field(data, V3C_VPS)) postample<F>(stream);
 
     if (has_field(data, V3C_AD))  preample<F>(stream, V3C_AD);

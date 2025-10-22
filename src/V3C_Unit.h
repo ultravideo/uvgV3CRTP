@@ -72,7 +72,7 @@ namespace uvgV3CRTP {
       uint8_t vuh_v3c_parameter_set_id = 0; // Not V3C_VPS
       uint8_t vuh_atlas_id = 0; // Not V3C_CAD, V3C_VPS
 
-      // Only V3C_GVD
+      // Only V3C_AVD
       uint8_t vuh_attribute_index = 0;
       uint8_t vuh_attribute_partition_index = 0;
 
