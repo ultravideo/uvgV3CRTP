@@ -67,13 +67,16 @@ namespace uvgV3CRTP {
     bool b;
   };
 
+  // Placeholder struct for template specialization, because nested classes can't be forward declared
+  struct _V3C_Unit_Header_ {};
+
   // Api related structs
   struct HeaderStruct {
     uint8_t vuh_unit_type;
-    uint8_t vuh_v3c_parameter_set_id;
-    uint8_t vuh_atlas_id; // Not V3C_CAD
+    uint8_t vuh_v3c_parameter_set_id; // Not V3C_VPS
+    uint8_t vuh_atlas_id; // Not V3C_CAD, V3C_VPS
 
-    // Only V3C_GVD
+    // Only V3C_AVD
     uint8_t vuh_attribute_index;
     uint8_t vuh_attribute_partition_index;
 

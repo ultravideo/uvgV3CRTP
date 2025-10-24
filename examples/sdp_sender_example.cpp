@@ -106,12 +106,7 @@ int main(int argc, char* argv[]) {
   // Print state and bitstream info
   state.print_state(false);
 
-  //std::cout << "Bitstream info: " << std::endl;
   state.print_bitstream_info();
-
-  //size_t len = 0;
-  //auto info = std::unique_ptr<char, decltype(&free)>(state.get_bitstream_info_string(&len, uvgV3CRTP::INFO_FMT::PARAM), &free);
-  //std::cout << info.get() << std::endl;
   //
   // **************************************
 
@@ -132,14 +127,20 @@ int main(int argc, char* argv[]) {
   auto headers = state.get_cur_gof_unit_info_string(uvgV3CRTP::INFO_FMT::SDP, uvgV3CRTP::INFO_FMT::BASE64);
   if (headers)
   {
-    oob_stream << headers;
+    // Need to get rid of header for vps
+    std::string header_str(headers);
+    header_str.erase(0, header_str.find('\n') + 1);
+    oob_stream << header_str;
     free(headers);
   }
   // Write VPS
-  auto vps = state.get_cur_gof_unit_info_string(uvgV3CRTP::V3C_VPS, uvgV3CRTP::INFO_FMT::NONE, uvgV3CRTP::INFO_FMT::NONE,
+  auto vps = state.get_cur_gof_unit_info_string(uvgV3CRTP::V3C_VPS, uvgV3CRTP::INFO_FMT::SDP, uvgV3CRTP::INFO_FMT::BASE64,
                                                                     uvgV3CRTP::INFO_FMT::SDP, uvgV3CRTP::INFO_FMT::BASE64);
+
   if (vps)
   {
+    // Add a delim between vps and headers to make parsing easier
+    oob_stream << "#" << std::endl;
     oob_stream << vps;
     free(vps);
   }

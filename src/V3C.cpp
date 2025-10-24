@@ -26,10 +26,9 @@ namespace uvgV3CRTP {
   template V3C::PayloadDataType V3C::read_out_of_band_info<V3C::PayloadDataType, V3C_Gof>(std::istream&, const INFO_FMT, const INFO_FMT, const INIT_FLAGS);
   template V3C::HeaderDataType V3C::read_out_of_band_info<V3C::HeaderDataType, V3C_Unit>(std::istream&, const INFO_FMT, const INFO_FMT, const INIT_FLAGS);
   template V3C::PayloadDataType V3C::read_out_of_band_info<V3C::PayloadDataType, V3C_Unit>(std::istream&, const INFO_FMT, const INFO_FMT, const INIT_FLAGS);
+  template V3C::PayloadDataType V3C::read_out_of_band_info<V3C::PayloadDataType, _V3C_Unit_Header_>(std::istream&, const INFO_FMT, const INFO_FMT, const INIT_FLAGS);
   template size_t V3C::sample_stream_header_size<SAMPLE_STREAM_TYPE::V3C>(V3C_UNIT_TYPE type);
   template size_t V3C::sample_stream_header_size<SAMPLE_STREAM_TYPE::NAL>(V3C_UNIT_TYPE type);
-
-  //template void V3C::write_out_of_band_info<V3C_Unit::V3C_Unit_Header>(std::ostream&, V3C_Unit::V3C_Unit_Header const&, INFO_FMT);
 
   // Helper to map enum types to data types
   namespace {
@@ -443,9 +442,9 @@ namespace uvgV3CRTP {
     
     for (size_t i = 0; i < loop_len; i += 3) {
       // Combine 3 bytes into a 24-bit number
-      const uint32_t val = in[i + 0] << 16 
-                         | in[i + 1] << 8 
-                         | in[i + 2] << 0;
+      const uint32_t val = ((in[i + 0] & 0xFF) << 16)
+                         | ((in[i + 1] & 0xFF) << 8)
+                         | ((in[i + 2] & 0xFF) << 0);
       // Extract 4 6-bit values and map to base64 characters
       out.push_back(b64_alpha[(val >> 18) & 0x3F]);
       out.push_back(b64_alpha[(val >> 12) & 0x3F]);
@@ -454,8 +453,9 @@ namespace uvgV3CRTP {
     }
     // Account for last byte(s) and padding
     if (pad != 0) {
-      const uint32_t val = pad == 2 ? in[len - 1] << 16                       // If pad = 2, only 1 byte of input left
-                                    : in[len - 2] << 16 | (in[len - 1] << 8); // If pad = 1, 2 bytes of input left
+      const uint32_t val = pad == 2 ? ((in[len - 1] & 0xFF) << 16)                       // If pad = 2, only 1 byte of input left
+                                    : (((in[len - 2] & 0xFF) << 16) 
+                                     | ((in[len - 1] & 0xFF) << 8)); // If pad = 1, 2 bytes of input left
       out.push_back(b64_alpha[(val >> 18) & 0x3F]);
       out.push_back(b64_alpha[(val >> 12) & 0x3F]);
       if (pad == 1) {
@@ -486,10 +486,10 @@ namespace uvgV3CRTP {
     for (size_t i = 0; i < loop_len; i += 4)
     {
       // Decode 4 base64 characters into a 24-bit number
-      const auto val = (std::strchr(b64_alpha, in[i + 0]) - b64_alpha) << 18
-                     | (std::strchr(b64_alpha, in[i + 1]) - b64_alpha) << 12
-                     | (std::strchr(b64_alpha, in[i + 2]) - b64_alpha) << 6
-                     | (std::strchr(b64_alpha, in[i + 3]) - b64_alpha) << 0;
+      const auto val = (((std::strchr(b64_alpha, in[i + 0]) - b64_alpha) & 0x3F) << 18)
+                     | (((std::strchr(b64_alpha, in[i + 1]) - b64_alpha) & 0x3F) << 12)
+                     | (((std::strchr(b64_alpha, in[i + 2]) - b64_alpha) & 0x3F) << 6)
+                     | (((std::strchr(b64_alpha, in[i + 3]) - b64_alpha) & 0x3F) << 0);
       // Extract 3 bytes from the 24-bit number
       out.push_back((val >> 16) & 0xFF);
       out.push_back((val >> 8)  & 0xFF);
@@ -497,9 +497,9 @@ namespace uvgV3CRTP {
     }
     // Handle last 4 characters and padding
     if (pad != 0) {
-      const auto val = (std::strchr(b64_alpha, in[loop_len + 0]) - b64_alpha) << 18
-                     | (std::strchr(b64_alpha, in[loop_len + 1]) - b64_alpha) << 12
-                     | (pad == 1 ? (std::strchr(b64_alpha, in[loop_len + 2]) - b64_alpha) << 6 : 0);
+      const auto val = (((std::strchr(b64_alpha, in[loop_len + 0]) - b64_alpha) & 0x3F) << 18)
+                     | (((std::strchr(b64_alpha, in[loop_len + 1]) - b64_alpha) & 0x3F) << 12)
+                     | (pad == 1 ? (((std::strchr(b64_alpha, in[loop_len + 2]) - b64_alpha) & 0x3F) << 6) : 0);
       out.push_back((val >> 16) & 0xFF);
       if (pad == 1) {
         out.push_back((val >> 8) & 0xFF);
@@ -615,16 +615,19 @@ namespace uvgV3CRTP {
       in.read(&field_str[0], in_field.size());
       if (field_str == in_field)
       {
+        std::string value_str;
+        std::getline(in, value_str, delim);
+        std::stringstream in_stringstream(value_str);
         // Read the value if the field matches
         if constexpr (need_integral_conversion<TV>())
         {
           // If value is interpreted as a char, make sure to convert it to an integer
           int64_t tmp;
-          in >> tmp >> std::ws; // Read the value as an integer
+          in_stringstream >> tmp; // Read the value as an integer
           value = static_cast<typename std::decay<TV>::type>(tmp);
         }
         else {
-          in >> value >> std::ws; // Consume any whitespace after the value
+          in_stringstream >> value;
         }
         if (in.peek() == delim) {
           in.ignore(); // Ignore the delimiter if present (non-whitespace)
@@ -735,11 +738,29 @@ namespace uvgV3CRTP {
     out << get_unit_type_name(type) << ":" << std::endl;
     out << "--------" << std::endl;
   }
+  template <INFO_FMT F, typename Stream, typename... Param>
+  static inline void preample(std::istream& in, Param...)
+  {
+    if constexpr (F == INFO_FMT::LOGGING)
+    {
+      // Get rid of the two preample lines
+      std::string tmp;
+      std::getline(in, tmp);
+      std::getline(in, tmp);
+    }
+  }
   template <>
   inline void preample<INFO_FMT::SDP>(std::ostream& out, const V3C_UNIT_TYPE type)
   {
     (void)type; //Suppress warnings
     out << "a=v3cfmtp:";
+  }
+  template <>
+  inline void preample<INFO_FMT::SDP>(std::istream& in, const V3C_UNIT_TYPE type)
+  {
+    (void)type; //Suppress warnings
+    std::string tmp;
+    std::getline(in, tmp, ':'); // Skip atribute tag
   }
 
   template <INFO_FMT F = INFO_FMT::LOGGING, typename Stream, typename... Param>
@@ -764,6 +785,11 @@ namespace uvgV3CRTP {
   inline void postample<INFO_FMT::SDP>(std::ostream& out)
   {
     out << std::endl; // End of a=v3cfmtp line
+  }
+  template <>
+  inline void postample<INFO_FMT::SDP>(std::istream& in)
+  {
+    in >> std::ws; // Skip endline of a=v3cfmtp line
   }
 
   template <INFO_FMT F, V3C_UNIT_TYPE T, auto Field, typename A = void>
@@ -1392,7 +1418,14 @@ namespace uvgV3CRTP {
             {
               for (auto& [field, payload]: value)
               {
-                payload = dec_base64(payload.c_str(), payload.size());
+                // Check if payload is divided with ',' and decode each part separately
+                std::stringstream payload_stream(payload);
+                payload.clear();
+                std::string tmp;
+                while (std::getline(payload_stream, tmp, ','))
+                {
+                  payload += dec_base64(tmp.c_str(), tmp.size()); // TODO: Divide multiple NALUs properly?
+                }
               }
             }
           }
@@ -1425,7 +1458,7 @@ namespace uvgV3CRTP {
   }
 
   template<typename DataClass>
-  static DataClass init_class(INIT_FLAGS init_flags)
+  static DataClass init_class(INIT_FLAGS)
   { 
     return DataClass();
   }
@@ -1434,7 +1467,9 @@ namespace uvgV3CRTP {
   {
     if (init_flags != INIT_FLAGS::NUL)
     {
-      return V3C_Unit(V3C::unit_types_from_init_flag(init_flags).front());
+      V3C_Unit tmp(V3C::unit_types_from_init_flag(init_flags).front());
+      tmp.push_back(init_class<Nalu>(init_flags)); // Add a dummy NALU in case it's for payload initialization
+      return tmp;
     }
     return V3C_Unit();
   }
@@ -1465,7 +1500,14 @@ namespace uvgV3CRTP {
   template<typename DataType, typename DataClass>
   DataType V3C::read_out_of_band_info(std::istream & stream, const INFO_FMT field_fmt, const INFO_FMT value_fmt, const INIT_FLAGS init_flags)
   {
-    return _out_of_band_info<DataType>(stream, init_class<DataClass>(init_flags), field_fmt, value_fmt);
+    if constexpr (std::is_same<DataClass, _V3C_Unit_Header_>::value) // Translate to V3C_Unit::V3C_Unit_Header
+    {
+      return _out_of_band_info<DataType>(stream, init_class<V3C_Unit::V3C_Unit_Header>(init_flags), field_fmt, value_fmt);
+    }
+    else 
+    {
+      return _out_of_band_info<DataType>(stream, init_class<DataClass>(init_flags), field_fmt, value_fmt);
+    }
   }
 
   void V3C::populate_bitstream_info(const InfoDataType& in_info, BitstreamInfo& out_info)

@@ -21,7 +21,7 @@ constexpr int TIMEOUT = 6000;
 // Auto size precision may not match orig bitstream
 constexpr bool AUTO_PRECISION_MODE = true;
 constexpr bool AUTO_EXPECTED_NUM_MODE = true;
-constexpr int VPS_PERIOD = 1; // How often to insert VPS
+constexpr size_t VPS_PERIOD = (size_t)-1; // How often to insert VPS
 
 static void compare_bitstreams(uvgV3CRTP::V3C_State<uvgV3CRTP::V3C_Receiver>& state, std::unique_ptr<char[]>& buf, size_t length)
 {
@@ -129,7 +129,7 @@ int main(int argc, char* argv[]) {
   std::cout << "Read SDP... " << std::flush;
 
   // Read Headers and VPS from sdp definition
-  std::ifstream sdp(argv[2]);
+  std::ifstream sdp(argv[1]);
 
   if (!sdp.is_open()) {
     std::cerr << "Failed to open SDP file" << std::endl;
@@ -166,10 +166,12 @@ int main(int argc, char* argv[]) {
   state.parse_unit_info_string(sdp_buf.get(), sdp_len, header_ptrs, uvgV3CRTP::INFO_FMT::SDP, uvgV3CRTP::INFO_FMT::BASE64);
 
   // Read vps
+  std::string vps_str(sdp_buf.get(), sdp_len);
+  vps_str.erase(0, vps_str.find("#") + 2);
   size_t vps_len = 0;
   auto vps = std::unique_ptr<char, decltype(&free)>(
-    state.parse_unit_info_string(sdp_buf.get(), sdp_len, uvgV3CRTP::V3C_VPS, nullptr, &vps_len,
-                                 uvgV3CRTP::INFO_FMT::NONE, uvgV3CRTP::INFO_FMT::NONE, 
+    state.parse_unit_info_string(vps_str.c_str(), vps_str.size(), uvgV3CRTP::V3C_VPS, nullptr, &vps_len,
+                                 uvgV3CRTP::INFO_FMT::SDP, uvgV3CRTP::INFO_FMT::BASE64,
                                  uvgV3CRTP::INFO_FMT::SDP, uvgV3CRTP::INFO_FMT::BASE64),
     &free
   );
@@ -183,10 +185,11 @@ int main(int argc, char* argv[]) {
   //
   std::cout << "Receiving bitstream... " << std::endl;
   size_t gof_num = 0;
-  
+  auto prev_time = std::chrono::steady_clock::now();
+
   while (state.get_error_flag() == uvgV3CRTP::ERROR_TYPE::OK && expected_number_of_gof > 0)
   {
-    if (gof_num > 0 && gof_num % VPS_PERIOD)
+    if (gof_num > 0 && (gof_num % VPS_PERIOD == 0))
     {
       //Increment VPS id in headers when a new vps is expected
       for (auto& unit_header : header_defs)
@@ -199,9 +202,9 @@ int main(int argc, char* argv[]) {
     uvgV3CRTP::receive_gof(&state, size_precisions, num_nalus, header_defs, TIMEOUT);
 
     // Insert VPS to the current gov here based on the VPS period 
-    if (gof_num % VPS_PERIOD)
+    if (gof_num % VPS_PERIOD == 0)
     {
-      state.append_to_sample_stream(vps.get(), vps_len);
+      state.append_to_sample_stream(vps.get(), vps_len - 1, false); //-1 len because of null termination
     }
     gof_num++;
 
@@ -222,6 +225,9 @@ int main(int argc, char* argv[]) {
       std::cout << std::endl;
     }
     expected_number_of_gof -= 1;
+
+    std::cout << "  Time since previous GoF received: " << (std::chrono::steady_clock::now() - prev_time).count() << std::endl;
+    prev_time = std::chrono::steady_clock::now();
   }
 
   std::cout << "Stopping receiving: " << state.get_error_msg() << std::endl;
@@ -233,7 +239,7 @@ int main(int argc, char* argv[]) {
     //read orig bitstream for comparison
     std::cout << "Compare to orig bitstream... " << std::flush;
     // Open file
-    std::ifstream bitstream(argv[4], std::ios::in | std::ios::binary);
+    std::ifstream bitstream(argv[3], std::ios::in | std::ios::binary);
 
     if (!bitstream.is_open()) {
       std::cerr << "File open failed" << std::endl;
@@ -292,9 +298,9 @@ int main(int argc, char* argv[]) {
   // ******** Print info about sample stream **********
   //
   // Print state and bitstream info
+  state.first_gof();
   state.print_state(false);
 
-  //std::cout << "Bitstream info: " << std::endl;
   state.print_bitstream_info();
   //
   // **************************************

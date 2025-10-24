@@ -860,7 +860,7 @@ namespace uvgV3CRTP {
       // If value format is BASE64 need to use payload data type
       if (header_value_fmt == INFO_FMT::BASE64 || (header_value_fmt == INFO_FMT::NONE && header_field_fmt == INFO_FMT::BASE64))
       {
-        auto out_data = V3C::read_out_of_band_info<V3C::PayloadDataType, V3C_Unit>(in_stream, header_field_fmt, header_value_fmt, type_flag);
+        auto out_data = V3C::read_out_of_band_info<V3C::PayloadDataType, _V3C_Unit_Header_>(in_stream, header_field_fmt, header_value_fmt, type_flag);
 
         // Append binary data to out_stream
         out_stream << out_data.at(type).at(PAYLOAD_FIELDS::HEADER);

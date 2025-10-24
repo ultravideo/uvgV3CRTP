@@ -52,7 +52,10 @@ namespace uvgV3CRTP {
   void V3C_Sender::send_gof(const V3C_Gof& gof) const
   {
     for (const auto& [type, v3c_unit] : gof) {
-      send_v3c_unit(v3c_unit);
+      if (streams_.find(type) != streams_.end()) // Only send units for which stream has been initialized
+      {
+        send_v3c_unit(v3c_unit);
+      }
     }
   }
 
