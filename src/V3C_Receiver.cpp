@@ -67,6 +67,29 @@ namespace uvgV3CRTP {
     return new_stream;
   }
 
+  void V3C_Receiver::install_receive_hook(const V3C_UNIT_TYPE type, void* arg, void(*hook)(void*, uvgrtp::frame::rtp_frame*)) const
+  {
+    if (streams_.find(type) == streams_.end())
+    {
+      throw ConnectionException("Receiver not initialized for V3C unit type " + std::to_string(static_cast<int>(type)));
+    }
+
+    auto error = streams_.at(type)->install_receive_hook(arg, hook);
+
+    if (error == RTP_INVALID_VALUE)
+    {
+      throw ConnectionException("Invalid hook function or argument for V3C unit type " + std::to_string(static_cast<int>(type)));
+    }
+    else if (error == RTP_NOT_INITIALIZED)
+    {
+      throw ConnectionException("RTP context not initialized for V3C unit type " + std::to_string(static_cast<int>(type)));
+    }
+    else if (error != RTP_OK)
+    {
+      throw ConnectionException("Failed to install receive hook for V3C unit type " + std::to_string(static_cast<int>(type)));
+    }
+  }
+
   void V3C_Receiver::clear_receive_buffer()
   {
     for (auto&[type, buffer] : receive_buffer_)

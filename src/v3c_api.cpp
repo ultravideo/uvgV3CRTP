@@ -767,6 +767,19 @@ namespace uvgV3CRTP {
     V3C_STATE_CATCH(true);
   }
 
+  ERROR_TYPE install_receive_hook(V3C_State<V3C_Receiver>* state, const V3C_UNIT_TYPE type, void* arg, void(*hook)(void*, uvgrtp::frame::rtp_frame*)) noexcept
+  {
+    if (!state->connection_)
+    {
+      return state->set_error(ERROR_TYPE::CONNECTION, "No connection exists");
+    }
+    V3C_STATE_TRY(state)
+    {
+      state->connection_->install_receive_hook(type, arg, hook);
+    }
+    V3C_STATE_CATCH(true);
+  }
+
   template<typename T>
   ERROR_TYPE V3C_State<T>::parse_bitstream_info_string(const char* const in_data, size_t in_len, INFO_FMT fmt, BitstreamInfo* out_info) noexcept
   {

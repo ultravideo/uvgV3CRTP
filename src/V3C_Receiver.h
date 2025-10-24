@@ -29,6 +29,8 @@ namespace uvgV3CRTP {
     template <typename V3CUnitHeader>
     V3C_Unit receive_v3c_unit(const V3C_UNIT_TYPE type, const uint8_t size_precision, const size_t expected_size, V3CUnitHeader&& header, const size_t timeout, const bool expected_size_as_num_nalus = false) const;
 
+    void install_receive_hook(const V3C_UNIT_TYPE type, void* arg, void (*hook)(void*, uvgrtp::frame::rtp_frame*)) const;
+
     void clear_receive_buffer(); // Drop all buffered data
     size_t receive_buffer_size() const; // Get total number of buffered nalus
     size_t receive_buffer_size(const V3C_UNIT_TYPE type) const; // Get number of buffered nalus

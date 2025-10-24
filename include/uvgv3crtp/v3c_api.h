@@ -9,6 +9,11 @@
 
 /// \file Api for using the library in an application.
 
+// Forward declaration
+namespace uvgrtp::frame {
+  struct rtp_frame;
+}
+
 namespace uvgV3CRTP {
 
   //Forward declaration
@@ -16,6 +21,7 @@ namespace uvgV3CRTP {
   class V3C_Receiver;
   template <SAMPLE_STREAM_TYPE E>
   class Sample_Stream;
+
 
   template <typename T>
   class V3C_State {
@@ -383,6 +389,7 @@ namespace uvgV3CRTP {
     friend ERROR_TYPE receive_bitstream(V3C_State<V3C_Receiver>* state, const uint8_t v3c_size_precision, const uint8_t size_precisions[NUM_V3C_UNIT_TYPES], const size_t expected_num_gofs, const size_t num_nalus[NUM_V3C_UNIT_TYPES], const HeaderStruct header_defs[NUM_V3C_UNIT_TYPES], int timeout) noexcept;
     friend ERROR_TYPE receive_gof(V3C_State<V3C_Receiver>* state, const uint8_t size_precisions[NUM_V3C_UNIT_TYPES], const size_t num_nalus[NUM_V3C_UNIT_TYPES], const HeaderStruct header_defs[NUM_V3C_UNIT_TYPES], int timeout) noexcept;
     friend ERROR_TYPE receive_unit(V3C_State<V3C_Receiver>* state, const V3C_UNIT_TYPE unit_type, const uint8_t size_precision, const size_t expected_size, const HeaderStruct header_def, int timeout) noexcept;
+    friend ERROR_TYPE install_receive_hook(V3C_State<V3C_Receiver>* state, const V3C_UNIT_TYPE type, void* arg, void (*hook)(void*, uvgrtp::frame::rtp_frame*)) noexcept;
 
     void init_connection(INIT_FLAGS flags, const char* endpoint_address, const uint16_t ports[NUM_V3C_UNIT_TYPES]) noexcept;
     ERROR_TYPE init_cur_gof(size_t to = 0, bool reverse = false) noexcept;
@@ -504,6 +511,33 @@ namespace uvgV3CRTP {
       const HeaderStruct header_def,
       int timeout
   ) noexcept;
+
+ /**
+ * @brief Bypass state and receive frames (e.g. NALU) directly. Asynchronously get frames using a hook.
+ * 
+ * @details Receive hook is an alternative to polling frames using receive_*.
+ * Instead of application asking from if there are any new frames available, uvgV3CRTP will notify
+ * the application when a frame has been received
+ *
+ * The hook should not be used for media processing as it will block the receiver from
+ * reading more frames. Instead, it should only be used as an interface between uvgV3CRTP and
+ * the calling application where the frame hand-off happens.
+ *
+ * note: if receive hooks are installed, data is not stored in the V3C_State sample stream.
+ * 
+ * @param state Pointer to the V3C_State<V3C_Receiver> object.
+ * @param type The V3C unit type for which to install the hook.
+ * @param arg Optional argument that is passed to the hook when it is called, can be set to nullptr.
+ * @param hook Function pointer to the receive hook that should be called when a new frame is received.
+ * @return ERROR_TYPE::OK on success, error code otherwise.
+ **/
+  ERROR_TYPE install_receive_hook(
+    V3C_State<V3C_Receiver>* state,
+    const V3C_UNIT_TYPE type,
+    void* arg,
+    void (*hook)(void*, uvgrtp::frame::rtp_frame*)
+  ) noexcept;
+
 
   // Explicitly define necessary instantiations so code is linked properly
   extern template class V3C_State<V3C_Sender>;
