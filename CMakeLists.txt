@@ -59,15 +59,18 @@ source_group(include include/.*)
 
 # Add other libraries that should be linked
 #target_link_libraries(${PROJECT_NAME} PRIVATE Threads::Threads ${PROJECT_NAME}_version)
-target_link_libraries(${PROJECT_NAME} PRIVATE ${PROJECT_NAME}_version uvgrtp)
+target_link_libraries(${PROJECT_NAME}
+        PRIVATE ${PROJECT_NAME}_version
+        PUBLIC uvgrtp
+)
+#target_include_directories(${PROJECT_NAME} PUBLIC ${uvgrtp_SOURCE_DIR}/include)
 # Make sure uvgRTP is linked as well when linking to the library
 
 target_include_directories(${PROJECT_NAME}
         PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
         PRIVATE $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>
         PUBLIC $<INSTALL_INTERFACE:include>
-        )
-        
+)
         
 if(CMAKE_BUILD_TYPE)
     message(STATUS "Selecting build type: ${CMAKE_BUILD_TYPE}")
